@@ -1,13 +1,44 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  LayoutDashboard, PackageSearch, MessageSquare, FileClock, Settings2,
-  Plus, X, Copy, Check, Search, Wifi, ChevronDown, Trash2, Pencil,
-  CalendarRange, AlertTriangle, Loader2, ScanSearch, History, ShieldCheck,
-  Truck, ClipboardCheck, PackageCheck, Info,
+  LayoutDashboard,
+  PackageSearch,
+  MessageSquare,
+  FileClock,
+  Settings2,
+  Plus,
+  X,
+  Copy,
+  Check,
+  Search,
+  Wifi,
+  ChevronDown,
+  Trash2,
+  Pencil,
+  CalendarRange,
+  AlertTriangle,
+  Loader2,
+  ScanSearch,
+  History,
+  ShieldCheck,
+  Truck,
+  ClipboardCheck,
+  PackageCheck,
+  Info,
+  Menu,
+  Cloud,
+  CloudOff,
 } from "lucide-react";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
-  PieChart, Pie, Cell,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { storeGet, storeSet, isUsingFirebase } from "./firebase.js";
 
@@ -15,13 +46,22 @@ import { storeGet, storeSet, isUsingFirebase } from "./firebase.js";
    TOKENS — "Fiber patch bay" console
    ============================================================ */
 const T = {
-  void: "#0B1517", panel: "#111F23", panel2: "#16262B", line: "#22383F",
-  ink: "#E7F1EF", ink2: "#8FA8AC", ink3: "#5C7377",
-  cyan: "#49D6C4", cyanDim: "#1E4A47",
-  amber: "#F0A63D", amberDim: "#4A3A1B",
-  red: "#E8654E", redDim: "#4A231C",
-  green: "#5FCB7A", greenDim: "#1D3F26",
-  grey: "#6B7E82",
+  void: "#F3F4F6",
+  panel: "#FFFFFF",
+  panel2: "#F9FAFB",
+  line: "#E5E7EB",
+  ink: "#111827",
+  ink2: "#4B5563",
+  ink3: "#9CA3AF",
+  cyan: "#2563EB",
+  cyanDim: "#EFF6FF",
+  amber: "#D97706",
+  amberDim: "#FEF3C7",
+  red: "#DC2626",
+  redDim: "#FEE2E2",
+  green: "#16A34A",
+  greenDim: "#DCFCE7",
+  grey: "#9CA3AF",
 };
 const mono = "'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace";
 const sans = "'Inter', -apple-system, 'Segoe UI', sans-serif";
@@ -32,9 +72,24 @@ const sans = "'Inter', -apple-system, 'Segoe UI', sans-serif";
 const RMA_DONE_STATUSES = ["Closed", "Customer Received"];
 function ledColor(status) {
   const s = (status || "").toLowerCase();
-  if (s.includes("closed") || s.includes("received") || s.includes("selesai")) return T.green;
-  if (s.includes("diterima") || s.includes("menunggu") || s.includes("pending") || s.includes("belum")) return T.grey;
-  if (s.includes("shipped") || s.includes("ready") || s.includes("qc") || s.includes("dicek") || s.includes("diperbaiki") || s.includes("progress")) return T.amber;
+  if (s.includes("closed") || s.includes("received") || s.includes("selesai"))
+    return T.green;
+  if (
+    s.includes("diterima") ||
+    s.includes("menunggu") ||
+    s.includes("pending") ||
+    s.includes("belum")
+  )
+    return T.grey;
+  if (
+    s.includes("shipped") ||
+    s.includes("ready") ||
+    s.includes("qc") ||
+    s.includes("dicek") ||
+    s.includes("diperbaiki") ||
+    s.includes("progress")
+  )
+    return T.amber;
   if (s.includes("reject") || s.includes("batal")) return T.red;
   return T.cyan;
 }
@@ -42,8 +97,19 @@ function StatusLed({ status, size = 8 }) {
   const c = ledColor(status);
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-      <span style={{ width: size, height: size, borderRadius: 999, background: c, boxShadow: `0 0 6px ${c}99`, flexShrink: 0 }} />
-      <span style={{ fontSize: 12.5, color: T.ink2, fontFamily: sans }}>{status || "—"}</span>
+      <span
+        style={{
+          width: size,
+          height: size,
+          borderRadius: 999,
+          background: c,
+          boxShadow: `0 0 0 3px ${c}22`,
+          flexShrink: 0,
+        }}
+      />
+      <span style={{ fontSize: 12.5, color: T.ink2, fontFamily: sans }}>
+        {status || "—"}
+      </span>
     </span>
   );
 }
@@ -53,10 +119,20 @@ function isOverdue(rma) {
 }
 function OverdueBadge() {
   return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 4, background: T.redDim, color: T.red,
-      fontSize: 10.5, fontWeight: 700, padding: "2px 7px", borderRadius: 999, letterSpacing: 0.3,
-    }}>
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        background: T.redDim,
+        color: T.red,
+        fontSize: 10.5,
+        fontWeight: 700,
+        padding: "2px 7px",
+        borderRadius: 999,
+        letterSpacing: 0.3,
+      }}
+    >
       <AlertTriangle size={10} /> OVERDUE
     </span>
   );
@@ -65,13 +141,40 @@ function OverdueBadge() {
 /* ============================================================
    STORAGE
    ============================================================ */
-const KEYS = { rma: "hsgq_rma_entries_v2", wa: "hsgq_wa_entries_v2", master: "hsgq_master_data_v2" };
+const KEYS = {
+  rma: "hsgq_rma_entries_v2",
+  wa: "hsgq_wa_entries_v2",
+  master: "hsgq_master_data_v2",
+};
 const DEFAULT_MASTER = {
   engineers: ["Yusuf", "Danang", "Aris", "Yusuf(Afif)", "Aris(Abdiel)"],
-  statusRMA: ["Unit Diterima", "Sedang Dicek", "Menunggu", "Sedang Diperbaiki", "QC/Testing", "Ready to Ship", "Shipped", "Customer Received", "Closed"],
+  statusRMA: [
+    "Unit Diterima",
+    "Sedang Dicek",
+    "Menunggu",
+    "Sedang Diperbaiki",
+    "QC/Testing",
+    "Ready to Ship",
+    "Shipped",
+    "Customer Received",
+    "Closed",
+  ],
   statusWA: ["On Progress", "Selesai", "FU Tim China", "Belum Ditag"],
-  finalResults: ["Normal", "Repair", "Replace PCBA", "Replace Unit", "Tidak Dapat Diperbaiki", "Rejected"],
-  waitingReasons: ["Customer Information", "Spare Part", "Firmware", "HQ / China", "Other"],
+  finalResults: [
+    "Normal",
+    "Repair",
+    "Replace PCBA",
+    "Replace Unit",
+    "Tidak Dapat Diperbaiki",
+    "Rejected",
+  ],
+  waitingReasons: [
+    "Customer Information",
+    "Spare Part",
+    "Firmware",
+    "HQ / China",
+    "Other",
+  ],
   warrantyStatuses: ["In Warranty", "Out of Warranty", "Warranty Unknown"],
   qcResults: ["Pending", "Pass", "Fail"],
   pengiriman: ["EXPEDISI", "CJA JAKARTA", "CJA SURABAYA", "Pending Spare"],
@@ -89,8 +192,17 @@ const fmtDate = (d) => {
   return `${pad2(dt.getDate())}/${pad2(dt.getMonth() + 1)}/${dt.getFullYear()}`;
 };
 const todayISO = () => new Date().toISOString().slice(0, 10);
-const dateNDaysAgoISO = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
-const addDaysISO = (iso, n) => { if (!iso) return ""; const d = new Date(iso); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const dateNDaysAgoISO = (n) => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+};
+const addDaysISO = (iso, n) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+};
 function genTicket(prefix, existingField) {
   const now = new Date();
   const stamp = `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}`;
@@ -99,11 +211,14 @@ function genTicket(prefix, existingField) {
 }
 function daysBetween(a, b) {
   if (!a || !b) return "";
-  const d1 = new Date(a), d2 = new Date(b);
+  const d1 = new Date(a),
+    d2 = new Date(b);
   if (isNaN(d1) || isNaN(d2)) return "";
   return Math.max(0, Math.round((d2 - d1) / 86400000));
 }
-function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+function uid() {
+  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
 
 /* ============================================================
    WA MESSAGE TEMPLATES
@@ -165,54 +280,182 @@ Thank you.`;
 function Field({ label, children, hint }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <span style={{ fontSize: 11, letterSpacing: 0.4, color: T.ink3, textTransform: "uppercase", fontFamily: sans }}>{label}</span>
+      <span
+        style={{
+          fontSize: 11,
+          letterSpacing: 0.4,
+          color: T.ink3,
+          textTransform: "uppercase",
+          fontFamily: sans,
+        }}
+      >
+        {label}
+      </span>
       {children}
       {hint && <span style={{ fontSize: 11, color: T.ink3 }}>{hint}</span>}
     </label>
   );
 }
-const inputBase = { background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 6, color: T.ink, padding: "8px 10px", fontSize: 13.5, fontFamily: sans, outline: "none" };
-function TextInput(props) { return <input {...props} style={{ ...inputBase, ...(props.style || {}) }} />; }
-function TextArea(props) { return <textarea {...props} style={{ ...inputBase, resize: "vertical", minHeight: 56, ...(props.style || {}) }} />; }
+const inputBase = {
+  background: T.panel2,
+  border: `1px solid ${T.line}`,
+  borderRadius: 6,
+  color: T.ink,
+  padding: "8px 10px",
+  fontSize: 13.5,
+  fontFamily: sans,
+  outline: "none",
+};
+function TextInput(props) {
+  return <input {...props} style={{ ...inputBase, ...(props.style || {}) }} />;
+}
+function TextArea(props) {
+  return (
+    <textarea
+      {...props}
+      style={{
+        ...inputBase,
+        resize: "vertical",
+        minHeight: 56,
+        ...(props.style || {}),
+      }}
+    />
+  );
+}
 function Select({ options, ...props }) {
   return (
     <div style={{ position: "relative" }}>
-      <select {...props} style={{ ...inputBase, appearance: "none", width: "100%", paddingRight: 28, ...(props.style || {}) }}>
+      <select
+        {...props}
+        style={{
+          ...inputBase,
+          appearance: "none",
+          width: "100%",
+          paddingRight: 28,
+          ...(props.style || {}),
+        }}
+      >
         <option value="">—</option>
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
       </select>
-      <ChevronDown size={14} color={T.ink3} style={{ position: "absolute", right: 8, top: 10, pointerEvents: "none" }} />
+      <ChevronDown
+        size={14}
+        color={T.ink3}
+        style={{
+          position: "absolute",
+          right: 8,
+          top: 10,
+          pointerEvents: "none",
+        }}
+      />
     </div>
   );
 }
 function Btn({ children, variant = "ghost", ...props }) {
   const styles = {
-    solid: { background: T.cyan, color: "#03211E", border: `1px solid ${T.cyan}` },
-    ghost: { background: "transparent", color: T.ink2, border: `1px solid ${T.line}` },
-    danger: { background: "transparent", color: T.red, border: `1px solid ${T.redDim}` },
+    solid: {
+      background: T.cyan,
+      color: "#FFFFFF",
+      border: `1px solid ${T.cyan}`,
+    },
+    ghost: {
+      background: "#FFFFFF",
+      color: T.ink2,
+      border: `1px solid ${T.line}`,
+    },
+    danger: {
+      background: "#FFFFFF",
+      color: T.red,
+      border: `1px solid #FCA5A5`,
+    },
     tab: { background: "transparent", color: T.ink3, border: "none" },
     tabActive: { background: T.cyanDim, color: T.cyan, border: "none" },
   };
   return (
-    <button {...props} style={{
-      display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", fontFamily: sans, fontSize: 13,
-      fontWeight: 600, padding: "8px 14px", borderRadius: 6, transition: "opacity .15s", ...styles[variant], ...(props.style || {}),
-    }}>{children}</button>
+    <button
+      {...props}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        cursor: "pointer",
+        fontFamily: sans,
+        fontSize: 13,
+        fontWeight: 600,
+        padding: "8px 14px",
+        borderRadius: 6,
+        transition: "opacity .15s",
+        ...styles[variant],
+        ...(props.style || {}),
+      }}
+    >
+      {children}
+    </button>
   );
 }
 function Modal({ title, onClose, children, width = 720 }) {
   return (
-    <div onClick={onClose} style={{
-      position: "fixed", inset: 0, background: "rgba(4,10,11,0.7)", backdropFilter: "blur(2px)",
-      display: "flex", alignItems: "flex-start", justifyContent: "center", zIndex: 50, padding: "40px 16px", overflowY: "auto",
-    }}>
-      <div onClick={(e) => e.stopPropagation()} style={{
-        background: T.panel, border: `1px solid ${T.line}`, borderRadius: 10, width: "100%", maxWidth: width,
-        boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderBottom: `1px solid ${T.line}` }}>
-          <span style={{ fontFamily: mono, fontSize: 13, color: T.cyan, letterSpacing: 0.5 }}>{title}</span>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: T.ink3 }}><X size={18} /></button>
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(4,10,11,0.7)",
+        backdropFilter: "blur(2px)",
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        zIndex: 50,
+        padding: "40px 16px",
+        overflowY: "auto",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: T.panel,
+          border: `1px solid ${T.line}`,
+          borderRadius: 14,
+          width: "100%",
+          maxWidth: width,
+          boxShadow: "0 20px 45px rgba(16,24,40,0.18)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "14px 18px",
+            borderBottom: `1px solid ${T.line}`,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: sans,
+              fontWeight: 700,
+              fontSize: 14,
+              color: T.ink,
+              letterSpacing: 0.2,
+            }}
+          >
+            {title}
+          </span>
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: T.ink3,
+            }}
+          >
+            <X size={18} />
+          </button>
         </div>
         <div style={{ padding: 18 }}>{children}</div>
       </div>
@@ -222,25 +465,55 @@ function Modal({ title, onClose, children, width = 720 }) {
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);
   return (
-    <Btn variant={copied ? "solid" : "ghost"} onClick={() => { navigator.clipboard?.writeText(text).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>
-      {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Tersalin" : "Salin"}
+    <Btn
+      variant={copied ? "solid" : "ghost"}
+      onClick={() => {
+        navigator.clipboard?.writeText(text).catch(() => {});
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }}
+    >
+      {copied ? <Check size={14} /> : <Copy size={14} />}{" "}
+      {copied ? "Tersalin" : "Salin"}
     </Btn>
   );
 }
 function IconBtn({ icon: Icon, onClick, title, danger }) {
   return (
-    <button onClick={onClick} title={title} style={{
-      background: "transparent", border: `1px solid ${T.line}`, borderRadius: 6, padding: 6,
-      cursor: "pointer", color: danger ? T.red : T.ink3, display: "flex",
-    }}><Icon size={13} /></button>
+    <button
+      onClick={onClick}
+      title={title}
+      style={{
+        background: "transparent",
+        border: `1px solid ${T.line}`,
+        borderRadius: 6,
+        padding: 6,
+        cursor: "pointer",
+        color: danger ? T.red : T.ink3,
+        display: "flex",
+      }}
+    >
+      <Icon size={13} />
+    </button>
   );
 }
 function SectionHeader({ title, subtitle, action }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 16,
+      }}
+    >
       <div>
-        <h2 style={{ margin: 0, fontSize: 18, fontFamily: sans, color: T.ink }}>{title}</h2>
-        <div style={{ fontSize: 12.5, color: T.ink3, marginTop: 2 }}>{subtitle}</div>
+        <h2 style={{ margin: 0, fontSize: 18, fontFamily: sans, color: T.ink }}>
+          {title}
+        </h2>
+        <div style={{ fontSize: 12.5, color: T.ink3, marginTop: 2 }}>
+          {subtitle}
+        </div>
       </div>
       {action}
     </div>
@@ -249,8 +522,17 @@ function SectionHeader({ title, subtitle, action }) {
 function SearchBar({ value, onChange, placeholder }) {
   return (
     <div style={{ position: "relative", maxWidth: 320 }}>
-      <Search size={14} color={T.ink3} style={{ position: "absolute", left: 10, top: 10 }} />
-      <TextInput value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder || "Cari..."} style={{ paddingLeft: 30, width: "100%" }} />
+      <Search
+        size={14}
+        color={T.ink3}
+        style={{ position: "absolute", left: 10, top: 10 }}
+      />
+      <TextInput
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder || "Cari..."}
+        style={{ paddingLeft: 30, width: "100%" }}
+      />
     </div>
   );
 }
@@ -258,8 +540,20 @@ function InlineHint({ children, tone = "info" }) {
   const colors = { info: [T.cyanDim, T.cyan], warn: [T.amberDim, T.amber] };
   const [bg, fg] = colors[tone];
   return (
-    <div style={{ display: "flex", gap: 6, alignItems: "flex-start", background: bg, color: fg, fontSize: 11.5, padding: "6px 9px", borderRadius: 6 }}>
-      <Info size={12} style={{ marginTop: 1, flexShrink: 0 }} /> <span>{children}</span>
+    <div
+      style={{
+        display: "flex",
+        gap: 6,
+        alignItems: "flex-start",
+        background: bg,
+        color: fg,
+        fontSize: 11.5,
+        padding: "6px 9px",
+        borderRadius: 6,
+      }}
+    >
+      <Info size={12} style={{ marginTop: 1, flexShrink: 0 }} />{" "}
+      <span>{children}</span>
     </div>
   );
 }
@@ -276,7 +570,14 @@ const RMA_TABS = [
   { id: "qc", label: "QC/Shipping", icon: PackageCheck },
 ];
 
-function RmaForm({ initial, master, existingTicketNos, unitHistoryLookup, onSave, onClose }) {
+function RmaForm({
+  initial,
+  master,
+  existingTicketNos,
+  unitHistoryLookup,
+  onSave,
+  onClose,
+}) {
   const isEdit = !!initial;
   const [tab, setTab] = useState("overview");
   const [f, setF] = useState(
@@ -284,19 +585,59 @@ function RmaForm({ initial, master, existingTicketNos, unitHistoryLookup, onSave
       id: uid(),
       ticketNo: genTicket("RMA", existingTicketNos),
       status: master.statusRMA[0] || "",
-      engineer: "", product: "", sn: "", mac: "",
-      customerName: "", company: "", customerPhone: "",
-      receivedDate: todayISO(), receivedTime: "", receivedBy: "", doNumber: "", courierName: "",
-      physicalCondition: "", accessories: "", unitQty: 1, receivingNotes: "",
-      eta: addDaysISO(todayISO(), 3), closedDate: "",
-      initialProblem: "", symptom: "", checkingResult: "", rootCause: "", actionTaken: "", finalResult: "",
-      waitingReason: "", waitingParty: "", waitingStart: "", waitingEnd: "", waitingNote: "",
-      warrantyStatus: "", warrantyStart: "", warrantyEnd: "", warrantyDecision: "", warrantyReason: "",
-      qcTester: "", qcDate: "", qcResult: "", qcNotes: "",
-      shipping: "", trackingNo: "", shippedDate: "", customerReceivedDate: "",
+      engineer: "",
+      product: "",
+      sn: "",
+      mac: "",
+      customerName: "",
+      company: "",
+      customerPhone: "",
+      receivedDate: todayISO(),
+      receivedTime: "",
+      receivedBy: "",
+      doNumber: "",
+      courierName: "",
+      physicalCondition: "",
+      accessories: "",
+      unitQty: 1,
+      receivingNotes: "",
+      eta: addDaysISO(todayISO(), 3),
+      closedDate: "",
+      initialProblem: "",
+      symptom: "",
+      checkingResult: "",
+      rootCause: "",
+      actionTaken: "",
+      finalResult: "",
+      waitingReason: "",
+      waitingParty: "",
+      waitingStart: "",
+      waitingEnd: "",
+      waitingNote: "",
+      warrantyStatus: "",
+      warrantyStart: "",
+      warrantyEnd: "",
+      warrantyDecision: "",
+      warrantyReason: "",
+      qcTester: "",
+      qcDate: "",
+      qcResult: "",
+      qcNotes: "",
+      shipping: "",
+      trackingNo: "",
+      shippedDate: "",
+      customerReceivedDate: "",
       notes: "",
-      statusHistory: [{ from: null, to: master.statusRMA[0] || "", changedBy: "", changedAt: new Date().toISOString(), note: "Tiket dibuat" }],
-    }
+      statusHistory: [
+        {
+          from: null,
+          to: master.statusRMA[0] || "",
+          changedBy: "",
+          changedAt: new Date().toISOString(),
+          note: "Tiket dibuat",
+        },
+      ],
+    },
   );
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
 
@@ -308,9 +649,16 @@ function RmaForm({ initial, master, existingTicketNos, unitHistoryLookup, onSave
   const handleSave = () => {
     let statusHistory = f.statusHistory || [];
     if (isEdit && initial.status !== f.status) {
-      statusHistory = [...statusHistory, {
-        from: initial.status, to: f.status, changedBy: f.engineer, changedAt: new Date().toISOString(), note: "",
-      }];
+      statusHistory = [
+        ...statusHistory,
+        {
+          from: initial.status,
+          to: f.status,
+          changedBy: f.engineer,
+          changedAt: new Date().toISOString(),
+          note: "",
+        },
+      ];
     }
     let eta = f.eta;
     if (!eta && f.receivedDate) eta = addDaysISO(f.receivedDate, 3);
@@ -318,24 +666,68 @@ function RmaForm({ initial, master, existingTicketNos, unitHistoryLookup, onSave
   };
 
   const Tabs = (
-    <div style={{ display: "flex", gap: 2, borderBottom: `1px solid ${T.line}`, marginBottom: 16, flexWrap: "wrap" }}>
+    <div
+      style={{
+        display: "flex",
+        gap: 2,
+        borderBottom: `1px solid ${T.line}`,
+        marginBottom: 16,
+        flexWrap: "wrap",
+      }}
+    >
       {RMA_TABS.map((t) => {
         const Icon = t.icon;
         const active = tab === t.id;
         return (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
-            display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: "none", border: "none",
-            borderBottom: active ? `2px solid ${T.cyan}` : "2px solid transparent", color: active ? T.cyan : T.ink3,
-            cursor: "pointer", fontFamily: sans, fontSize: 12.5, fontWeight: 600, marginBottom: -1,
-          }}><Icon size={13} /> {t.label}</button>
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 12px",
+              background: "none",
+              border: "none",
+              borderBottom: active
+                ? `2px solid ${T.cyan}`
+                : "2px solid transparent",
+              color: active ? T.cyan : T.ink3,
+              cursor: "pointer",
+              fontFamily: sans,
+              fontSize: 12.5,
+              fontWeight: 600,
+              marginBottom: -1,
+            }}
+          >
+            <Icon size={13} /> {t.label}
+          </button>
         );
       })}
       {isEdit && (
-        <button onClick={() => setTab("timeline")} style={{
-          display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: "none", border: "none",
-          borderBottom: tab === "timeline" ? `2px solid ${T.cyan}` : "2px solid transparent", color: tab === "timeline" ? T.cyan : T.ink3,
-          cursor: "pointer", fontFamily: sans, fontSize: 12.5, fontWeight: 600, marginBottom: -1,
-        }}><History size={13} /> Timeline</button>
+        <button
+          onClick={() => setTab("timeline")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "8px 12px",
+            background: "none",
+            border: "none",
+            borderBottom:
+              tab === "timeline"
+                ? `2px solid ${T.cyan}`
+                : "2px solid transparent",
+            color: tab === "timeline" ? T.cyan : T.ink3,
+            cursor: "pointer",
+            fontFamily: sans,
+            fontSize: 12.5,
+            fontWeight: 600,
+            marginBottom: -1,
+          }}
+        >
+          <History size={13} /> Timeline
+        </button>
       )}
     </div>
   );
@@ -345,23 +737,76 @@ function RmaForm({ initial, master, existingTicketNos, unitHistoryLookup, onSave
       {Tabs}
       {tab === "overview" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="No. Ticket"><TextInput value={f.ticketNo} onChange={set("ticketNo")} style={{ fontFamily: mono }} /></Field>
-            <Field label="Status">
-              <Select options={master.statusRMA} value={f.status} onChange={set("status")} />
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+          >
+            <Field label="No. Ticket">
+              <TextInput
+                value={f.ticketNo}
+                onChange={set("ticketNo")}
+                style={{ fontFamily: mono }}
+              />
             </Field>
-            <Field label="Engineer"><Select options={master.engineers} value={f.engineer} onChange={set("engineer")} /></Field>
-            <Field label="Produk / Type"><TextInput value={f.product} onChange={set("product")} placeholder="cth. G04ID" /></Field>
-            <Field label="SN"><TextInput value={f.sn} onChange={set("sn")} style={{ fontFamily: mono }} /></Field>
-            <Field label="MAC"><TextInput value={f.mac} onChange={set("mac")} style={{ fontFamily: mono }} /></Field>
-            <Field label="Nama Customer"><TextInput value={f.customerName} onChange={set("customerName")} /></Field>
-            <Field label="Perusahaan"><TextInput value={f.company} onChange={set("company")} /></Field>
-            <Field label="No. HP Customer"><TextInput value={f.customerPhone} onChange={set("customerPhone")} /></Field>
+            <Field label="Status">
+              <Select
+                options={master.statusRMA}
+                value={f.status}
+                onChange={set("status")}
+              />
+            </Field>
+            <Field label="Engineer">
+              <Select
+                options={master.engineers}
+                value={f.engineer}
+                onChange={set("engineer")}
+              />
+            </Field>
+            <Field label="Produk / Type">
+              <TextInput
+                value={f.product}
+                onChange={set("product")}
+                placeholder="cth. G04ID"
+              />
+            </Field>
+            <Field label="SN">
+              <TextInput
+                value={f.sn}
+                onChange={set("sn")}
+                style={{ fontFamily: mono }}
+              />
+            </Field>
+            <Field label="MAC">
+              <TextInput
+                value={f.mac}
+                onChange={set("mac")}
+                style={{ fontFamily: mono }}
+              />
+            </Field>
+            <Field label="Nama Customer">
+              <TextInput
+                value={f.customerName}
+                onChange={set("customerName")}
+              />
+            </Field>
+            <Field label="Perusahaan">
+              <TextInput value={f.company} onChange={set("company")} />
+            </Field>
+            <Field label="No. HP Customer">
+              <TextInput
+                value={f.customerPhone}
+                onChange={set("customerPhone")}
+              />
+            </Field>
           </div>
           {priorMatches.length > 0 && (
             <InlineHint tone="warn">
-              Unit ini pernah muncul {priorMatches.length}x sebelumnya: {priorMatches.slice(0, 3).map((h) => `${h.ref} (${h.status})`).join(", ")}
-              {priorMatches.length > 3 ? ", ..." : ""}. Cek tab "Unit History" untuk detail lengkap.
+              Unit ini pernah muncul {priorMatches.length}x sebelumnya:{" "}
+              {priorMatches
+                .slice(0, 3)
+                .map((h) => `${h.ref} (${h.status})`)
+                .join(", ")}
+              {priorMatches.length > 3 ? ", ..." : ""}. Cek tab "Unit History"
+              untuk detail lengkap.
             </InlineHint>
           )}
         </div>
@@ -369,46 +814,167 @@ function RmaForm({ initial, master, existingTicketNos, unitHistoryLookup, onSave
 
       {tab === "receiving" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="Tanggal Masuk"><TextInput type="date" value={f.receivedDate} onChange={set("receivedDate")} /></Field>
-            <Field label="Jam Diterima"><TextInput type="time" value={f.receivedTime} onChange={set("receivedTime")} /></Field>
-            <Field label="Diterima Oleh"><Select options={master.engineers} value={f.receivedBy} onChange={set("receivedBy")} /></Field>
-            <Field label="Estimasi Selesai (ETA)" hint="Default masuk + 3 hari"><TextInput type="date" value={f.eta} onChange={set("eta")} /></Field>
-            <Field label="No. DO / Surat Jalan Customer"><TextInput value={f.doNumber} onChange={set("doNumber")} /></Field>
-            <Field label="Nama Pengirim / Kurir"><TextInput value={f.courierName} onChange={set("courierName")} /></Field>
-            <Field label="Jumlah Unit"><TextInput type="number" min="1" value={f.unitQty} onChange={set("unitQty")} /></Field>
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+          >
+            <Field label="Tanggal Masuk">
+              <TextInput
+                type="date"
+                value={f.receivedDate}
+                onChange={set("receivedDate")}
+              />
+            </Field>
+            <Field label="Jam Diterima">
+              <TextInput
+                type="time"
+                value={f.receivedTime}
+                onChange={set("receivedTime")}
+              />
+            </Field>
+            <Field label="Diterima Oleh">
+              <Select
+                options={master.engineers}
+                value={f.receivedBy}
+                onChange={set("receivedBy")}
+              />
+            </Field>
+            <Field label="Estimasi Selesai (ETA)" hint="Default masuk + 3 hari">
+              <TextInput type="date" value={f.eta} onChange={set("eta")} />
+            </Field>
+            <Field label="No. DO / Surat Jalan Customer">
+              <TextInput value={f.doNumber} onChange={set("doNumber")} />
+            </Field>
+            <Field label="Nama Pengirim / Kurir">
+              <TextInput value={f.courierName} onChange={set("courierName")} />
+            </Field>
+            <Field label="Jumlah Unit">
+              <TextInput
+                type="number"
+                min="1"
+                value={f.unitQty}
+                onChange={set("unitQty")}
+              />
+            </Field>
           </div>
-          <Field label="Kondisi Fisik Saat Diterima"><TextArea value={f.physicalCondition} onChange={set("physicalCondition")} placeholder="cth. lecet minor di casing, tidak ada kerusakan berat" /></Field>
-          <Field label="Kelengkapan / Accessories"><TextArea value={f.accessories} onChange={set("accessories")} placeholder="cth. adaptor, kabel LAN, tanpa dus" /></Field>
-          <Field label="Catatan Receiving"><TextArea value={f.receivingNotes} onChange={set("receivingNotes")} /></Field>
-          <InlineHint>Foto unit/label SN/MAC belum bisa diunggah di versi web ini — perlu backend penyimpanan file sungguhan (Tahap 3+).</InlineHint>
+          <Field label="Kondisi Fisik Saat Diterima">
+            <TextArea
+              value={f.physicalCondition}
+              onChange={set("physicalCondition")}
+              placeholder="cth. lecet minor di casing, tidak ada kerusakan berat"
+            />
+          </Field>
+          <Field label="Kelengkapan / Accessories">
+            <TextArea
+              value={f.accessories}
+              onChange={set("accessories")}
+              placeholder="cth. adaptor, kabel LAN, tanpa dus"
+            />
+          </Field>
+          <Field label="Catatan Receiving">
+            <TextArea
+              value={f.receivingNotes}
+              onChange={set("receivingNotes")}
+            />
+          </Field>
+          <InlineHint>
+            Foto unit/label SN/MAC belum bisa diunggah di versi web ini — perlu
+            backend penyimpanan file sungguhan (Tahap 3+).
+          </InlineHint>
         </div>
       )}
 
       {tab === "diagnosis" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <Field label="Kendala Awal"><TextArea value={f.initialProblem} onChange={set("initialProblem")} /></Field>
-          <Field label="Gejala"><TextArea value={f.symptom} onChange={set("symptom")} placeholder="cth. PON LED tidak menyala" /></Field>
-          <Field label="Hasil Pengecekan"><TextArea value={f.checkingResult} onChange={set("checkingResult")} /></Field>
-          <Field label="Root Cause"><TextArea value={f.rootCause} onChange={set("rootCause")} placeholder="cth. kerusakan optical module" /></Field>
-          <Field label="Tindakan"><TextArea value={f.actionTaken} onChange={set("actionTaken")} placeholder="cth. Replacement PCBA" /></Field>
-          <Field label="Hasil Akhir"><Select options={master.finalResults} value={f.finalResult} onChange={set("finalResult")} /></Field>
+          <Field label="Kendala Awal">
+            <TextArea
+              value={f.initialProblem}
+              onChange={set("initialProblem")}
+            />
+          </Field>
+          <Field label="Gejala">
+            <TextArea
+              value={f.symptom}
+              onChange={set("symptom")}
+              placeholder="cth. PON LED tidak menyala"
+            />
+          </Field>
+          <Field label="Hasil Pengecekan">
+            <TextArea
+              value={f.checkingResult}
+              onChange={set("checkingResult")}
+            />
+          </Field>
+          <Field label="Root Cause">
+            <TextArea
+              value={f.rootCause}
+              onChange={set("rootCause")}
+              placeholder="cth. kerusakan optical module"
+            />
+          </Field>
+          <Field label="Tindakan">
+            <TextArea
+              value={f.actionTaken}
+              onChange={set("actionTaken")}
+              placeholder="cth. Replacement PCBA"
+            />
+          </Field>
+          <Field label="Hasil Akhir">
+            <Select
+              options={master.finalResults}
+              value={f.finalResult}
+              onChange={set("finalResult")}
+            />
+          </Field>
         </div>
       )}
 
       {tab === "waiting" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <InlineHint>Isi bagian ini hanya jika status RMA sedang "Menunggu" — dipakai untuk menghitung berapa lama tiket tertahan karena pihak tertentu.</InlineHint>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="Alasan Menunggu"><Select options={master.waitingReasons} value={f.waitingReason} onChange={set("waitingReason")} /></Field>
-            <Field label="Pihak yang Ditunggu"><TextInput value={f.waitingParty} onChange={set("waitingParty")} placeholder="cth. Tim China, Customer" /></Field>
-            <Field label="Mulai Menunggu"><TextInput type="date" value={f.waitingStart} onChange={set("waitingStart")} /></Field>
-            <Field label="Selesai Menunggu"><TextInput type="date" value={f.waitingEnd} onChange={set("waitingEnd")} /></Field>
+          <InlineHint>
+            Isi bagian ini hanya jika status RMA sedang "Menunggu" — dipakai
+            untuk menghitung berapa lama tiket tertahan karena pihak tertentu.
+          </InlineHint>
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+          >
+            <Field label="Alasan Menunggu">
+              <Select
+                options={master.waitingReasons}
+                value={f.waitingReason}
+                onChange={set("waitingReason")}
+              />
+            </Field>
+            <Field label="Pihak yang Ditunggu">
+              <TextInput
+                value={f.waitingParty}
+                onChange={set("waitingParty")}
+                placeholder="cth. Tim China, Customer"
+              />
+            </Field>
+            <Field label="Mulai Menunggu">
+              <TextInput
+                type="date"
+                value={f.waitingStart}
+                onChange={set("waitingStart")}
+              />
+            </Field>
+            <Field label="Selesai Menunggu">
+              <TextInput
+                type="date"
+                value={f.waitingEnd}
+                onChange={set("waitingEnd")}
+              />
+            </Field>
           </div>
-          <Field label="Catatan Waiting"><TextArea value={f.waitingNote} onChange={set("waitingNote")} /></Field>
+          <Field label="Catatan Waiting">
+            <TextArea value={f.waitingNote} onChange={set("waitingNote")} />
+          </Field>
           {f.waitingStart && (
             <div style={{ fontSize: 12.5, color: T.ink2 }}>
-              Lama menunggu: <b style={{ color: T.cyan, fontFamily: mono }}>{daysBetween(f.waitingStart, f.waitingEnd || todayISO())} hari</b>
+              Lama menunggu:{" "}
+              <b style={{ color: T.cyan, fontFamily: mono }}>
+                {daysBetween(f.waitingStart, f.waitingEnd || todayISO())} hari
+              </b>
               {!f.waitingEnd && " (masih berjalan)"}
             </div>
           )}
@@ -417,61 +983,213 @@ function RmaForm({ initial, master, existingTicketNos, unitHistoryLookup, onSave
 
       {tab === "warranty" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="Status Warranty"><Select options={master.warrantyStatuses} value={f.warrantyStatus} onChange={set("warrantyStatus")} /></Field>
-            <Field label="Keputusan Warranty"><TextInput value={f.warrantyDecision} onChange={set("warrantyDecision")} placeholder="cth. Ditanggung, Ditolak" /></Field>
-            <Field label="Warranty Start"><TextInput type="date" value={f.warrantyStart} onChange={set("warrantyStart")} /></Field>
-            <Field label="Warranty End"><TextInput type="date" value={f.warrantyEnd} onChange={set("warrantyEnd")} /></Field>
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+          >
+            <Field label="Status Warranty">
+              <Select
+                options={master.warrantyStatuses}
+                value={f.warrantyStatus}
+                onChange={set("warrantyStatus")}
+              />
+            </Field>
+            <Field label="Keputusan Warranty">
+              <TextInput
+                value={f.warrantyDecision}
+                onChange={set("warrantyDecision")}
+                placeholder="cth. Ditanggung, Ditolak"
+              />
+            </Field>
+            <Field label="Warranty Start">
+              <TextInput
+                type="date"
+                value={f.warrantyStart}
+                onChange={set("warrantyStart")}
+              />
+            </Field>
+            <Field label="Warranty End">
+              <TextInput
+                type="date"
+                value={f.warrantyEnd}
+                onChange={set("warrantyEnd")}
+              />
+            </Field>
           </div>
-          <Field label="Alasan Keputusan Warranty"><TextArea value={f.warrantyReason} onChange={set("warrantyReason")} /></Field>
+          <Field label="Alasan Keputusan Warranty">
+            <TextArea
+              value={f.warrantyReason}
+              onChange={set("warrantyReason")}
+            />
+          </Field>
         </div>
       )}
 
       {tab === "qc" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: T.ink2, display: "flex", alignItems: "center", gap: 6 }}>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: T.ink2,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
             <ClipboardCheck size={14} color={T.cyan} /> QC / TESTING
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="QC / Tester"><Select options={master.engineers} value={f.qcTester} onChange={set("qcTester")} /></Field>
-            <Field label="Tanggal QC"><TextInput type="date" value={f.qcDate} onChange={set("qcDate")} /></Field>
-            <Field label="Hasil QC"><Select options={master.qcResults} value={f.qcResult} onChange={set("qcResult")} /></Field>
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+          >
+            <Field label="QC / Tester">
+              <Select
+                options={master.engineers}
+                value={f.qcTester}
+                onChange={set("qcTester")}
+              />
+            </Field>
+            <Field label="Tanggal QC">
+              <TextInput
+                type="date"
+                value={f.qcDate}
+                onChange={set("qcDate")}
+              />
+            </Field>
+            <Field label="Hasil QC">
+              <Select
+                options={master.qcResults}
+                value={f.qcResult}
+                onChange={set("qcResult")}
+              />
+            </Field>
           </div>
-          <Field label="Catatan QC"><TextArea value={f.qcNotes} onChange={set("qcNotes")} /></Field>
-          {f.qcResult === "Fail" && <InlineHint tone="warn">QC Fail — status sebaiknya dikembalikan ke "Sedang Diperbaiki" di tab Overview.</InlineHint>}
+          <Field label="Catatan QC">
+            <TextArea value={f.qcNotes} onChange={set("qcNotes")} />
+          </Field>
+          {f.qcResult === "Fail" && (
+            <InlineHint tone="warn">
+              QC Fail — status sebaiknya dikembalikan ke "Sedang Diperbaiki" di
+              tab Overview.
+            </InlineHint>
+          )}
 
-          <div style={{ fontSize: 12, fontWeight: 700, color: T.ink2, display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: T.ink2,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              marginTop: 8,
+            }}
+          >
             <Truck size={14} color={T.cyan} /> SHIPPING
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="Metode Pengiriman"><Select options={master.pengiriman} value={f.shipping} onChange={set("shipping")} /></Field>
-            <Field label="No. Resi / Surat Jalan"><TextInput value={f.trackingNo} onChange={set("trackingNo")} /></Field>
-            <Field label="Tanggal Dikirim (Shipped)"><TextInput type="date" value={f.shippedDate} onChange={set("shippedDate")} /></Field>
-            <Field label="Tanggal Diterima Customer"><TextInput type="date" value={f.customerReceivedDate} onChange={set("customerReceivedDate")} /></Field>
-            <Field label="Tanggal Ditutup (Closed)"><TextInput type="date" value={f.closedDate} onChange={set("closedDate")} /></Field>
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+          >
+            <Field label="Metode Pengiriman">
+              <Select
+                options={master.pengiriman}
+                value={f.shipping}
+                onChange={set("shipping")}
+              />
+            </Field>
+            <Field label="No. Resi / Surat Jalan">
+              <TextInput value={f.trackingNo} onChange={set("trackingNo")} />
+            </Field>
+            <Field label="Tanggal Dikirim (Shipped)">
+              <TextInput
+                type="date"
+                value={f.shippedDate}
+                onChange={set("shippedDate")}
+              />
+            </Field>
+            <Field label="Tanggal Diterima Customer">
+              <TextInput
+                type="date"
+                value={f.customerReceivedDate}
+                onChange={set("customerReceivedDate")}
+              />
+            </Field>
+            <Field label="Tanggal Ditutup (Closed)">
+              <TextInput
+                type="date"
+                value={f.closedDate}
+                onChange={set("closedDate")}
+              />
+            </Field>
           </div>
-          <Field label="Keterangan"><TextArea value={f.notes} onChange={set("notes")} /></Field>
+          <Field label="Keterangan">
+            <TextArea value={f.notes} onChange={set("notes")} />
+          </Field>
         </div>
       )}
 
       {tab === "timeline" && isEdit && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {(f.statusHistory || []).slice().reverse().map((h, i) => (
-            <div key={i} style={{ display: "flex", gap: 10, padding: "8px 10px", background: T.panel2, borderRadius: 6, border: `1px solid ${T.line}` }}>
-              <span style={{ width: 8, height: 8, borderRadius: 99, background: ledColor(h.to), marginTop: 5, flexShrink: 0 }} />
-              <div style={{ fontSize: 12.5 }}>
-                <div style={{ color: T.ink }}>{h.from ? `${h.from} → ${h.to}` : `Dibuat: ${h.to}`}</div>
-                <div style={{ color: T.ink3, fontSize: 11 }}>{new Date(h.changedAt).toLocaleString("id-ID")} {h.changedBy ? `· ${h.changedBy}` : ""} {h.note ? `· ${h.note}` : ""}</div>
+          {(f.statusHistory || [])
+            .slice()
+            .reverse()
+            .map((h, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  padding: "8px 10px",
+                  background: T.panel2,
+                  borderRadius: 6,
+                  border: `1px solid ${T.line}`,
+                }}
+              >
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 99,
+                    background: ledColor(h.to),
+                    marginTop: 5,
+                    flexShrink: 0,
+                  }}
+                />
+                <div style={{ fontSize: 12.5 }}>
+                  <div style={{ color: T.ink }}>
+                    {h.from ? `${h.from} → ${h.to}` : `Dibuat: ${h.to}`}
+                  </div>
+                  <div style={{ color: T.ink3, fontSize: 11 }}>
+                    {new Date(h.changedAt).toLocaleString("id-ID")}{" "}
+                    {h.changedBy ? `· ${h.changedBy}` : ""}{" "}
+                    {h.note ? `· ${h.note}` : ""}
+                  </div>
+                </div>
               </div>
+            ))}
+          {(!f.statusHistory || f.statusHistory.length === 0) && (
+            <div style={{ color: T.ink3, fontSize: 12.5 }}>
+              Belum ada riwayat.
             </div>
-          ))}
-          {(!f.statusHistory || f.statusHistory.length === 0) && <div style={{ color: T.ink3, fontSize: 12.5 }}>Belum ada riwayat.</div>}
+          )}
         </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 18, paddingTop: 14, borderTop: `1px solid ${T.line}` }}>
-        <Btn variant="ghost" onClick={onClose}>Batal</Btn>
-        <Btn variant="solid" onClick={handleSave}>Simpan Tiket</Btn>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 8,
+          marginTop: 18,
+          paddingTop: 14,
+          borderTop: `1px solid ${T.line}`,
+        }}
+      >
+        <Btn variant="ghost" onClick={onClose}>
+          Batal
+        </Btn>
+        <Btn variant="solid" onClick={handleSave}>
+          Simpan Tiket
+        </Btn>
       </div>
     </div>
   );
@@ -483,59 +1201,213 @@ function RmaForm({ initial, master, existingTicketNos, unitHistoryLookup, onSave
 function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
   const [f, setF] = useState(
     initial || {
-      id: uid(), caseDate: todayISO(), caseNo: genTicket("CASE", existingCaseNos),
-      customerPhone: "", customerName: "", company: "", deviceType: "", sn: "", mac: "",
-      initialProblem: "", engineerTag: "", status: master.statusWA[0] || "",
-      finalAnalysis: "", solvedDate: "", notes: "",
+      id: uid(),
+      caseDate: todayISO(),
+      caseNo: genTicket("CASE", existingCaseNos),
+      customerPhone: "",
+      customerName: "",
+      company: "",
+      deviceType: "",
+      sn: "",
+      mac: "",
+      initialProblem: "",
+      engineerTag: "",
+      status: master.statusWA[0] || "",
+      finalAnalysis: "",
+      solvedDate: "",
+      notes: "",
       commHistory: [],
-    }
+    },
   );
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
-  const addComm = () => setF((s) => ({ ...s, commHistory: [...(s.commHistory || []), { id: uid(), date: todayISO(), handledBy: "", summary: "", result: "" }] }));
-  const updateComm = (id, key, val) => setF((s) => ({ ...s, commHistory: s.commHistory.map((c) => (c.id === id ? { ...c, [key]: val } : c)) }));
-  const removeComm = (id) => setF((s) => ({ ...s, commHistory: s.commHistory.filter((c) => c.id !== id) }));
+  const addComm = () =>
+    setF((s) => ({
+      ...s,
+      commHistory: [
+        ...(s.commHistory || []),
+        { id: uid(), date: todayISO(), handledBy: "", summary: "", result: "" },
+      ],
+    }));
+  const updateComm = (id, key, val) =>
+    setF((s) => ({
+      ...s,
+      commHistory: s.commHistory.map((c) =>
+        c.id === id ? { ...c, [key]: val } : c,
+      ),
+    }));
+  const removeComm = (id) =>
+    setF((s) => ({
+      ...s,
+      commHistory: s.commHistory.filter((c) => c.id !== id),
+    }));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="No. Case"><TextInput value={f.caseNo} onChange={set("caseNo")} style={{ fontFamily: mono }} /></Field>
-        <Field label="Tanggal Case"><TextInput type="date" value={f.caseDate} onChange={set("caseDate")} /></Field>
-        <Field label="Engineer / Tagging"><Select options={master.engineers} value={f.engineerTag} onChange={set("engineerTag")} /></Field>
-        <Field label="Status"><Select options={master.statusWA} value={f.status} onChange={set("status")} /></Field>
-        <Field label="Nama Customer"><TextInput value={f.customerName} onChange={set("customerName")} /></Field>
-        <Field label="Perusahaan"><TextInput value={f.company} onChange={set("company")} /></Field>
-        <Field label="No. HP Customer"><TextInput value={f.customerPhone} onChange={set("customerPhone")} /></Field>
-        <Field label="Type Perangkat"><TextInput value={f.deviceType} onChange={set("deviceType")} /></Field>
-        <Field label="SN"><TextInput value={f.sn} onChange={set("sn")} style={{ fontFamily: mono }} /></Field>
-        <Field label="MAC"><TextInput value={f.mac} onChange={set("mac")} style={{ fontFamily: mono }} /></Field>
-        <Field label="Tanggal Solved"><TextInput type="date" value={f.solvedDate} onChange={set("solvedDate")} /></Field>
+        <Field label="No. Case">
+          <TextInput
+            value={f.caseNo}
+            onChange={set("caseNo")}
+            style={{ fontFamily: mono }}
+          />
+        </Field>
+        <Field label="Tanggal Case">
+          <TextInput
+            type="date"
+            value={f.caseDate}
+            onChange={set("caseDate")}
+          />
+        </Field>
+        <Field label="Engineer / Tagging">
+          <Select
+            options={master.engineers}
+            value={f.engineerTag}
+            onChange={set("engineerTag")}
+          />
+        </Field>
+        <Field label="Status">
+          <Select
+            options={master.statusWA}
+            value={f.status}
+            onChange={set("status")}
+          />
+        </Field>
+        <Field label="Nama Customer">
+          <TextInput value={f.customerName} onChange={set("customerName")} />
+        </Field>
+        <Field label="Perusahaan">
+          <TextInput value={f.company} onChange={set("company")} />
+        </Field>
+        <Field label="No. HP Customer">
+          <TextInput value={f.customerPhone} onChange={set("customerPhone")} />
+        </Field>
+        <Field label="Type Perangkat">
+          <TextInput value={f.deviceType} onChange={set("deviceType")} />
+        </Field>
+        <Field label="SN">
+          <TextInput
+            value={f.sn}
+            onChange={set("sn")}
+            style={{ fontFamily: mono }}
+          />
+        </Field>
+        <Field label="MAC">
+          <TextInput
+            value={f.mac}
+            onChange={set("mac")}
+            style={{ fontFamily: mono }}
+          />
+        </Field>
+        <Field label="Tanggal Solved">
+          <TextInput
+            type="date"
+            value={f.solvedDate}
+            onChange={set("solvedDate")}
+          />
+        </Field>
       </div>
-      <Field label="Kendala Awal"><TextArea value={f.initialProblem} onChange={set("initialProblem")} /></Field>
-      <Field label="Analisa Akhir"><TextArea value={f.finalAnalysis} onChange={set("finalAnalysis")} /></Field>
+      <Field label="Kendala Awal">
+        <TextArea value={f.initialProblem} onChange={set("initialProblem")} />
+      </Field>
+      <Field label="Analisa Akhir">
+        <TextArea value={f.finalAnalysis} onChange={set("finalAnalysis")} />
+      </Field>
 
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <span style={{ fontSize: 11, letterSpacing: 0.4, color: T.ink3, textTransform: "uppercase", fontFamily: sans }}>Riwayat Komunikasi</span>
-          <Btn variant="ghost" onClick={addComm}><Plus size={13} /> Tambah</Btn>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 8,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 11,
+              letterSpacing: 0.4,
+              color: T.ink3,
+              textTransform: "uppercase",
+              fontFamily: sans,
+            }}
+          >
+            Riwayat Komunikasi
+          </span>
+          <Btn variant="ghost" onClick={addComm}>
+            <Plus size={13} /> Tambah
+          </Btn>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {(f.commHistory || []).map((c) => (
-            <div key={c.id} style={{ display: "grid", gridTemplateColumns: "110px 110px 1fr 1fr 28px", gap: 6, alignItems: "start" }}>
-              <TextInput type="date" value={c.date} onChange={(e) => updateComm(c.id, "date", e.target.value)} />
-              <Select options={master.engineers} value={c.handledBy} onChange={(e) => updateComm(c.id, "handledBy", e.target.value)} />
-              <TextInput placeholder="Ringkasan komunikasi" value={c.summary} onChange={(e) => updateComm(c.id, "summary", e.target.value)} />
-              <TextInput placeholder="Hasil" value={c.result} onChange={(e) => updateComm(c.id, "result", e.target.value)} />
-              <button onClick={() => removeComm(c.id)} style={{ background: "none", border: "none", color: T.ink3, cursor: "pointer", padding: 8 }}><Trash2 size={13} /></button>
+            <div
+              key={c.id}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "110px 110px 1fr 1fr 28px",
+                gap: 6,
+                alignItems: "start",
+              }}
+            >
+              <TextInput
+                type="date"
+                value={c.date}
+                onChange={(e) => updateComm(c.id, "date", e.target.value)}
+              />
+              <Select
+                options={master.engineers}
+                value={c.handledBy}
+                onChange={(e) => updateComm(c.id, "handledBy", e.target.value)}
+              />
+              <TextInput
+                placeholder="Ringkasan komunikasi"
+                value={c.summary}
+                onChange={(e) => updateComm(c.id, "summary", e.target.value)}
+              />
+              <TextInput
+                placeholder="Hasil"
+                value={c.result}
+                onChange={(e) => updateComm(c.id, "result", e.target.value)}
+              />
+              <button
+                onClick={() => removeComm(c.id)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: T.ink3,
+                  cursor: "pointer",
+                  padding: 8,
+                }}
+              >
+                <Trash2 size={13} />
+              </button>
             </div>
           ))}
-          {(!f.commHistory || f.commHistory.length === 0) && <div style={{ fontSize: 12, color: T.ink3 }}>Belum ada riwayat komunikasi — berguna kalau 1 case ditangani beberapa engineer.</div>}
+          {(!f.commHistory || f.commHistory.length === 0) && (
+            <div style={{ fontSize: 12, color: T.ink3 }}>
+              Belum ada riwayat komunikasi — berguna kalau 1 case ditangani
+              beberapa engineer.
+            </div>
+          )}
         </div>
       </div>
 
-      <Field label="Keterangan"><TextArea value={f.notes} onChange={set("notes")} /></Field>
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 4 }}>
-        <Btn variant="ghost" onClick={onClose}>Batal</Btn>
-        <Btn variant="solid" onClick={() => onSave(f)}>Simpan Case</Btn>
+      <Field label="Keterangan">
+        <TextArea value={f.notes} onChange={set("notes")} />
+      </Field>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 8,
+          marginTop: 4,
+        }}
+      >
+        <Btn variant="ghost" onClick={onClose}>
+          Batal
+        </Btn>
+        <Btn variant="solid" onClick={() => onSave(f)}>
+          Simpan Case
+        </Btn>
       </div>
     </div>
   );
@@ -546,24 +1418,75 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
    ============================================================ */
 function DataTable({ columns, rows, onRowClick, emptyLabel }) {
   return (
-    <div style={{ overflowX: "auto", border: `1px solid ${T.line}`, borderRadius: 8 }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+    <div
+      style={{
+        overflowX: "auto",
+        border: `1px solid ${T.line}`,
+        borderRadius: 8,
+      }}
+    >
+      <table
+        style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
+      >
         <thead>
           <tr style={{ background: T.panel2 }}>
             {columns.map((c) => (
-              <th key={c.key} style={{ textAlign: "left", padding: "10px 12px", color: T.ink3, fontWeight: 600, fontSize: 11, letterSpacing: 0.4, textTransform: "uppercase", fontFamily: sans, borderBottom: `1px solid ${T.line}`, whiteSpace: "nowrap" }}>{c.label}</th>
+              <th
+                key={c.key}
+                style={{
+                  textAlign: "left",
+                  padding: "10px 12px",
+                  color: T.ink3,
+                  fontWeight: 600,
+                  fontSize: 11,
+                  letterSpacing: 0.4,
+                  textTransform: "uppercase",
+                  fontFamily: sans,
+                  borderBottom: `1px solid ${T.line}`,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {c.label}
+              </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.length === 0 && <tr><td colSpan={columns.length} style={{ padding: 24, textAlign: "center", color: T.ink3 }}>{emptyLabel}</td></tr>}
+          {rows.length === 0 && (
+            <tr>
+              <td
+                colSpan={columns.length}
+                style={{ padding: 24, textAlign: "center", color: T.ink3 }}
+              >
+                {emptyLabel}
+              </td>
+            </tr>
+          )}
           {rows.map((row, i) => (
-            <tr key={row.id || i} onClick={() => onRowClick && onRowClick(row)}
-              style={{ borderBottom: `1px solid ${T.line}`, cursor: onRowClick ? "pointer" : "default" }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = T.panel2)}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+            <tr
+              key={row.id || i}
+              onClick={() => onRowClick && onRowClick(row)}
+              style={{
+                borderBottom: `1px solid ${T.line}`,
+                cursor: onRowClick ? "pointer" : "default",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = T.panel2)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
+            >
               {columns.map((c) => (
-                <td key={c.key} style={{ padding: "9px 12px", color: T.ink, fontFamily: c.mono ? mono : sans, whiteSpace: "nowrap" }}>
+                <td
+                  key={c.key}
+                  style={{
+                    padding: "9px 12px",
+                    color: T.ink,
+                    fontFamily: c.mono ? mono : sans,
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {c.render ? c.render(row) : row[c.key]}
                 </td>
               ))}
@@ -581,42 +1504,96 @@ function DataTable({ columns, rows, onRowClick, emptyLabel }) {
 function Dashboard({ rma, wa }) {
   const statusCount = useMemo(() => {
     const m = {};
-    [...rma.map((e) => e.status), ...wa.map((e) => e.status)].forEach((s) => { const k = s || "—"; m[k] = (m[k] || 0) + 1; });
+    [...rma.map((e) => e.status), ...wa.map((e) => e.status)].forEach((s) => {
+      const k = s || "—";
+      m[k] = (m[k] || 0) + 1;
+    });
     return Object.entries(m).map(([name, value]) => ({ name, value }));
   }, [rma, wa]);
 
   const productCount = useMemo(() => {
     const m = {};
-    rma.forEach((e) => { const k = e.product || "—"; m[k] = (m[k] || 0) + 1; });
-    return Object.entries(m).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 8);
+    rma.forEach((e) => {
+      const k = e.product || "—";
+      m[k] = (m[k] || 0) + 1;
+    });
+    return Object.entries(m)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
   }, [rma]);
 
   const engineerCount = useMemo(() => {
     const m = {};
-    [...rma.map((e) => e.engineer), ...wa.map((e) => e.engineerTag)].forEach((e) => { if (e) m[e] = (m[e] || 0) + 1; });
-    return Object.entries(m).map(([name, cases]) => ({ name, cases })).sort((a, b) => b.cases - a.cases);
+    [...rma.map((e) => e.engineer), ...wa.map((e) => e.engineerTag)].forEach(
+      (e) => {
+        if (e) m[e] = (m[e] || 0) + 1;
+      },
+    );
+    return Object.entries(m)
+      .map(([name, cases]) => ({ name, cases }))
+      .sort((a, b) => b.cases - a.cases);
   }, [rma, wa]);
 
   const warrantyCount = useMemo(() => {
     const m = {};
-    rma.forEach((e) => { const k = e.warrantyStatus || "Belum diisi"; m[k] = (m[k] || 0) + 1; });
+    rma.forEach((e) => {
+      const k = e.warrantyStatus || "Belum diisi";
+      m[k] = (m[k] || 0) + 1;
+    });
     return Object.entries(m).map(([name, value]) => ({ name, value }));
   }, [rma]);
 
-  const rmaOpen = rma.filter((e) => !RMA_DONE_STATUSES.includes(e.status)).length;
-  const rmaClosed = rma.filter((e) => RMA_DONE_STATUSES.includes(e.status)).length;
+  const rmaOpen = rma.filter(
+    (e) => !RMA_DONE_STATUSES.includes(e.status),
+  ).length;
+  const rmaClosed = rma.filter((e) =>
+    RMA_DONE_STATUSES.includes(e.status),
+  ).length;
   const rmaOverdue = rma.filter(isOverdue).length;
   const avgTAT = useMemo(() => {
-    const days = rma.filter((e) => e.closedDate).map((e) => daysBetween(e.receivedDate, e.closedDate)).filter((n) => typeof n === "number");
+    const days = rma
+      .filter((e) => e.closedDate)
+      .map((e) => daysBetween(e.receivedDate, e.closedDate))
+      .filter((n) => typeof n === "number");
     if (!days.length) return "-";
     return (days.reduce((a, b) => a + b, 0) / days.length).toFixed(1);
   }, [rma]);
 
   const pieColors = [T.cyan, T.amber, T.green, T.red, T.grey, "#8B7FD6"];
   const Stat = ({ label, value, accent }) => (
-    <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 10, padding: 16, flex: 1, minWidth: 130 }}>
-      <div style={{ fontSize: 11, letterSpacing: 0.5, color: T.ink3, textTransform: "uppercase", fontFamily: sans }}>{label}</div>
-      <div style={{ fontSize: 26, fontFamily: mono, color: accent || T.ink, marginTop: 6 }}>{value}</div>
+    <div
+      style={{
+        background: T.panel,
+        border: `1px solid ${T.line}`,
+        borderRadius: 12,
+        padding: 16,
+        flex: 1,
+        minWidth: 130,
+        boxShadow: "0 1px 2px rgba(16,24,40,0.05)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          letterSpacing: 0.5,
+          color: T.ink3,
+          textTransform: "uppercase",
+          fontFamily: sans,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 26,
+          fontFamily: mono,
+          color: accent || T.ink,
+          marginTop: 6,
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 
@@ -630,52 +1607,174 @@ function Dashboard({ rma, wa }) {
         <Stat label="Rata-rata TAT (hari)" value={avgTAT} accent={T.cyan} />
         <Stat label="Total Case WhatsApp" value={wa.length} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 14 }}>
-        <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 10, padding: 16 }}>
-          <div style={{ fontSize: 12, color: T.ink2, marginBottom: 10, fontFamily: sans, fontWeight: 600 }}>Beban Kasus per Engineer</div>
+      <div
+        style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 14 }}
+      >
+        <div
+          style={{
+            background: T.panel,
+            border: `1px solid ${T.line}`,
+            borderRadius: 12,
+            padding: 16,
+            boxShadow: "0 1px 2px rgba(16,24,40,0.05)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12,
+              color: T.ink2,
+              marginBottom: 10,
+              fontFamily: sans,
+              fontWeight: 600,
+            }}
+          >
+            Beban Kasus per Engineer
+          </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={engineerCount}>
               <CartesianGrid stroke={T.line} vertical={false} />
               <XAxis dataKey="name" stroke={T.ink3} fontSize={11} />
               <YAxis stroke={T.ink3} fontSize={11} allowDecimals={false} />
-              <Tooltip contentStyle={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 6, fontSize: 12 }} />
+              <Tooltip
+                contentStyle={{
+                  background: T.panel2,
+                  border: `1px solid ${T.line}`,
+                  borderRadius: 6,
+                  fontSize: 12,
+                }}
+              />
               <Bar dataKey="cases" fill={T.cyan} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 10, padding: 16 }}>
-          <div style={{ fontSize: 12, color: T.ink2, marginBottom: 10, fontFamily: sans, fontWeight: 600 }}>Distribusi Status</div>
+        <div
+          style={{
+            background: T.panel,
+            border: `1px solid ${T.line}`,
+            borderRadius: 12,
+            padding: 16,
+            boxShadow: "0 1px 2px rgba(16,24,40,0.05)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12,
+              color: T.ink2,
+              marginBottom: 10,
+              fontFamily: sans,
+              fontWeight: 600,
+            }}
+          >
+            Distribusi Status
+          </div>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
-              <Pie data={statusCount} dataKey="value" nameKey="name" innerRadius={40} outerRadius={72} paddingAngle={2}>
-                {statusCount.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
+              <Pie
+                data={statusCount}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={40}
+                outerRadius={72}
+                paddingAngle={2}
+              >
+                {statusCount.map((_, i) => (
+                  <Cell key={i} fill={pieColors[i % pieColors.length]} />
+                ))}
               </Pie>
-              <Tooltip contentStyle={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 6, fontSize: 12 }} />
+              <Tooltip
+                contentStyle={{
+                  background: T.panel2,
+                  border: `1px solid ${T.line}`,
+                  borderRadius: 6,
+                  fontSize: 12,
+                }}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 14 }}>
-        <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 10, padding: 16 }}>
-          <div style={{ fontSize: 12, color: T.ink2, marginBottom: 10, fontFamily: sans, fontWeight: 600 }}>RMA per Produk (Top 8)</div>
+      <div
+        style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 14 }}
+      >
+        <div
+          style={{
+            background: T.panel,
+            border: `1px solid ${T.line}`,
+            borderRadius: 12,
+            padding: 16,
+            boxShadow: "0 1px 2px rgba(16,24,40,0.05)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12,
+              color: T.ink2,
+              marginBottom: 10,
+              fontFamily: sans,
+              fontWeight: 600,
+            }}
+          >
+            RMA per Produk (Top 8)
+          </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={productCount}>
               <CartesianGrid stroke={T.line} vertical={false} />
               <XAxis dataKey="name" stroke={T.ink3} fontSize={11} />
               <YAxis stroke={T.ink3} fontSize={11} allowDecimals={false} />
-              <Tooltip contentStyle={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 6, fontSize: 12 }} />
+              <Tooltip
+                contentStyle={{
+                  background: T.panel2,
+                  border: `1px solid ${T.line}`,
+                  borderRadius: 6,
+                  fontSize: 12,
+                }}
+              />
               <Bar dataKey="count" fill={T.amber} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div style={{ background: T.panel, border: `1px solid ${T.line}`, borderRadius: 10, padding: 16 }}>
-          <div style={{ fontSize: 12, color: T.ink2, marginBottom: 10, fontFamily: sans, fontWeight: 600 }}>RMA per Warranty</div>
+        <div
+          style={{
+            background: T.panel,
+            border: `1px solid ${T.line}`,
+            borderRadius: 12,
+            padding: 16,
+            boxShadow: "0 1px 2px rgba(16,24,40,0.05)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12,
+              color: T.ink2,
+              marginBottom: 10,
+              fontFamily: sans,
+              fontWeight: 600,
+            }}
+          >
+            RMA per Warranty
+          </div>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
-              <Pie data={warrantyCount} dataKey="value" nameKey="name" innerRadius={40} outerRadius={72} paddingAngle={2}>
-                {warrantyCount.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
+              <Pie
+                data={warrantyCount}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={40}
+                outerRadius={72}
+                paddingAngle={2}
+              >
+                {warrantyCount.map((_, i) => (
+                  <Cell key={i} fill={pieColors[i % pieColors.length]} />
+                ))}
               </Pie>
-              <Tooltip contentStyle={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 6, fontSize: 12 }} />
+              <Tooltip
+                contentStyle={{
+                  background: T.panel2,
+                  border: `1px solid ${T.line}`,
+                  borderRadius: 6,
+                  fontSize: 12,
+                }}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -693,21 +1792,39 @@ function WeeklyReport({ rma, wa }) {
 
   const cases = useMemo(() => {
     const inRange = (d) => d && d >= start && d <= end;
-    const rmaCases = rma.filter((e) => inRange(e.receivedDate)).map((e) => ({
-      channel: "RMA", engineer: e.engineer, date: e.receivedDate,
-      customer: e.customerName || e.company || "-", type: e.product || "-",
-      problem: e.initialProblem || "-",
-      analysis: [e.checkingResult, e.rootCause ? `Root cause: ${e.rootCause}` : ""].filter(Boolean).join(" | ") || "-",
-      solution: RMA_DONE_STATUSES.includes(e.status) ? `Selesai pada ${fmtDate(e.closedDate || e.customerReceivedDate)}` : (e.actionTaken || "Follow up / monitoring"),
-      status: e.status || "-",
-    }));
-    const waCases = wa.filter((e) => inRange(e.caseDate)).map((e) => ({
-      channel: "WhatsApp", engineer: e.engineerTag, date: e.caseDate,
-      customer: e.customerName || e.company || "-", type: e.deviceType || "-",
-      problem: e.initialProblem || "-", analysis: e.finalAnalysis || "-",
-      solution: (e.status || "").toLowerCase().includes("selesai") ? `Selesai pada ${fmtDate(e.solvedDate)}` : (e.finalAnalysis || "Follow up / monitoring"),
-      status: e.status || "-",
-    }));
+    const rmaCases = rma
+      .filter((e) => inRange(e.receivedDate))
+      .map((e) => ({
+        channel: "RMA",
+        engineer: e.engineer,
+        date: e.receivedDate,
+        customer: e.customerName || e.company || "-",
+        type: e.product || "-",
+        problem: e.initialProblem || "-",
+        analysis:
+          [e.checkingResult, e.rootCause ? `Root cause: ${e.rootCause}` : ""]
+            .filter(Boolean)
+            .join(" | ") || "-",
+        solution: RMA_DONE_STATUSES.includes(e.status)
+          ? `Selesai pada ${fmtDate(e.closedDate || e.customerReceivedDate)}`
+          : e.actionTaken || "Follow up / monitoring",
+        status: e.status || "-",
+      }));
+    const waCases = wa
+      .filter((e) => inRange(e.caseDate))
+      .map((e) => ({
+        channel: "WhatsApp",
+        engineer: e.engineerTag,
+        date: e.caseDate,
+        customer: e.customerName || e.company || "-",
+        type: e.deviceType || "-",
+        problem: e.initialProblem || "-",
+        analysis: e.finalAnalysis || "-",
+        solution: (e.status || "").toLowerCase().includes("selesai")
+          ? `Selesai pada ${fmtDate(e.solvedDate)}`
+          : e.finalAnalysis || "Follow up / monitoring",
+        status: e.status || "-",
+      }));
     return [...rmaCases, ...waCases].sort((a, b) => (a.date > b.date ? 1 : -1));
   }, [rma, wa, start, end]);
 
@@ -721,7 +1838,9 @@ Troubleshooting Issue Customer / Customer Issue Troubleshooting
 Technical Support HSGQ Jakarta / HSGQ Jakarta Technical Support
 🚨 Issue & Troubleshooting / Kendala & Penanganan:
 ============================================`;
-    const body = cases.map((c, i) => `
+    const body = cases
+      .map(
+        (c, i) => `
 - Case ${i + 1} [${c.channel}] (${c.engineer || "-"})
 Tanggal / Date: ${fmtDate(c.date)}
 Customer / Company: ${c.customer}
@@ -730,21 +1849,70 @@ Problem / Issue: ${c.problem}
 Analisa / Analysis: ${c.analysis}
 Solusi / Solution: ${c.solution}
 Status / Status: ${c.status}
-============================================`).join("");
+============================================`,
+      )
+      .join("");
     return header + body;
   }, [cases, start, end]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
-        <Field label="Dari Tanggal"><TextInput type="date" value={start} onChange={(e) => setStart(e.target.value)} /></Field>
-        <Field label="Sampai Tanggal"><TextInput type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field>
-        <Btn variant="ghost" onClick={() => { setStart(dateNDaysAgoISO(7)); setEnd(todayISO()); }}><CalendarRange size={14} /> 7 Hari Terakhir</Btn>
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          alignItems: "flex-end",
+          flexWrap: "wrap",
+        }}
+      >
+        <Field label="Dari Tanggal">
+          <TextInput
+            type="date"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+          />
+        </Field>
+        <Field label="Sampai Tanggal">
+          <TextInput
+            type="date"
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+          />
+        </Field>
+        <Btn
+          variant="ghost"
+          onClick={() => {
+            setStart(dateNDaysAgoISO(7));
+            setEnd(todayISO());
+          }}
+        >
+          <CalendarRange size={14} /> 7 Hari Terakhir
+        </Btn>
         <div style={{ flex: 1 }} />
         <CopyButton text={reportText} />
       </div>
-      <div style={{ background: T.void, border: `1px solid ${T.line}`, borderRadius: 10, padding: 18, fontFamily: mono, fontSize: 12.5, color: T.ink2, whiteSpace: "pre-wrap", lineHeight: 1.6, maxHeight: 520, overflowY: "auto" }}>
-        {cases.length === 0 ? <span style={{ color: T.ink3 }}>Tidak ada case pada rentang tanggal ini.</span> : reportText}
+      <div
+        style={{
+          background: T.void,
+          border: `1px solid ${T.line}`,
+          borderRadius: 10,
+          padding: 18,
+          fontFamily: mono,
+          fontSize: 12.5,
+          color: T.ink2,
+          whiteSpace: "pre-wrap",
+          lineHeight: 1.6,
+          maxHeight: 520,
+          overflowY: "auto",
+        }}
+      >
+        {cases.length === 0 ? (
+          <span style={{ color: T.ink3 }}>
+            Tidak ada case pada rentang tanggal ini.
+          </span>
+        ) : (
+          reportText
+        )}
       </div>
     </div>
   );
@@ -759,42 +1927,126 @@ function UnitHistory({ rma, wa }) {
   const results = useMemo(() => {
     if (!query.trim()) return [];
     const q = query.trim().toLowerCase();
-    const rmaHits = rma.filter((e) => (e.sn || "").toLowerCase() === q || (e.mac || "").toLowerCase() === q)
-      .map((e) => ({ ref: e.ticketNo, channel: "RMA", date: e.receivedDate, status: e.status, result: e.finalResult || "-", note: e.rootCause || e.checkingResult || "-" }));
-    const waHits = wa.filter((e) => (e.sn || "").toLowerCase() === q || (e.mac || "").toLowerCase() === q)
-      .map((e) => ({ ref: e.caseNo, channel: "WhatsApp", date: e.caseDate, status: e.status, result: e.finalAnalysis || "-", note: e.initialProblem || "-" }));
+    const rmaHits = rma
+      .filter(
+        (e) =>
+          (e.sn || "").toLowerCase() === q || (e.mac || "").toLowerCase() === q,
+      )
+      .map((e) => ({
+        ref: e.ticketNo,
+        channel: "RMA",
+        date: e.receivedDate,
+        status: e.status,
+        result: e.finalResult || "-",
+        note: e.rootCause || e.checkingResult || "-",
+      }));
+    const waHits = wa
+      .filter(
+        (e) =>
+          (e.sn || "").toLowerCase() === q || (e.mac || "").toLowerCase() === q,
+      )
+      .map((e) => ({
+        ref: e.caseNo,
+        channel: "WhatsApp",
+        date: e.caseDate,
+        status: e.status,
+        result: e.finalAnalysis || "-",
+        note: e.initialProblem || "-",
+      }));
     return [...rmaHits, ...waHits].sort((a, b) => (a.date < b.date ? 1 : -1));
   }, [query, rma, wa]);
 
   const partialResults = useMemo(() => {
     if (!query.trim() || query.trim().length < 3) return [];
     const q = query.trim().toLowerCase();
-    const rmaHits = rma.filter((e) => ((e.sn || "").toLowerCase().includes(q) || (e.mac || "").toLowerCase().includes(q)) && !results.some((r) => r.ref === e.ticketNo))
-      .map((e) => ({ ref: e.ticketNo, channel: "RMA", date: e.receivedDate, status: e.status, sn: e.sn, mac: e.mac }));
+    const rmaHits = rma
+      .filter(
+        (e) =>
+          ((e.sn || "").toLowerCase().includes(q) ||
+            (e.mac || "").toLowerCase().includes(q)) &&
+          !results.some((r) => r.ref === e.ticketNo),
+      )
+      .map((e) => ({
+        ref: e.ticketNo,
+        channel: "RMA",
+        date: e.receivedDate,
+        status: e.status,
+        sn: e.sn,
+        mac: e.mac,
+      }));
     return rmaHits.slice(0, 10);
   }, [query, rma, results]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ maxWidth: 420 }}>
-        <SearchBar value={query} onChange={setQuery} placeholder="Masukkan SN atau MAC persis..." />
+        <SearchBar
+          value={query}
+          onChange={setQuery}
+          placeholder="Masukkan SN atau MAC persis..."
+        />
       </div>
       {!query.trim() && (
-        <InlineHint>Cari SN/MAC untuk melihat apakah unit ini pernah punya riwayat RMA atau case WhatsApp sebelumnya — berguna sebelum bikin tiket baru untuk unit yang sama.</InlineHint>
+        <InlineHint>
+          Cari SN/MAC untuk melihat apakah unit ini pernah punya riwayat RMA
+          atau case WhatsApp sebelumnya — berguna sebelum bikin tiket baru untuk
+          unit yang sama.
+        </InlineHint>
       )}
       {query.trim() && results.length === 0 && partialResults.length === 0 && (
-        <div style={{ color: T.ink3, fontSize: 13 }}>Tidak ditemukan riwayat untuk "{query}". Unit ini baru pertama kali masuk sistem.</div>
+        <div style={{ color: T.ink3, fontSize: 13 }}>
+          Tidak ditemukan riwayat untuk "{query}". Unit ini baru pertama kali
+          masuk sistem.
+        </div>
       )}
       {results.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {results.length > 1 && <InlineHint tone="warn">⚠ Unit ini pernah memiliki {results.length} riwayat sebelumnya.</InlineHint>}
+          {results.length > 1 && (
+            <InlineHint tone="warn">
+              ⚠ Unit ini pernah memiliki {results.length} riwayat sebelumnya.
+            </InlineHint>
+          )}
           {results.map((r, i) => (
-            <div key={i} style={{ display: "flex", gap: 14, padding: "10px 14px", background: T.panel, border: `1px solid ${T.line}`, borderRadius: 8, alignItems: "center" }}>
-              <span style={{ width: 8, height: 8, borderRadius: 99, background: ledColor(r.status), flexShrink: 0 }} />
-              <div style={{ fontFamily: mono, fontSize: 12.5, color: T.cyan, minWidth: 150 }}>{r.ref}</div>
-              <div style={{ fontSize: 11.5, color: T.ink3, minWidth: 80 }}>{r.channel}</div>
-              <div style={{ fontSize: 12, color: T.ink2, minWidth: 90 }}>{fmtDate(r.date)}</div>
-              <div style={{ fontSize: 12.5, color: T.ink, flex: 1 }}>{r.result}</div>
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                gap: 14,
+                padding: "10px 14px",
+                background: T.panel,
+                border: `1px solid ${T.line}`,
+                borderRadius: 8,
+                alignItems: "center",
+              }}
+            >
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 99,
+                  background: ledColor(r.status),
+                  flexShrink: 0,
+                }}
+              />
+              <div
+                style={{
+                  fontFamily: mono,
+                  fontSize: 12.5,
+                  color: T.cyan,
+                  minWidth: 150,
+                }}
+              >
+                {r.ref}
+              </div>
+              <div style={{ fontSize: 11.5, color: T.ink3, minWidth: 80 }}>
+                {r.channel}
+              </div>
+              <div style={{ fontSize: 12, color: T.ink2, minWidth: 90 }}>
+                {fmtDate(r.date)}
+              </div>
+              <div style={{ fontSize: 12.5, color: T.ink, flex: 1 }}>
+                {r.result}
+              </div>
               <div style={{ fontSize: 11.5, color: T.ink3 }}>{r.status}</div>
             </div>
           ))}
@@ -802,11 +2054,32 @@ function UnitHistory({ rma, wa }) {
       )}
       {partialResults.length > 0 && (
         <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 11, color: T.ink3, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.4 }}>Kecocokan sebagian</div>
+          <div
+            style={{
+              fontSize: 11,
+              color: T.ink3,
+              marginBottom: 6,
+              textTransform: "uppercase",
+              letterSpacing: 0.4,
+            }}
+          >
+            Kecocokan sebagian
+          </div>
           {partialResults.map((r, i) => (
-            <div key={i} style={{ display: "flex", gap: 14, padding: "8px 14px", fontSize: 12, color: T.ink2 }}>
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                gap: 14,
+                padding: "8px 14px",
+                fontSize: 12,
+                color: T.ink2,
+              }}
+            >
               <span style={{ fontFamily: mono, color: T.cyan }}>{r.ref}</span>
-              <span style={{ fontFamily: mono }}>{r.sn} / {r.mac}</span>
+              <span style={{ fontFamily: mono }}>
+                {r.sn} / {r.mac}
+              </span>
               <span>{r.status}</span>
             </div>
           ))}
@@ -823,18 +2096,65 @@ function TagList({ label, items, onChange }) {
   const [val, setVal] = useState("");
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <span style={{ fontSize: 12, fontWeight: 600, color: T.ink2, fontFamily: sans }}>{label}</span>
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: T.ink2,
+          fontFamily: sans,
+        }}
+      >
+        {label}
+      </span>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
         {items.map((it) => (
-          <span key={it} style={{ display: "flex", alignItems: "center", gap: 6, background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 999, padding: "4px 10px", fontSize: 12.5, color: T.ink }}>
-            {it}<X size={12} style={{ cursor: "pointer", color: T.ink3 }} onClick={() => onChange(items.filter((x) => x !== it))} />
+          <span
+            key={it}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              background: T.panel2,
+              border: `1px solid ${T.line}`,
+              borderRadius: 999,
+              padding: "4px 10px",
+              fontSize: 12.5,
+              color: T.ink,
+            }}
+          >
+            {it}
+            <X
+              size={12}
+              style={{ cursor: "pointer", color: T.ink3 }}
+              onClick={() => onChange(items.filter((x) => x !== it))}
+            />
           </span>
         ))}
       </div>
       <div style={{ display: "flex", gap: 6 }}>
-        <TextInput value={val} onChange={(e) => setVal(e.target.value)} placeholder="Tambah item..." style={{ flex: 1 }}
-          onKeyDown={(e) => { if (e.key === "Enter" && val.trim()) { onChange([...items, val.trim()]); setVal(""); } }} />
-        <Btn variant="ghost" onClick={() => { if (val.trim()) { onChange([...items, val.trim()]); setVal(""); } }}><Plus size={14} /></Btn>
+        <TextInput
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          placeholder="Tambah item..."
+          style={{ flex: 1 }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && val.trim()) {
+              onChange([...items, val.trim()]);
+              setVal("");
+            }
+          }}
+        />
+        <Btn
+          variant="ghost"
+          onClick={() => {
+            if (val.trim()) {
+              onChange([...items, val.trim()]);
+              setVal("");
+            }
+          }}
+        >
+          <Plus size={14} />
+        </Btn>
       </div>
     </div>
   );
@@ -843,14 +2163,46 @@ function SettingsTab({ master, setMaster }) {
   const update = (k) => (arr) => setMaster((m) => ({ ...m, [k]: arr }));
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-      <TagList label="Engineer" items={master.engineers} onChange={update("engineers")} />
-      <TagList label="Status RMA (alur utama)" items={master.statusRMA} onChange={update("statusRMA")} />
-      <TagList label="Status WhatsApp" items={master.statusWA} onChange={update("statusWA")} />
-      <TagList label="Hasil Akhir" items={master.finalResults} onChange={update("finalResults")} />
-      <TagList label="Alasan Menunggu" items={master.waitingReasons} onChange={update("waitingReasons")} />
-      <TagList label="Status Warranty" items={master.warrantyStatuses} onChange={update("warrantyStatuses")} />
-      <TagList label="Hasil QC" items={master.qcResults} onChange={update("qcResults")} />
-      <TagList label="Metode Pengiriman" items={master.pengiriman} onChange={update("pengiriman")} />
+      <TagList
+        label="Engineer"
+        items={master.engineers}
+        onChange={update("engineers")}
+      />
+      <TagList
+        label="Status RMA (alur utama)"
+        items={master.statusRMA}
+        onChange={update("statusRMA")}
+      />
+      <TagList
+        label="Status WhatsApp"
+        items={master.statusWA}
+        onChange={update("statusWA")}
+      />
+      <TagList
+        label="Hasil Akhir"
+        items={master.finalResults}
+        onChange={update("finalResults")}
+      />
+      <TagList
+        label="Alasan Menunggu"
+        items={master.waitingReasons}
+        onChange={update("waitingReasons")}
+      />
+      <TagList
+        label="Status Warranty"
+        items={master.warrantyStatuses}
+        onChange={update("warrantyStatuses")}
+      />
+      <TagList
+        label="Hasil QC"
+        items={master.qcResults}
+        onChange={update("qcResults")}
+      />
+      <TagList
+        label="Metode Pengiriman"
+        items={master.pengiriman}
+        onChange={update("pengiriman")}
+      />
     </div>
   );
 }
@@ -868,15 +2220,24 @@ export default function App() {
   const [waModal, setWaModal] = useState(null);
   const [waMsgEntry, setWaMsgEntry] = useState(null);
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState({ status: "", engineer: "", warranty: "", overdueOnly: false });
+  const [filters, setFilters] = useState({
+    status: "",
+    engineer: "",
+    warranty: "",
+    overdueOnly: false,
+  });
   const [saveErr, setSaveErr] = useState("");
 
   useEffect(() => {
     (async () => {
       const [r, w, m] = await Promise.all([
-        storeGet(KEYS.rma, []), storeGet(KEYS.wa, []), storeGet(KEYS.master, DEFAULT_MASTER),
+        storeGet(KEYS.rma, []),
+        storeGet(KEYS.wa, []),
+        storeGet(KEYS.master, DEFAULT_MASTER),
       ]);
-      setRma(r); setWa(w); setMaster({ ...DEFAULT_MASTER, ...m });
+      setRma(r);
+      setWa(w);
+      setMaster({ ...DEFAULT_MASTER, ...m });
       setLoading(false);
     })();
   }, []);
@@ -891,27 +2252,44 @@ export default function App() {
     const ok = await storeSet(KEYS.wa, arr);
     if (!ok) setSaveErr("Gagal menyimpan data WhatsApp. Coba lagi.");
   }, []);
-  useEffect(() => { storeSet(KEYS.master, master); }, [master]);
+  useEffect(() => {
+    storeSet(KEYS.master, master);
+  }, [master]);
 
   const saveRma = (entry) => {
     const exists = rma.some((e) => e.id === entry.id);
-    persistRma(exists ? rma.map((e) => (e.id === entry.id ? entry : e)) : [entry, ...rma]);
+    persistRma(
+      exists
+        ? rma.map((e) => (e.id === entry.id ? entry : e))
+        : [entry, ...rma],
+    );
     setRmaModal(null);
   };
   const saveWa = (entry) => {
     const exists = wa.some((e) => e.id === entry.id);
-    persistWa(exists ? wa.map((e) => (e.id === entry.id ? entry : e)) : [entry, ...wa]);
+    persistWa(
+      exists ? wa.map((e) => (e.id === entry.id ? entry : e)) : [entry, ...wa],
+    );
     setWaModal(null);
   };
   const deleteRma = (id) => persistRma(rma.filter((e) => e.id !== id));
   const deleteWa = (id) => persistWa(wa.filter((e) => e.id !== id));
 
-  const unitHistoryLookup = useCallback((sn, mac) => {
-    const matches = (e, snField, macField) => (sn && e[snField] && e[snField].toLowerCase() === sn.toLowerCase()) || (mac && e[macField] && e[macField].toLowerCase() === mac.toLowerCase());
-    const rmaHits = rma.filter((e) => matches(e, "sn", "mac")).map((e) => ({ id: e.id, ref: e.ticketNo, status: e.status }));
-    const waHits = wa.filter((e) => matches(e, "sn", "mac")).map((e) => ({ id: e.id, ref: e.caseNo, status: e.status }));
-    return [...rmaHits, ...waHits];
-  }, [rma, wa]);
+  const unitHistoryLookup = useCallback(
+    (sn, mac) => {
+      const matches = (e, snField, macField) =>
+        (sn && e[snField] && e[snField].toLowerCase() === sn.toLowerCase()) ||
+        (mac && e[macField] && e[macField].toLowerCase() === mac.toLowerCase());
+      const rmaHits = rma
+        .filter((e) => matches(e, "sn", "mac"))
+        .map((e) => ({ id: e.id, ref: e.ticketNo, status: e.status }));
+      const waHits = wa
+        .filter((e) => matches(e, "sn", "mac"))
+        .map((e) => ({ id: e.id, ref: e.caseNo, status: e.status }));
+      return [...rmaHits, ...waHits];
+    },
+    [rma, wa],
+  );
 
   const filteredRma = useMemo(() => {
     const q = search.toLowerCase();
@@ -919,7 +2297,8 @@ export default function App() {
       if (q && !JSON.stringify(e).toLowerCase().includes(q)) return false;
       if (filters.status && e.status !== filters.status) return false;
       if (filters.engineer && e.engineer !== filters.engineer) return false;
-      if (filters.warranty && e.warrantyStatus !== filters.warranty) return false;
+      if (filters.warranty && e.warrantyStatus !== filters.warranty)
+        return false;
       if (filters.overdueOnly && !isOverdue(e)) return false;
       return true;
     });
@@ -940,163 +2319,504 @@ export default function App() {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 500, background: T.void, color: T.ink2, fontFamily: sans, gap: 10 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: 500,
+          background: T.void,
+          color: T.ink2,
+          fontFamily: sans,
+          gap: 10,
+        }}
+      >
         <Loader2 className="spin" size={18} /> Memuat data...
         <style>{`.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     );
   }
 
+  const activeNavLabel = NAV.find((n) => n.id === tab)?.label || "";
+
   return (
-    <div style={{ display: "flex", minHeight: 680, background: T.void, color: T.ink, fontFamily: sans, borderRadius: 12, overflow: "hidden", border: `1px solid ${T.line}` }}>
-      <div style={{ width: 210, background: T.panel, borderRight: `1px solid ${T.line}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
-        <div style={{ padding: "20px 18px 14px", borderBottom: `1px solid ${T.line}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Wifi size={16} color={T.cyan} />
-            <span style={{ fontFamily: mono, fontSize: 12.5, color: T.cyan, letterSpacing: 0.5 }}>HSGQ · FIBER OPS</span>
+    <div
+      style={{
+        display: "flex",
+        minHeight: 680,
+        background: T.void,
+        color: T.ink,
+        fontFamily: sans,
+        borderRadius: 12,
+        overflow: "hidden",
+        border: `1px solid ${T.line}`,
+      }}
+    >
+      <div
+        style={{
+          width: 230,
+          background: T.panel,
+          borderRight: `1px solid ${T.line}`,
+          display: "flex",
+          flexDirection: "column",
+          flexShrink: 0,
+        }}
+      >
+        <div
+          style={{
+            padding: "18px 18px 16px",
+            borderBottom: `1px solid ${T.line}`,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <div
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 9,
+              background: T.cyan,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Wifi size={17} color="#FFFFFF" />
           </div>
-          <div style={{ fontSize: 10.5, color: T.ink3, marginTop: 4, letterSpacing: 0.3 }}>RMA & Case Log Book</div>
+          <div>
+            <div
+              style={{
+                fontFamily: sans,
+                fontWeight: 700,
+                fontSize: 14.5,
+                color: T.ink,
+                letterSpacing: 0.1,
+              }}
+            >
+              HSGQ Cloud
+            </div>
+            <div
+              style={{
+                fontSize: 10.5,
+                color: T.ink3,
+                marginTop: 1,
+                letterSpacing: 0.2,
+              }}
+            >
+              RMA & Case Log Book
+            </div>
+          </div>
         </div>
-        <div style={{ padding: "10px 10px", display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
-          {NAV.map((n, i) => {
+        <div
+          style={{
+            padding: "12px 10px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            flex: 1,
+          }}
+        >
+          {NAV.map((n) => {
             const Icon = n.icon;
             const active = tab === n.id;
             return (
-              <button key={n.id} onClick={() => setTab(n.id)} style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 7,
-                background: active ? T.cyanDim : "transparent", border: "none", cursor: "pointer",
-                color: active ? T.cyan : T.ink2, textAlign: "left", fontFamily: sans, fontSize: 13,
-              }}>
-                <span style={{ fontFamily: mono, fontSize: 10.5, color: active ? T.cyan : T.ink3, width: 14 }}>{pad2(i + 1)}</span>
-                <Icon size={15} />{n.label}
+              <button
+                key={n.id}
+                onClick={() => setTab(n.id)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "9px 12px",
+                  borderRadius: 8,
+                  background: active ? T.cyanDim : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: active ? T.cyan : T.ink2,
+                  textAlign: "left",
+                  fontFamily: sans,
+                  fontSize: 13,
+                  fontWeight: active ? 600 : 500,
+                }}
+              >
+                <Icon size={16} />
+                {n.label}
               </button>
             );
           })}
         </div>
-        <div style={{ padding: 14, borderTop: `1px solid ${T.line}`, fontSize: 10.5, color: T.ink3, lineHeight: 1.5 }}>
-          {isUsingFirebase
-            ? <>Data tersimpan & <b style={{ color: T.ink2 }}>dibagikan</b> lewat Firestore.</>
-            : <>Mode <b style={{ color: T.amber }}>lokal</b> (localStorage) — data <b>hanya di browser ini</b>, belum tersambung Firebase.</>}
+      </div>
+
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minWidth: 0,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "14px 22px",
+            background: T.panel,
+            borderBottom: `1px solid ${T.line}`,
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Menu size={17} color={T.ink3} />
+            <span
+              style={{
+                fontFamily: sans,
+                fontWeight: 600,
+                fontSize: 14.5,
+                color: T.ink,
+              }}
+            >
+              {activeNavLabel}
+            </span>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 12,
+              fontFamily: sans,
+              padding: "5px 10px",
+              borderRadius: 999,
+              background: isUsingFirebase ? T.greenDim : T.amberDim,
+              color: isUsingFirebase ? T.green : T.amber,
+            }}
+          >
+            {isUsingFirebase ? <Cloud size={13} /> : <CloudOff size={13} />}
+            {isUsingFirebase
+              ? "Firestore Tersambung"
+              : "Mode Lokal (belum tersambung Firebase)"}
+          </div>
+        </div>
+
+        <div style={{ flex: 1, padding: 22, overflowY: "auto" }}>
+          {!isUsingFirebase && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: T.amberDim,
+                color: T.amber,
+                padding: "8px 12px",
+                borderRadius: 6,
+                fontSize: 12.5,
+                marginBottom: 14,
+              }}
+            >
+              <AlertTriangle size={14} /> Firebase belum dikonfigurasi di{" "}
+              <code style={{ fontFamily: mono }}>src/firebase.js</code> — data
+              disimpan sementara di localStorage browser ini saja.
+            </div>
+          )}
+          {saveErr && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: T.redDim,
+                color: T.red,
+                padding: "8px 12px",
+                borderRadius: 6,
+                fontSize: 12.5,
+                marginBottom: 14,
+              }}
+            >
+              <AlertTriangle size={14} /> {saveErr}
+            </div>
+          )}
+
+          {tab === "dashboard" && (
+            <>
+              <SectionHeader
+                title="Dashboard"
+                subtitle="Ringkasan operasional RMA & WhatsApp support"
+              />
+              <Dashboard rma={rma} wa={wa} />
+            </>
+          )}
+
+          {tab === "rma" && (
+            <>
+              <SectionHeader
+                title="RMA Log Book"
+                subtitle="Daftar tiket RMA — Receiving, Diagnosis, Waiting, Warranty, QC, Shipping"
+                action={
+                  <Btn
+                    variant="solid"
+                    onClick={() => setRmaModal({ mode: "new" })}
+                  >
+                    <Plus size={14} /> Tiket Baru
+                  </Btn>
+                }
+              />
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  flexWrap: "wrap",
+                  marginBottom: 12,
+                }}
+              >
+                <SearchBar
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Cari tiket, customer, SN, MAC..."
+                />
+                <Select
+                  options={master.statusRMA}
+                  value={filters.status}
+                  onChange={(e) =>
+                    setFilters((f) => ({ ...f, status: e.target.value }))
+                  }
+                />
+                <Select
+                  options={master.engineers}
+                  value={filters.engineer}
+                  onChange={(e) =>
+                    setFilters((f) => ({ ...f, engineer: e.target.value }))
+                  }
+                />
+                <Select
+                  options={master.warrantyStatuses}
+                  value={filters.warranty}
+                  onChange={(e) =>
+                    setFilters((f) => ({ ...f, warranty: e.target.value }))
+                  }
+                />
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 12.5,
+                    color: T.ink2,
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters.overdueOnly}
+                    onChange={(e) =>
+                      setFilters((f) => ({
+                        ...f,
+                        overdueOnly: e.target.checked,
+                      }))
+                    }
+                  />
+                  Overdue saja
+                </label>
+                {(filters.status ||
+                  filters.engineer ||
+                  filters.warranty ||
+                  filters.overdueOnly) && (
+                  <Btn
+                    variant="ghost"
+                    onClick={() =>
+                      setFilters({
+                        status: "",
+                        engineer: "",
+                        warranty: "",
+                        overdueOnly: false,
+                      })
+                    }
+                  >
+                    Reset Filter
+                  </Btn>
+                )}
+              </div>
+              <DataTable
+                columns={[
+                  { key: "ticketNo", label: "Ticket", mono: true },
+                  {
+                    key: "status",
+                    label: "Status",
+                    render: (r) => (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <StatusLed status={r.status} />
+                        {isOverdue(r) && <OverdueBadge />}
+                      </div>
+                    ),
+                  },
+                  { key: "engineer", label: "Engineer" },
+                  { key: "product", label: "Produk" },
+                  { key: "customerName", label: "Customer" },
+                  { key: "warrantyStatus", label: "Warranty" },
+                  {
+                    key: "receivedDate",
+                    label: "Masuk",
+                    render: (r) => fmtDate(r.receivedDate),
+                  },
+                  { key: "eta", label: "ETA", render: (r) => fmtDate(r.eta) },
+                  {
+                    key: "actions",
+                    label: "",
+                    render: (r) => (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <IconBtn
+                          icon={MessageSquare}
+                          onClick={() =>
+                            setWaMsgEntry({ kind: "rma", entry: r })
+                          }
+                          title="Pesan WA"
+                        />
+                        <IconBtn
+                          icon={Pencil}
+                          onClick={() =>
+                            setRmaModal({ mode: "edit", entry: r })
+                          }
+                          title="Edit"
+                        />
+                        <IconBtn
+                          icon={Trash2}
+                          danger
+                          onClick={() => deleteRma(r.id)}
+                          title="Hapus"
+                        />
+                      </div>
+                    ),
+                  },
+                ]}
+                rows={filteredRma}
+                emptyLabel="Belum ada tiket RMA yang cocok dengan filter. Klik 'Tiket Baru' untuk mulai."
+              />
+            </>
+          )}
+
+          {tab === "wa" && (
+            <>
+              <SectionHeader
+                title="WhatsApp Log Book"
+                subtitle="Daftar case kendala via WhatsApp + riwayat komunikasi"
+                action={
+                  <Btn
+                    variant="solid"
+                    onClick={() => setWaModal({ mode: "new" })}
+                  >
+                    <Plus size={14} /> Case Baru
+                  </Btn>
+                }
+              />
+              <SearchBar
+                value={search}
+                onChange={setSearch}
+                placeholder="Cari case, customer, SN, MAC..."
+              />
+              <div style={{ height: 12 }} />
+              <DataTable
+                columns={[
+                  { key: "caseNo", label: "Case", mono: true },
+                  {
+                    key: "status",
+                    label: "Status",
+                    render: (r) => <StatusLed status={r.status} />,
+                  },
+                  { key: "engineerTag", label: "Engineer" },
+                  { key: "deviceType", label: "Type" },
+                  { key: "customerName", label: "Customer" },
+                  {
+                    key: "caseDate",
+                    label: "Tanggal",
+                    render: (r) => fmtDate(r.caseDate),
+                  },
+                  {
+                    key: "comm",
+                    label: "Komunikasi",
+                    render: (r) => (r.commHistory || []).length + "x",
+                  },
+                  {
+                    key: "actions",
+                    label: "",
+                    render: (r) => (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <IconBtn
+                          icon={MessageSquare}
+                          onClick={() =>
+                            setWaMsgEntry({ kind: "wa", entry: r })
+                          }
+                          title="Pesan WA"
+                        />
+                        <IconBtn
+                          icon={Pencil}
+                          onClick={() => setWaModal({ mode: "edit", entry: r })}
+                          title="Edit"
+                        />
+                        <IconBtn
+                          icon={Trash2}
+                          danger
+                          onClick={() => deleteWa(r.id)}
+                          title="Hapus"
+                        />
+                      </div>
+                    ),
+                  },
+                ]}
+                rows={filteredWa}
+                emptyLabel="Belum ada case WhatsApp. Klik 'Case Baru' untuk mulai."
+              />
+            </>
+          )}
+
+          {tab === "unithistory" && (
+            <>
+              <SectionHeader
+                title="Unit History"
+                subtitle="Quick search riwayat unit berdasarkan SN/MAC lintas RMA & WhatsApp Case"
+              />
+              <UnitHistory rma={rma} wa={wa} />
+            </>
+          )}
+
+          {tab === "report" && (
+            <>
+              <SectionHeader
+                title="Weekly Report"
+                subtitle="Ringkasan mingguan otomatis dari RMA + WhatsApp log"
+              />
+              <WeeklyReport rma={rma} wa={wa} />
+            </>
+          )}
+
+          {tab === "settings" && (
+            <>
+              <SectionHeader
+                title="Pengaturan"
+                subtitle="Kelola daftar Engineer, status, dan opsi lainnya"
+              />
+              <SettingsTab master={master} setMaster={setMaster} />
+            </>
+          )}
         </div>
       </div>
 
-      <div style={{ flex: 1, padding: 22, overflowY: "auto" }}>
-        {!isUsingFirebase && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: T.amberDim, color: T.amber, padding: "8px 12px", borderRadius: 6, fontSize: 12.5, marginBottom: 14 }}>
-            <AlertTriangle size={14} /> Firebase belum dikonfigurasi di <code style={{ fontFamily: mono }}>src/firebase.js</code> — data disimpan sementara di localStorage browser ini saja.
-          </div>
-        )}
-        {saveErr && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: T.redDim, color: T.red, padding: "8px 12px", borderRadius: 6, fontSize: 12.5, marginBottom: 14 }}>
-            <AlertTriangle size={14} /> {saveErr}
-          </div>
-        )}
-
-        {tab === "dashboard" && (
-          <>
-            <SectionHeader title="Dashboard" subtitle="Ringkasan operasional RMA & WhatsApp support" />
-            <Dashboard rma={rma} wa={wa} />
-          </>
-        )}
-
-        {tab === "rma" && (
-          <>
-            <SectionHeader title="RMA Log Book" subtitle="Daftar tiket RMA — Receiving, Diagnosis, Waiting, Warranty, QC, Shipping"
-              action={<Btn variant="solid" onClick={() => setRmaModal({ mode: "new" })}><Plus size={14} /> Tiket Baru</Btn>} />
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-              <SearchBar value={search} onChange={setSearch} placeholder="Cari tiket, customer, SN, MAC..." />
-              <Select options={master.statusRMA} value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))} />
-              <Select options={master.engineers} value={filters.engineer} onChange={(e) => setFilters((f) => ({ ...f, engineer: e.target.value }))} />
-              <Select options={master.warrantyStatuses} value={filters.warranty} onChange={(e) => setFilters((f) => ({ ...f, warranty: e.target.value }))} />
-              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: T.ink2, cursor: "pointer" }}>
-                <input type="checkbox" checked={filters.overdueOnly} onChange={(e) => setFilters((f) => ({ ...f, overdueOnly: e.target.checked }))} />
-                Overdue saja
-              </label>
-              {(filters.status || filters.engineer || filters.warranty || filters.overdueOnly) && (
-                <Btn variant="ghost" onClick={() => setFilters({ status: "", engineer: "", warranty: "", overdueOnly: false })}>Reset Filter</Btn>
-              )}
-            </div>
-            <DataTable
-              columns={[
-                { key: "ticketNo", label: "Ticket", mono: true },
-                { key: "status", label: "Status", render: (r) => <div style={{ display: "flex", alignItems: "center", gap: 8 }}><StatusLed status={r.status} />{isOverdue(r) && <OverdueBadge />}</div> },
-                { key: "engineer", label: "Engineer" },
-                { key: "product", label: "Produk" },
-                { key: "customerName", label: "Customer" },
-                { key: "warrantyStatus", label: "Warranty" },
-                { key: "receivedDate", label: "Masuk", render: (r) => fmtDate(r.receivedDate) },
-                { key: "eta", label: "ETA", render: (r) => fmtDate(r.eta) },
-                {
-                  key: "actions", label: "", render: (r) => (
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <IconBtn icon={MessageSquare} onClick={() => setWaMsgEntry({ kind: "rma", entry: r })} title="Pesan WA" />
-                      <IconBtn icon={Pencil} onClick={() => setRmaModal({ mode: "edit", entry: r })} title="Edit" />
-                      <IconBtn icon={Trash2} danger onClick={() => deleteRma(r.id)} title="Hapus" />
-                    </div>
-                  )
-                },
-              ]}
-              rows={filteredRma}
-              emptyLabel="Belum ada tiket RMA yang cocok dengan filter. Klik 'Tiket Baru' untuk mulai."
-            />
-          </>
-        )}
-
-        {tab === "wa" && (
-          <>
-            <SectionHeader title="WhatsApp Log Book" subtitle="Daftar case kendala via WhatsApp + riwayat komunikasi"
-              action={<Btn variant="solid" onClick={() => setWaModal({ mode: "new" })}><Plus size={14} /> Case Baru</Btn>} />
-            <SearchBar value={search} onChange={setSearch} placeholder="Cari case, customer, SN, MAC..." />
-            <div style={{ height: 12 }} />
-            <DataTable
-              columns={[
-                { key: "caseNo", label: "Case", mono: true },
-                { key: "status", label: "Status", render: (r) => <StatusLed status={r.status} /> },
-                { key: "engineerTag", label: "Engineer" },
-                { key: "deviceType", label: "Type" },
-                { key: "customerName", label: "Customer" },
-                { key: "caseDate", label: "Tanggal", render: (r) => fmtDate(r.caseDate) },
-                { key: "comm", label: "Komunikasi", render: (r) => (r.commHistory || []).length + "x" },
-                {
-                  key: "actions", label: "", render: (r) => (
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <IconBtn icon={MessageSquare} onClick={() => setWaMsgEntry({ kind: "wa", entry: r })} title="Pesan WA" />
-                      <IconBtn icon={Pencil} onClick={() => setWaModal({ mode: "edit", entry: r })} title="Edit" />
-                      <IconBtn icon={Trash2} danger onClick={() => deleteWa(r.id)} title="Hapus" />
-                    </div>
-                  )
-                },
-              ]}
-              rows={filteredWa}
-              emptyLabel="Belum ada case WhatsApp. Klik 'Case Baru' untuk mulai."
-            />
-          </>
-        )}
-
-        {tab === "unithistory" && (
-          <>
-            <SectionHeader title="Unit History" subtitle="Quick search riwayat unit berdasarkan SN/MAC lintas RMA & WhatsApp Case" />
-            <UnitHistory rma={rma} wa={wa} />
-          </>
-        )}
-
-        {tab === "report" && (
-          <>
-            <SectionHeader title="Weekly Report" subtitle="Ringkasan mingguan otomatis dari RMA + WhatsApp log" />
-            <WeeklyReport rma={rma} wa={wa} />
-          </>
-        )}
-
-        {tab === "settings" && (
-          <>
-            <SectionHeader title="Pengaturan" subtitle="Kelola daftar Engineer, status, dan opsi lainnya" />
-            <SettingsTab master={master} setMaster={setMaster} />
-          </>
-        )}
-      </div>
-
       {rmaModal && (
-        <Modal title={rmaModal.mode === "new" ? "TIKET RMA BARU" : `EDIT ${rmaModal.entry.ticketNo}`} onClose={() => setRmaModal(null)}>
+        <Modal
+          title={
+            rmaModal.mode === "new"
+              ? "TIKET RMA BARU"
+              : `EDIT ${rmaModal.entry.ticketNo}`
+          }
+          onClose={() => setRmaModal(null)}
+        >
           <RmaForm
             initial={rmaModal.entry}
             master={master}
@@ -1108,17 +2828,57 @@ export default function App() {
         </Modal>
       )}
       {waModal && (
-        <Modal title={waModal.mode === "new" ? "CASE WHATSAPP BARU" : `EDIT ${waModal.entry.caseNo}`} onClose={() => setWaModal(null)}>
-          <WaForm initial={waModal.entry} master={master} existingCaseNos={wa.map((e) => e.caseNo)} onSave={saveWa} onClose={() => setWaModal(null)} />
+        <Modal
+          title={
+            waModal.mode === "new"
+              ? "CASE WHATSAPP BARU"
+              : `EDIT ${waModal.entry.caseNo}`
+          }
+          onClose={() => setWaModal(null)}
+        >
+          <WaForm
+            initial={waModal.entry}
+            master={master}
+            existingCaseNos={wa.map((e) => e.caseNo)}
+            onSave={saveWa}
+            onClose={() => setWaModal(null)}
+          />
         </Modal>
       )}
       {waMsgEntry && (
-        <Modal title="PESAN KONFIRMASI WHATSAPP" onClose={() => setWaMsgEntry(null)} width={560}>
-          <div style={{ background: T.void, border: `1px solid ${T.line}`, borderRadius: 8, padding: 16, fontFamily: mono, fontSize: 12.5, color: T.ink2, whiteSpace: "pre-wrap", lineHeight: 1.6, maxHeight: 400, overflowY: "auto", marginBottom: 12 }}>
-            {waMsgEntry.kind === "rma" ? rmaWaMessage(waMsgEntry.entry) : waWaMessage(waMsgEntry.entry)}
+        <Modal
+          title="PESAN KONFIRMASI WHATSAPP"
+          onClose={() => setWaMsgEntry(null)}
+          width={560}
+        >
+          <div
+            style={{
+              background: T.void,
+              border: `1px solid ${T.line}`,
+              borderRadius: 8,
+              padding: 16,
+              fontFamily: mono,
+              fontSize: 12.5,
+              color: T.ink2,
+              whiteSpace: "pre-wrap",
+              lineHeight: 1.6,
+              maxHeight: 400,
+              overflowY: "auto",
+              marginBottom: 12,
+            }}
+          >
+            {waMsgEntry.kind === "rma"
+              ? rmaWaMessage(waMsgEntry.entry)
+              : waWaMessage(waMsgEntry.entry)}
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <CopyButton text={waMsgEntry.kind === "rma" ? rmaWaMessage(waMsgEntry.entry) : waWaMessage(waMsgEntry.entry)} />
+            <CopyButton
+              text={
+                waMsgEntry.kind === "rma"
+                  ? rmaWaMessage(waMsgEntry.entry)
+                  : waWaMessage(waMsgEntry.entry)
+              }
+            />
           </div>
         </Modal>
       )}
