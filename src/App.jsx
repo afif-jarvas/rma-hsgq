@@ -46,22 +46,29 @@ import { storeGet, storeSet, isUsingFirebase } from "./firebase.js";
    TOKENS — "Fiber patch bay" console
    ============================================================ */
 const T = {
-  void: "#F3F4F6",
-  panel: "#FFFFFF",
-  panel2: "#F9FAFB",
-  line: "#E5E7EB",
-  ink: "#111827",
-  ink2: "#4B5563",
-  ink3: "#9CA3AF",
-  cyan: "#2563EB",
-  cyanDim: "#EFF6FF",
-  amber: "#D97706",
-  amberDim: "#FEF3C7",
-  red: "#DC2626",
-  redDim: "#FEE2E2",
-  green: "#16A34A",
-  greenDim: "#DCFCE7",
-  grey: "#9CA3AF",
+  void: "var(--bg)",
+  panel: "var(--panel)",
+  panel2: "var(--panel-2)",
+
+  line: "var(--line)",
+
+  ink: "var(--text)",
+  ink2: "var(--text-2)",
+  ink3: "var(--text-3)",
+
+  cyan: "var(--primary)",
+  cyanDim: "var(--primary-dim)",
+
+  amber: "var(--amber)",
+  amberDim: "var(--amber-dim)",
+
+  red: "var(--red)",
+  redDim: "var(--red-dim)",
+
+  green: "var(--green)",
+  greenDim: "var(--green-dim)",
+
+  grey: "var(--text-3)",
 };
 const mono = "'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace";
 const sans = "'Inter', -apple-system, 'Segoe UI', sans-serif";
