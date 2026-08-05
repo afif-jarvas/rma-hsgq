@@ -129,6 +129,17 @@ select {
   --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
 }
 
+/* Recharts tooltip fix for dark mode */
+[data-theme="dark"] .recharts-default-tooltip {
+  color: var(--text) !important;
+}
+[data-theme="dark"] .recharts-tooltip-item {
+  color: var(--text) !important;
+}
+[data-theme="dark"] .recharts-tooltip-label {
+  color: var(--text) !important;
+}
+
 /* ============================================================
    GLOBAL CONTROLS
    ============================================================ */
