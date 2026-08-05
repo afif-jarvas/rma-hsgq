@@ -27,6 +27,10 @@ import {
   Menu,
   Cloud,
   CloudOff,
+  Languages,
+  Moon,
+  Sun,
+  FileDown,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -41,6 +45,9 @@ import {
   Cell,
 } from "recharts";
 import { storeGet, storeSet, isUsingFirebase } from "./firebase.js";
+import UserCenter from "./components/UserCenter.jsx";
+import { useAuth } from "./auth/AuthContext.jsx";
+import { useTheme } from "./context/ThemeContext.jsx";
 
 /* ============================================================
    TOKENS — "Fiber patch bay" console
@@ -73,6 +80,105 @@ const T = {
 const mono = "'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace";
 const sans = "'Inter', -apple-system, 'Segoe UI', sans-serif";
 
+const LANGUAGES = [
+  { code: "id", label: "Indonesia" },
+  { code: "en", label: "English" },
+  { code: "zh", label: "中文" },
+];
+
+const I18N = {
+  id: {
+    home: "Home",
+    rmaLog: "RMA Log Book",
+    waLog: "WhatsApp Log",
+    unitHistory: "Unit History",
+    weeklyReport: "Weekly Report",
+    settings: "Pengaturan",
+    homeTitle: "Home",
+    homeSubtitle: "Ringkasan monitoring operasional RMA & WhatsApp support",
+    totalDevices: "Total Devices",
+    lastLoginTime: "Last Login Time",
+    totalRma: "Total RMA",
+    rmaOpen: "RMA Open",
+    rmaClosed: "RMA Closed",
+    rmaOverdue: "RMA Overdue",
+    avgTat: "Rata-rata TAT (hari)",
+    totalWa: "Total Case WhatsApp",
+    engineerLoad: "Beban Kasus per Engineer",
+    statusDistribution: "Device Status",
+    productCount: "Device Count",
+    warrantyChart: "RMA per Warranty",
+    cases: "Cases",
+    count: "Count",
+    firestoreConnected: "Firestore Tersambung",
+    localMode: "Mode Lokal",
+    language: "Bahasa",
+    theme: "Theme",
+  },
+  en: {
+    home: "Home",
+    rmaLog: "RMA Log Book",
+    waLog: "WhatsApp Log",
+    unitHistory: "Unit History",
+    weeklyReport: "Weekly Report",
+    settings: "Settings",
+    homeTitle: "Home",
+    homeSubtitle: "Operational monitoring summary for RMA & WhatsApp support",
+    totalDevices: "Total Devices",
+    lastLoginTime: "Last Login Time",
+    totalRma: "Total RMA",
+    rmaOpen: "RMA Open",
+    rmaClosed: "RMA Closed",
+    rmaOverdue: "RMA Overdue",
+    avgTat: "Average TAT (days)",
+    totalWa: "Total WhatsApp Cases",
+    engineerLoad: "Case Load by Engineer",
+    statusDistribution: "Device Status",
+    productCount: "Device Count",
+    warrantyChart: "RMA by Warranty",
+    cases: "Cases",
+    count: "Count",
+    firestoreConnected: "Firestore Connected",
+    localMode: "Local Mode",
+    language: "Language",
+    theme: "Theme",
+  },
+  zh: {
+    home: "主页",
+    rmaLog: "RMA 记录",
+    waLog: "WhatsApp 记录",
+    unitHistory: "设备历史",
+    weeklyReport: "周报",
+    settings: "设置",
+    homeTitle: "主页",
+    homeSubtitle: "RMA 与 WhatsApp 支持运营监控摘要",
+    totalDevices: "设备总数",
+    lastLoginTime: "上次登录时间",
+    totalRma: "RMA 总数",
+    rmaOpen: "未结 RMA",
+    rmaClosed: "已结 RMA",
+    rmaOverdue: "逾期 RMA",
+    avgTat: "平均处理天数",
+    totalWa: "WhatsApp 案例总数",
+    engineerLoad: "工程师案例量",
+    statusDistribution: "设备状态",
+    productCount: "设备数量",
+    warrantyChart: "保修 RMA 分布",
+    cases: "案例",
+    count: "数量",
+    firestoreConnected: "Firestore 已连接",
+    localMode: "本地模式",
+    language: "语言",
+    theme: "主题",
+  },
+};
+
+function getStoredLanguage() {
+  if (typeof window === "undefined") return "id";
+  const saved = localStorage.getItem("hsgq_language");
+  return I18N[saved] ? saved : "id";
+}
+
 /* ============================================================
    STATUS / OVERDUE HELPERS
    ============================================================ */
@@ -102,6 +208,7 @@ function ledColor(status) {
 }
 function StatusLed({ status, size = 8 }) {
   const c = ledColor(status);
+
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
       <span
@@ -370,14 +477,14 @@ function Btn({ children, variant = "ghost", ...props }) {
       border: `1px solid ${T.cyan}`,
     },
     ghost: {
-      background: "#FFFFFF",
+      background: T.panel2,
       color: T.ink2,
       border: `1px solid ${T.line}`,
     },
     danger: {
-      background: "#FFFFFF",
+      background: T.panel2,
       color: T.red,
-      border: `1px solid #FCA5A5`,
+      border: `1px solid ${T.red}`,
     },
     tab: { background: "transparent", color: T.ink3, border: "none" },
     tabActive: { background: T.cyanDim, color: T.cyan, border: "none" },
@@ -1508,7 +1615,7 @@ function DataTable({ columns, rows, onRowClick, emptyLabel }) {
 /* ============================================================
    DASHBOARD
    ============================================================ */
-function Dashboard({ rma, wa }) {
+function Dashboard({ rma, wa, t, lastLoginLabel }) {
   const statusCount = useMemo(() => {
     const m = {};
     [...rma.map((e) => e.status), ...wa.map((e) => e.status)].forEach((s) => {
@@ -1607,12 +1714,14 @@ function Dashboard({ rma, wa }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <Stat label="Total RMA" value={rma.length} />
-        <Stat label="RMA Open" value={rmaOpen} accent={T.amber} />
-        <Stat label="RMA Closed" value={rmaClosed} accent={T.green} />
-        <Stat label="RMA Overdue" value={rmaOverdue} accent={T.red} />
-        <Stat label="Rata-rata TAT (hari)" value={avgTAT} accent={T.cyan} />
-        <Stat label="Total Case WhatsApp" value={wa.length} />
+        <Stat label={t.totalDevices} value={rma.length + wa.length} />
+        <Stat label={t.lastLoginTime} value={lastLoginLabel} accent={T.cyan} />
+        <Stat label={t.totalRma} value={rma.length} />
+        <Stat label={t.rmaOpen} value={rmaOpen} accent={T.amber} />
+        <Stat label={t.rmaClosed} value={rmaClosed} accent={T.green} />
+        <Stat label={t.rmaOverdue} value={rmaOverdue} accent={T.red} />
+        <Stat label={t.avgTat} value={avgTAT} accent={T.cyan} />
+        <Stat label={t.totalWa} value={wa.length} />
       </div>
       <div
         style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 14 }}
@@ -1635,7 +1744,7 @@ function Dashboard({ rma, wa }) {
               fontWeight: 600,
             }}
           >
-            Beban Kasus per Engineer
+            {t.engineerLoad}
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={engineerCount}>
@@ -1650,7 +1759,7 @@ function Dashboard({ rma, wa }) {
                   fontSize: 12,
                 }}
               />
-              <Bar dataKey="cases" fill={T.cyan} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="cases" name={t.cases} fill={T.cyan} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -1672,7 +1781,7 @@ function Dashboard({ rma, wa }) {
               fontWeight: 600,
             }}
           >
-            Distribusi Status
+            {t.statusDistribution}
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
@@ -1721,7 +1830,7 @@ function Dashboard({ rma, wa }) {
               fontWeight: 600,
             }}
           >
-            RMA per Produk (Top 8)
+            {t.productCount}
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={productCount}>
@@ -1736,7 +1845,7 @@ function Dashboard({ rma, wa }) {
                   fontSize: 12,
                 }}
               />
-              <Bar dataKey="count" fill={T.amber} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" name={t.count} fill={T.amber} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -1758,7 +1867,7 @@ function Dashboard({ rma, wa }) {
               fontWeight: 600,
             }}
           >
-            RMA per Warranty
+            {t.warrantyChart}
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
@@ -1862,6 +1971,118 @@ Status / Status: ${c.status}
     return header + body;
   }, [cases, start, end]);
 
+  const cleanReportText = useMemo(() => {
+    const header = `WEEKLY SUMMARY / RINGKASAN MINGGUAN - TECHNICAL SUPPORT
+Periode / Period:
+${fmtDate(start)} - ${fmtDate(end)}
+Ringkasan Kegiatan / Activity Summary:
+Monitoring OLT dan ONU / OLT and ONU Monitoring
+Troubleshooting Issue Customer / Customer Issue Troubleshooting
+Technical Support HSGQ Jakarta / HSGQ Jakarta Technical Support
+Issue & Troubleshooting / Kendala & Penanganan:
+============================================`;
+    const body = cases
+      .map(
+        (c, i) => `
+- Case ${i + 1} [${c.channel}] (${c.engineer || "-"})
+Tanggal / Date: ${fmtDate(c.date)}
+Customer / Company: ${c.customer}
+Type / Device Type: ${c.type}
+Problem / Issue: ${c.problem}
+Analisa / Analysis: ${c.analysis}
+Solusi / Solution: ${c.solution}
+Status / Status: ${c.status}
+============================================`,
+      )
+      .join("");
+    return header + body;
+  }, [cases, start, end]);
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function exportPdf() {
+    const rows = cases
+      .map(
+        (c, i) => `
+          <section class="case">
+            <div class="case-title">Case ${i + 1} - ${escapeHtml(c.channel)}</div>
+            <div class="grid">
+              <div><span>Date</span><strong>${escapeHtml(fmtDate(c.date))}</strong></div>
+              <div><span>Engineer</span><strong>${escapeHtml(c.engineer || "-")}</strong></div>
+              <div><span>Customer / Company</span><strong>${escapeHtml(c.customer)}</strong></div>
+              <div><span>Type / Device Type</span><strong>${escapeHtml(c.type)}</strong></div>
+              <div class="full"><span>Problem / Issue</span><strong>${escapeHtml(c.problem)}</strong></div>
+              <div class="full"><span>Analysis</span><strong>${escapeHtml(c.analysis)}</strong></div>
+              <div class="full"><span>Solution</span><strong>${escapeHtml(c.solution)}</strong></div>
+              <div><span>Status</span><strong>${escapeHtml(c.status)}</strong></div>
+            </div>
+          </section>`,
+      )
+      .join("");
+
+    const win = window.open("", "_blank");
+    if (!win) {
+      window.alert("Popup browser diblokir. Izinkan popup untuk export PDF.");
+      return;
+    }
+
+    win.document.write(`<!doctype html>
+      <html>
+        <head>
+          <title>Weekly Report ${escapeHtml(fmtDate(start))} - ${escapeHtml(fmtDate(end))}</title>
+          <style>
+            @page { size: A4; margin: 16mm; }
+            * { box-sizing: border-box; }
+            body { margin: 0; color: #111827; font-family: Arial, sans-serif; line-height: 1.45; }
+            .toolbar { position: sticky; top: 0; display: flex; justify-content: flex-end; gap: 8px; padding: 10px 0; background: #fff; }
+            button { border: 0; border-radius: 6px; background: #2563eb; color: #fff; padding: 9px 14px; font-weight: 700; cursor: pointer; }
+            .header { border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 18px; }
+            .brand { font-size: 12px; font-weight: 700; color: #2563eb; letter-spacing: .4px; text-transform: uppercase; }
+            h1 { margin: 4px 0 6px; font-size: 24px; }
+            .period { color: #4b5563; font-size: 12px; }
+            .summary { border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+            .summary h2 { margin: 0 0 8px; font-size: 14px; }
+            .summary ul { margin: 0; padding-left: 18px; font-size: 12px; }
+            .case { border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; margin-bottom: 12px; page-break-inside: avoid; }
+            .case-title { font-weight: 700; color: #111827; margin-bottom: 10px; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 14px; }
+            .grid div { min-width: 0; }
+            .grid .full { grid-column: 1 / -1; }
+            span { display: block; color: #6b7280; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+            strong { display: block; color: #111827; font-size: 12px; font-weight: 500; white-space: pre-wrap; }
+            .empty { color: #6b7280; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px; }
+            @media print { .toolbar { display: none; } body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+          </style>
+        </head>
+        <body>
+          <div class="toolbar"><button onclick="window.print()">Print / Save PDF</button></div>
+          <div class="header">
+            <div class="brand">HSGQ Cloud</div>
+            <h1>Weekly Technical Support Report</h1>
+            <div class="period">${escapeHtml(fmtDate(start))} - ${escapeHtml(fmtDate(end))}</div>
+          </div>
+          <section class="summary">
+            <h2>Activity Summary</h2>
+            <ul>
+              <li>Monitoring OLT dan ONU / OLT and ONU Monitoring</li>
+              <li>Troubleshooting Issue Customer / Customer Issue Troubleshooting</li>
+              <li>Technical Support HSGQ Jakarta / HSGQ Jakarta Technical Support</li>
+            </ul>
+          </section>
+          ${cases.length ? rows : '<div class="empty">Tidak ada case pada rentang tanggal ini.</div>'}
+        </body>
+      </html>`);
+    win.document.close();
+    win.focus();
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div
@@ -1896,7 +2117,10 @@ Status / Status: ${c.status}
           <CalendarRange size={14} /> 7 Hari Terakhir
         </Btn>
         <div style={{ flex: 1 }} />
-        <CopyButton text={reportText} />
+        <Btn variant="ghost" onClick={exportPdf}>
+          <FileDown size={14} /> Export PDF
+        </Btn>
+        <CopyButton text={cleanReportText} />
       </div>
       <div
         style={{
@@ -1918,7 +2142,7 @@ Status / Status: ${c.status}
             Tidak ada case pada rentang tanggal ini.
           </span>
         ) : (
-          reportText
+          cleanReportText
         )}
       </div>
     </div>
@@ -1932,31 +2156,63 @@ function UnitHistory({ rma, wa }) {
   const [query, setQuery] = useState("");
 
   const results = useMemo(() => {
-    if (!query.trim()) return [];
     const q = query.trim().toLowerCase();
     const rmaHits = rma
       .filter(
         (e) =>
-          (e.sn || "").toLowerCase() === q || (e.mac || "").toLowerCase() === q,
+          !q ||
+          [
+            e.ticketNo,
+            e.sn,
+            e.mac,
+            e.customerName,
+            e.company,
+            e.status,
+            e.finalResult,
+            e.rootCause,
+            e.checkingResult,
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(q),
       )
       .map((e) => ({
         ref: e.ticketNo,
         channel: "RMA",
         date: e.receivedDate,
         status: e.status,
+        sn: e.sn || "-",
+        mac: e.mac || "-",
+        customer: e.customerName || e.company || "-",
         result: e.finalResult || "-",
         note: e.rootCause || e.checkingResult || "-",
       }));
     const waHits = wa
       .filter(
         (e) =>
-          (e.sn || "").toLowerCase() === q || (e.mac || "").toLowerCase() === q,
+          !q ||
+          [
+            e.caseNo,
+            e.sn,
+            e.mac,
+            e.customerName,
+            e.company,
+            e.status,
+            e.finalAnalysis,
+            e.initialProblem,
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(q),
       )
       .map((e) => ({
         ref: e.caseNo,
         channel: "WhatsApp",
         date: e.caseDate,
         status: e.status,
+        sn: e.sn || "-",
+        mac: e.mac || "-",
+        customer: e.customerName || e.company || "-",
         result: e.finalAnalysis || "-",
         note: e.initialProblem || "-",
       }));
@@ -1990,7 +2246,7 @@ function UnitHistory({ rma, wa }) {
         <SearchBar
           value={query}
           onChange={setQuery}
-          placeholder="Masukkan SN atau MAC persis..."
+          placeholder="Filter SN, MAC, customer, case..."
         />
       </div>
       {!query.trim() && (
@@ -2008,7 +2264,7 @@ function UnitHistory({ rma, wa }) {
       )}
       {results.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {results.length > 1 && (
+          {query.trim() && results.length > 1 && (
             <InlineHint tone="warn">
               ⚠ Unit ini pernah memiliki {results.length} riwayat sebelumnya.
             </InlineHint>
@@ -2050,6 +2306,13 @@ function UnitHistory({ rma, wa }) {
               </div>
               <div style={{ fontSize: 12, color: T.ink2, minWidth: 90 }}>
                 {fmtDate(r.date)}
+              </div>
+              <div style={{ fontSize: 11.5, color: T.ink3, minWidth: 180 }}>
+                <span style={{ fontFamily: mono }}>{r.sn}</span> /{" "}
+                <span style={{ fontFamily: mono }}>{r.mac}</span>
+              </div>
+              <div style={{ fontSize: 12, color: T.ink2, minWidth: 120 }}>
+                {r.customer}
               </div>
               <div style={{ fontSize: 12.5, color: T.ink, flex: 1 }}>
                 {r.result}
@@ -2218,7 +2481,10 @@ function SettingsTab({ master, setMaster }) {
    MAIN APP
    ============================================================ */
 export default function App() {
-  const [tab, setTab] = useState("dashboard");
+  const { user } = useAuth();
+  const { resolvedTheme, setTheme } = useTheme();
+  const [tab, setTab] = useState("home");
+  const [language, setLanguage] = useState(getStoredLanguage);
   const [loading, setLoading] = useState(true);
   const [rma, setRma] = useState([]);
   const [wa, setWa] = useState([]);
@@ -2248,6 +2514,11 @@ export default function App() {
       setLoading(false);
     })();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hsgq_language", language);
+    document.documentElement.setAttribute("lang", language === "zh" ? "zh-CN" : language);
+  }, [language]);
 
   const persistRma = useCallback(async (arr) => {
     setRma(arr);
@@ -2315,13 +2586,20 @@ export default function App() {
     return wa.filter((e) => !q || JSON.stringify(e).toLowerCase().includes(q));
   }, [wa, search]);
 
+  const t = I18N[language] || I18N.id;
+  const lastLoginLabel = user?.metadata?.lastSignInTime
+    ? new Date(user.metadata.lastSignInTime).toLocaleString(
+        language === "zh" ? "zh-CN" : language === "en" ? "en-US" : "id-ID",
+      )
+    : "-";
+
   const NAV = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "rma", label: "RMA Log Book", icon: PackageSearch },
-    { id: "wa", label: "WhatsApp Log", icon: MessageSquare },
-    { id: "unithistory", label: "Unit History", icon: ScanSearch },
-    { id: "report", label: "Weekly Report", icon: FileClock },
-    { id: "settings", label: "Pengaturan", icon: Settings2 },
+    { id: "home", label: t.home, icon: LayoutDashboard },
+    { id: "rma", label: t.rmaLog, icon: PackageSearch },
+    { id: "wa", label: t.waLog, icon: MessageSquare },
+    { id: "unithistory", label: t.unitHistory, icon: ScanSearch },
+    { id: "report", label: t.weeklyReport, icon: FileClock },
+    { id: "settings", label: t.settings, icon: Settings2 },
   ];
 
   if (loading) {
@@ -2348,6 +2626,7 @@ export default function App() {
 
   return (
     <div
+      className="hsgq-app-shell"
       style={{
         display: "flex",
         minHeight: 680,
@@ -2360,6 +2639,7 @@ export default function App() {
       }}
     >
       <div
+        className="hsgq-sidebar"
         style={{
           width: 230,
           background: T.panel,
@@ -2457,6 +2737,7 @@ export default function App() {
       </div>
 
       <div
+        className="hsgq-main"
         style={{
           flex: 1,
           display: "flex",
@@ -2465,6 +2746,7 @@ export default function App() {
         }}
       >
         <div
+          className="hsgq-header"
           style={{
             display: "flex",
             alignItems: "center",
@@ -2488,27 +2770,43 @@ export default function App() {
               {activeNavLabel}
             </span>
           </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 12,
-              fontFamily: sans,
-              padding: "5px 10px",
-              borderRadius: 999,
-              background: isUsingFirebase ? T.greenDim : T.amberDim,
-              color: isUsingFirebase ? T.green : T.amber,
-            }}
-          >
-            {isUsingFirebase ? <Cloud size={13} /> : <CloudOff size={13} />}
-            {isUsingFirebase
-              ? "Firestore Tersambung"
-              : "Mode Lokal (belum tersambung Firebase)"}
+          <div className="hsgq-header-actions">
+            <button
+              type="button"
+              className="header-icon-button"
+              title={resolvedTheme === "dark" ? "Light" : "Dark"}
+              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            >
+              {resolvedTheme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+            </button>
+
+            <label className="language-select" title={t.language}>
+              <Languages size={15} />
+              <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+                {LANGUAGES.map((item) => (
+                  <option key={item.code} value={item.code}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div
+              className="hsgq-header-status"
+              style={{
+                background: isUsingFirebase ? T.greenDim : T.amberDim,
+                color: isUsingFirebase ? T.green : T.amber,
+              }}
+            >
+              {isUsingFirebase ? <Cloud size={13} /> : <CloudOff size={13} />}
+              {isUsingFirebase ? t.firestoreConnected : t.localMode}
+            </div>
+
+            <UserCenter />
           </div>
         </div>
 
-        <div style={{ flex: 1, padding: 22, overflowY: "auto" }}>
+        <div className="hsgq-content" style={{ flex: 1, padding: 22, overflowY: "auto" }}>
           {!isUsingFirebase && (
             <div
               style={{
@@ -2546,13 +2844,18 @@ export default function App() {
             </div>
           )}
 
-          {tab === "dashboard" && (
+          {tab === "home" && (
             <>
               <SectionHeader
-                title="Dashboard"
-                subtitle="Ringkasan operasional RMA & WhatsApp support"
+                title={t.homeTitle}
+                subtitle={t.homeSubtitle}
               />
-              <Dashboard rma={rma} wa={wa} />
+              <Dashboard
+                rma={rma}
+                wa={wa}
+                t={t}
+                lastLoginLabel={lastLoginLabel}
+              />
             </>
           )}
 

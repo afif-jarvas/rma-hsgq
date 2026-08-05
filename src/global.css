@@ -183,6 +183,81 @@ option {
   display: none !important;
 }
 
+.hsgq-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.header-icon-button {
+  width: 34px;
+  height: 34px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid var(--line);
+  border-radius: 8px;
+
+  background: var(--panel);
+  color: var(--text-2);
+
+  cursor: pointer;
+}
+
+.header-icon-button:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.language-select {
+  height: 34px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  border: 1px solid var(--line);
+  border-radius: 8px;
+
+  padding: 0 8px;
+
+  background: var(--panel);
+  color: var(--primary);
+}
+
+.language-select select {
+  width: 100px;
+
+  border: 0;
+  outline: 0;
+
+  background: transparent;
+  color: var(--primary);
+
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.hsgq-header-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  min-height: 34px;
+
+  padding: 5px 10px;
+  border-radius: 999px;
+
+  background: var(--green-dim);
+  color: var(--green);
+
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 /* ============================================================
    USER CENTER
    ============================================================ */
