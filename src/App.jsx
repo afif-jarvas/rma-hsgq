@@ -119,6 +119,171 @@ const I18N = {
     localMode: "Mode Lokal",
     language: "Bahasa",
     theme: "Theme",
+    openMenu: "Menu",
+    loadingData: "Memuat data...",
+    firebaseWarning:
+      "Firebase belum dikonfigurasi di src/firebase.js — data disimpan sementara di localStorage browser ini saja.",
+    cancel: "Batal",
+    add: "Tambah",
+    addItemPlaceholder: "Tambah item...",
+    searchPlaceholder: "Cari...",
+    copy: "Salin",
+    copied: "Tersalin",
+    editAction: "Edit",
+    deleteAction: "Hapus",
+    waMessageAction: "Pesan WA",
+    resetFilter: "Reset Filter",
+    colTicket: "Ticket",
+    colCase: "Case",
+    colStatus: "Status",
+    colEngineer: "Engineer",
+    colProduct: "Produk",
+    colCustomer: "Customer",
+    colWarranty: "Warranty",
+    colReceived: "Masuk",
+    colEta: "ETA",
+    colType: "Type",
+    colDate: "Tanggal",
+    colComm: "Komunikasi",
+    rmaPageTitle: "RMA Log Book",
+    rmaPageSubtitle:
+      "Daftar tiket RMA — Receiving, Diagnosis, Waiting, Warranty, QC, Shipping",
+    rmaNewTicket: "Tiket Baru",
+    rmaSearchPlaceholder: "Cari tiket, customer, SN, MAC...",
+    rmaOverdueOnly: "Overdue saja",
+    rmaEmptyList:
+      "Belum ada tiket RMA yang cocok dengan filter. Klik 'Tiket Baru' untuk mulai.",
+    rmaModalNewTitle: "TIKET RMA BARU",
+    rmaModalEditPrefix: "EDIT",
+    waPageTitle: "WhatsApp Log Book",
+    waPageSubtitle: "Daftar case kendala via WhatsApp + riwayat komunikasi",
+    waNewCase: "Case Baru",
+    waSearchPlaceholder: "Cari case, customer, SN, MAC...",
+    waEmptyList: "Belum ada case WhatsApp. Klik 'Case Baru' untuk mulai.",
+    waModalNewTitle: "CASE WHATSAPP BARU",
+    waMsgModalTitle: "PESAN KONFIRMASI WHATSAPP",
+    unitHistoryPageSubtitle:
+      "Quick search riwayat unit berdasarkan SN/MAC lintas RMA & WhatsApp Case",
+    unitHistorySearchPlaceholder: "Filter SN, MAC, customer, case...",
+    unitHistoryHint:
+      "Cari SN/MAC untuk melihat apakah unit ini pernah punya riwayat RMA atau case WhatsApp sebelumnya — berguna sebelum bikin tiket baru untuk unit yang sama.",
+    unitHistoryNotFound:
+      'Tidak ditemukan riwayat untuk "{q}". Unit ini baru pertama kali masuk sistem.',
+    unitHistoryPriorWarning:
+      "⚠ Unit ini pernah memiliki {n} riwayat sebelumnya.",
+    unitHistoryPartialMatch: "Kecocokan sebagian",
+    reportPageSubtitle: "Ringkasan mingguan otomatis dari RMA + WhatsApp log",
+    reportFromDate: "Dari Tanggal",
+    reportToDate: "Sampai Tanggal",
+    reportLast7Days: "7 Hari Terakhir",
+    reportExportPdf: "Export PDF",
+    reportEmptyRange: "Tidak ada case pada rentang tanggal ini.",
+    reportPopupBlocked:
+      "Popup browser diblokir. Izinkan popup untuk export PDF.",
+    settingsPageSubtitle: "Kelola daftar Engineer, status, dan opsi lainnya",
+    settingsEngineer: "Engineer",
+    settingsStatusRma: "Status RMA (alur utama)",
+    settingsStatusWa: "Status WhatsApp",
+    settingsFinalResults: "Hasil Akhir",
+    settingsWaitingReasons: "Alasan Menunggu",
+    settingsWarrantyStatuses: "Status Warranty",
+    settingsQcResults: "Hasil QC",
+    settingsShippingMethod: "Metode Pengiriman",
+    settingsPcbaTypes: "Tipe PCBA",
+    settingsSuppliers: "Supplier",
+    settingsWarehouseLocations: "Lokasi Gudang",
+    settingsMinStockDefault: "Minimum Stok Default (unit)",
+    tabOverview: "Overview",
+    tabReceiving: "Receiving",
+    tabDiagnosis: "Diagnosis",
+    tabWaiting: "Waiting",
+    tabWarranty: "Warranty",
+    tabQcShipping: "QC/Shipping",
+    tabTimeline: "Timeline",
+    rmaTicketNo: "No. Ticket",
+    rmaStatus: "Status",
+    rmaEngineer: "Engineer",
+    rmaProductType: "Produk / Type",
+    rmaSn: "SN",
+    rmaMac: "MAC",
+    rmaCustomerName: "Nama Customer",
+    rmaCompany: "Perusahaan",
+    rmaCustomerPhone: "No. HP Customer",
+    rmaPriorMatchPrefix: "Unit ini pernah muncul",
+    rmaPriorMatchTimesSuffix: "x sebelumnya:",
+    rmaPriorMatchSuffix: '. Cek tab "Unit History" untuk detail lengkap.',
+    rmaReceivedDate: "Tanggal Masuk",
+    rmaReceivedTime: "Jam Diterima",
+    rmaReceivedBy: "Diterima Oleh",
+    rmaEta: "Estimasi Selesai (ETA)",
+    rmaEtaHint: "Default masuk + 3 hari",
+    rmaDoNumber: "No. DO / Surat Jalan Customer",
+    rmaCourierName: "Nama Pengirim / Kurir",
+    rmaUnitQty: "Jumlah Unit",
+    rmaPhysicalCondition: "Kondisi Fisik Saat Diterima",
+    rmaAccessories: "Kelengkapan / Accessories",
+    rmaReceivingNotes: "Catatan Receiving",
+    rmaPhotoHint:
+      "Foto unit/label SN/MAC belum bisa diunggah di versi web ini — perlu backend penyimpanan file sungguhan (Tahap 3+).",
+    rmaInitialProblem: "Kendala Awal",
+    rmaSymptom: "Gejala",
+    rmaCheckingResult: "Hasil Pengecekan",
+    rmaRootCause: "Root Cause",
+    rmaActionTaken: "Tindakan",
+    rmaFinalResult: "Hasil Akhir",
+    rmaWaitingHint:
+      'Isi bagian ini hanya jika status RMA sedang "Menunggu" — dipakai untuk menghitung berapa lama tiket tertahan karena pihak tertentu.',
+    rmaWaitingReason: "Alasan Menunggu",
+    rmaWaitingParty: "Pihak yang Ditunggu",
+    rmaWaitingStart: "Mulai Menunggu",
+    rmaWaitingEnd: "Selesai Menunggu",
+    rmaWaitingNote: "Catatan Waiting",
+    rmaWaitingDuration: "Lama menunggu:",
+    rmaDays: "hari",
+    rmaStillOngoing: "(masih berjalan)",
+    rmaWarrantyStatus: "Status Warranty",
+    rmaWarrantyDecision: "Keputusan Warranty",
+    rmaWarrantyStart: "Warranty Start",
+    rmaWarrantyEnd: "Warranty End",
+    rmaWarrantyReason: "Alasan Keputusan Warranty",
+    rmaQcTesting: "QC / TESTING",
+    rmaQcTester: "QC / Tester",
+    rmaQcDate: "Tanggal QC",
+    rmaQcResult: "Hasil QC",
+    rmaQcNotes: "Catatan QC",
+    rmaQcFailHint:
+      'QC Fail — status sebaiknya dikembalikan ke "Sedang Diperbaiki" di tab Overview.',
+    rmaShippingSection: "SHIPPING",
+    rmaShippingMethod: "Metode Pengiriman",
+    rmaTrackingNo: "No. Resi / Surat Jalan",
+    rmaShippedDate: "Tanggal Dikirim (Shipped)",
+    rmaCustomerReceivedDate: "Tanggal Diterima Customer",
+    rmaClosedDate: "Tanggal Ditutup (Closed)",
+    rmaNotes: "Keterangan",
+    rmaNoHistory: "Belum ada riwayat.",
+    rmaCreatedPrefix: "Dibuat:",
+    rmaSaveTicket: "Simpan Tiket",
+    waCaseNo: "No. Case",
+    waCaseDate: "Tanggal Case",
+    waEngineerTag: "Engineer / Tagging",
+    waStatus: "Status",
+    waCustomerName: "Nama Customer",
+    waCompany: "Perusahaan",
+    waCustomerPhone: "No. HP Customer",
+    waDeviceType: "Type Perangkat",
+    waSn: "SN",
+    waMac: "MAC",
+    waSolvedDate: "Tanggal Solved",
+    waInitialProblem: "Kendala Awal",
+    waFinalAnalysis: "Analisa Akhir",
+    waCommHistory: "Riwayat Komunikasi",
+    waAdd: "Tambah",
+    waSummaryPlaceholder: "Ringkasan komunikasi",
+    waResultPlaceholder: "Hasil",
+    waNoCommHistory:
+      "Belum ada riwayat komunikasi — berguna kalau 1 case ditangani beberapa engineer.",
+    waNotes: "Keterangan",
+    waSaveCase: "Simpan Case",
   },
   en: {
     home: "Home",
@@ -148,6 +313,170 @@ const I18N = {
     localMode: "Local Mode",
     language: "Language",
     theme: "Theme",
+    openMenu: "Menu",
+    loadingData: "Loading data...",
+    firebaseWarning:
+      "Firebase is not configured yet in src/firebase.js — data is temporarily stored in this browser's localStorage only.",
+    cancel: "Cancel",
+    add: "Add",
+    addItemPlaceholder: "Add item...",
+    searchPlaceholder: "Search...",
+    copy: "Copy",
+    copied: "Copied",
+    editAction: "Edit",
+    deleteAction: "Delete",
+    waMessageAction: "WA Message",
+    resetFilter: "Reset Filter",
+    colTicket: "Ticket",
+    colCase: "Case",
+    colStatus: "Status",
+    colEngineer: "Engineer",
+    colProduct: "Product",
+    colCustomer: "Customer",
+    colWarranty: "Warranty",
+    colReceived: "Received",
+    colEta: "ETA",
+    colType: "Type",
+    colDate: "Date",
+    colComm: "Communication",
+    rmaPageTitle: "RMA Log Book",
+    rmaPageSubtitle:
+      "List of RMA tickets — Receiving, Diagnosis, Waiting, Warranty, QC, Shipping",
+    rmaNewTicket: "New Ticket",
+    rmaSearchPlaceholder: "Search ticket, customer, SN, MAC...",
+    rmaOverdueOnly: "Overdue only",
+    rmaEmptyList:
+      "No RMA tickets match the filter yet. Click 'New Ticket' to start.",
+    rmaModalNewTitle: "NEW RMA TICKET",
+    rmaModalEditPrefix: "EDIT",
+    waPageTitle: "WhatsApp Log Book",
+    waPageSubtitle: "List of WhatsApp support cases + communication history",
+    waNewCase: "New Case",
+    waSearchPlaceholder: "Search case, customer, SN, MAC...",
+    waEmptyList: "No WhatsApp cases yet. Click 'New Case' to start.",
+    waModalNewTitle: "NEW WHATSAPP CASE",
+    waMsgModalTitle: "WHATSAPP CONFIRMATION MESSAGE",
+    unitHistoryPageSubtitle:
+      "Quick search unit history by SN/MAC across RMA & WhatsApp Cases",
+    unitHistorySearchPlaceholder: "Filter SN, MAC, customer, case...",
+    unitHistoryHint:
+      "Search by SN/MAC to see if this unit already has RMA or WhatsApp case history — useful before creating a new ticket for the same unit.",
+    unitHistoryNotFound:
+      'No history found for "{q}". This unit is new to the system.',
+    unitHistoryPriorWarning:
+      "⚠ This unit already has {n} previous history entries.",
+    unitHistoryPartialMatch: "Partial match",
+    reportPageSubtitle: "Automatic weekly summary from RMA + WhatsApp log",
+    reportFromDate: "From Date",
+    reportToDate: "To Date",
+    reportLast7Days: "Last 7 Days",
+    reportExportPdf: "Export PDF",
+    reportEmptyRange: "No cases in this date range.",
+    reportPopupBlocked: "Browser popup blocked. Allow popups to export PDF.",
+    settingsPageSubtitle: "Manage Engineer list, statuses, and other options",
+    settingsEngineer: "Engineer",
+    settingsStatusRma: "RMA Status (main flow)",
+    settingsStatusWa: "WhatsApp Status",
+    settingsFinalResults: "Final Result",
+    settingsWaitingReasons: "Waiting Reason",
+    settingsWarrantyStatuses: "Warranty Status",
+    settingsQcResults: "QC Result",
+    settingsShippingMethod: "Shipping Method",
+    settingsPcbaTypes: "PCBA Type",
+    settingsSuppliers: "Supplier",
+    settingsWarehouseLocations: "Warehouse Location",
+    settingsMinStockDefault: "Default Minimum Stock (unit)",
+    tabOverview: "Overview",
+    tabReceiving: "Receiving",
+    tabDiagnosis: "Diagnosis",
+    tabWaiting: "Waiting",
+    tabWarranty: "Warranty",
+    tabQcShipping: "QC/Shipping",
+    tabTimeline: "Timeline",
+    rmaTicketNo: "Ticket No.",
+    rmaStatus: "Status",
+    rmaEngineer: "Engineer",
+    rmaProductType: "Product / Type",
+    rmaSn: "SN",
+    rmaMac: "MAC",
+    rmaCustomerName: "Customer Name",
+    rmaCompany: "Company",
+    rmaCustomerPhone: "Customer Phone",
+    rmaPriorMatchPrefix: "This unit has appeared",
+    rmaPriorMatchTimesSuffix: "x before:",
+    rmaPriorMatchSuffix: '. Check the "Unit History" tab for full details.',
+    rmaReceivedDate: "Received Date",
+    rmaReceivedTime: "Time Received",
+    rmaReceivedBy: "Received By",
+    rmaEta: "Estimated Completion (ETA)",
+    rmaEtaHint: "Defaults to received date + 3 days",
+    rmaDoNumber: "Customer DO / Delivery Note No.",
+    rmaCourierName: "Sender / Courier Name",
+    rmaUnitQty: "Unit Quantity",
+    rmaPhysicalCondition: "Physical Condition on Receipt",
+    rmaAccessories: "Accessories Included",
+    rmaReceivingNotes: "Receiving Notes",
+    rmaPhotoHint:
+      "Unit/SN/MAC label photos can't be uploaded in this web version yet — requires a real file storage backend (Phase 3+).",
+    rmaInitialProblem: "Initial Problem",
+    rmaSymptom: "Symptom",
+    rmaCheckingResult: "Checking Result",
+    rmaRootCause: "Root Cause",
+    rmaActionTaken: "Action Taken",
+    rmaFinalResult: "Final Result",
+    rmaWaitingHint:
+      'Fill this section only if the RMA status is "Waiting" — used to calculate how long the ticket has been held up by a certain party.',
+    rmaWaitingReason: "Waiting Reason",
+    rmaWaitingParty: "Party Being Waited On",
+    rmaWaitingStart: "Waiting Start",
+    rmaWaitingEnd: "Waiting End",
+    rmaWaitingNote: "Waiting Notes",
+    rmaWaitingDuration: "Waiting duration:",
+    rmaDays: "days",
+    rmaStillOngoing: "(still ongoing)",
+    rmaWarrantyStatus: "Warranty Status",
+    rmaWarrantyDecision: "Warranty Decision",
+    rmaWarrantyStart: "Warranty Start",
+    rmaWarrantyEnd: "Warranty End",
+    rmaWarrantyReason: "Warranty Decision Reason",
+    rmaQcTesting: "QC / TESTING",
+    rmaQcTester: "QC / Tester",
+    rmaQcDate: "QC Date",
+    rmaQcResult: "QC Result",
+    rmaQcNotes: "QC Notes",
+    rmaQcFailHint:
+      'QC Fail — status should be returned to "Under Repair" on the Overview tab.',
+    rmaShippingSection: "SHIPPING",
+    rmaShippingMethod: "Shipping Method",
+    rmaTrackingNo: "Tracking No. / Delivery Note",
+    rmaShippedDate: "Shipped Date",
+    rmaCustomerReceivedDate: "Customer Received Date",
+    rmaClosedDate: "Closed Date",
+    rmaNotes: "Notes",
+    rmaNoHistory: "No history yet.",
+    rmaCreatedPrefix: "Created:",
+    rmaSaveTicket: "Save Ticket",
+    waCaseNo: "Case No.",
+    waCaseDate: "Case Date",
+    waEngineerTag: "Engineer / Tagging",
+    waStatus: "Status",
+    waCustomerName: "Customer Name",
+    waCompany: "Company",
+    waCustomerPhone: "Customer Phone",
+    waDeviceType: "Device Type",
+    waSn: "SN",
+    waMac: "MAC",
+    waSolvedDate: "Solved Date",
+    waInitialProblem: "Initial Problem",
+    waFinalAnalysis: "Final Analysis",
+    waCommHistory: "Communication History",
+    waAdd: "Add",
+    waSummaryPlaceholder: "Communication summary",
+    waResultPlaceholder: "Result",
+    waNoCommHistory:
+      "No communication history yet — useful when a case is handled by multiple engineers.",
+    waNotes: "Notes",
+    waSaveCase: "Save Case",
   },
   zh: {
     home: "主页",
@@ -177,6 +506,164 @@ const I18N = {
     localMode: "本地模式",
     language: "语言",
     theme: "主题",
+    openMenu: "菜单",
+    loadingData: "正在加载数据...",
+    firebaseWarning:
+      "尚未在 src/firebase.js 中配置 Firebase — 数据暂时仅保存在此浏览器的 localStorage 中。",
+    cancel: "取消",
+    add: "添加",
+    addItemPlaceholder: "添加项目...",
+    searchPlaceholder: "搜索...",
+    copy: "复制",
+    copied: "已复制",
+    editAction: "编辑",
+    deleteAction: "删除",
+    waMessageAction: "WA 消息",
+    resetFilter: "重置筛选",
+    colTicket: "工单号",
+    colCase: "案例编号",
+    colStatus: "状态",
+    colEngineer: "工程师",
+    colProduct: "产品",
+    colCustomer: "客户",
+    colWarranty: "保修",
+    colReceived: "接收日期",
+    colEta: "预计完成",
+    colType: "类型",
+    colDate: "日期",
+    colComm: "沟通记录",
+    rmaPageTitle: "RMA 记录",
+    rmaPageSubtitle: "RMA 工单列表 — 接收、诊断、等待、保修、QC、发货",
+    rmaNewTicket: "新工单",
+    rmaSearchPlaceholder: "搜索工单、客户、SN、MAC...",
+    rmaOverdueOnly: "仅显示逾期",
+    rmaEmptyList: "暂无符合筛选条件的 RMA 工单。点击「新工单」开始。",
+    rmaModalNewTitle: "新建 RMA 工单",
+    rmaModalEditPrefix: "编辑",
+    waPageTitle: "WhatsApp 记录",
+    waPageSubtitle: "WhatsApp 支持案例列表 + 沟通记录",
+    waNewCase: "新案例",
+    waSearchPlaceholder: "搜索案例、客户、SN、MAC...",
+    waEmptyList: "暂无 WhatsApp 案例。点击「新案例」开始。",
+    waModalNewTitle: "新建 WhatsApp 案例",
+    waMsgModalTitle: "WhatsApp 确认消息",
+    unitHistoryPageSubtitle:
+      "按 SN/MAC 快速搜索 RMA 与 WhatsApp 案例中的设备历史",
+    unitHistorySearchPlaceholder: "按 SN、MAC、客户、案例筛选...",
+    unitHistoryHint:
+      "搜索 SN/MAC 以查看该设备是否曾有 RMA 或 WhatsApp 案例记录 — 在为同一设备建立新工单前很有用。",
+    unitHistoryNotFound: '未找到 "{q}" 的历史记录。此设备是首次进入系统。',
+    unitHistoryPriorWarning: "⚠ 此设备此前已有 {n} 条历史记录。",
+    unitHistoryPartialMatch: "部分匹配",
+    reportPageSubtitle: "根据 RMA + WhatsApp 记录自动生成的周报摘要",
+    reportFromDate: "起始日期",
+    reportToDate: "结束日期",
+    reportLast7Days: "最近 7 天",
+    reportExportPdf: "导出 PDF",
+    reportEmptyRange: "该日期范围内没有案例。",
+    reportPopupBlocked: "浏览器弹窗被拦截。请允许弹窗以导出 PDF。",
+    settingsPageSubtitle: "管理工程师名单、状态及其他选项",
+    settingsEngineer: "工程师",
+    settingsStatusRma: "RMA 状态（主流程）",
+    settingsStatusWa: "WhatsApp 状态",
+    settingsFinalResults: "最终结果",
+    settingsWaitingReasons: "等待原因",
+    settingsWarrantyStatuses: "保修状态",
+    settingsQcResults: "QC 结果",
+    settingsShippingMethod: "发货方式",
+    settingsPcbaTypes: "PCBA 类型",
+    settingsSuppliers: "供应商",
+    settingsWarehouseLocations: "仓库位置",
+    settingsMinStockDefault: "默认最低库存（件）",
+    tabOverview: "概览",
+    tabReceiving: "接收",
+    tabDiagnosis: "诊断",
+    tabWaiting: "等待",
+    tabWarranty: "保修",
+    tabQcShipping: "QC/发货",
+    tabTimeline: "时间线",
+    rmaTicketNo: "工单号",
+    rmaStatus: "状态",
+    rmaEngineer: "工程师",
+    rmaProductType: "产品 / 型号",
+    rmaSn: "SN",
+    rmaMac: "MAC",
+    rmaCustomerName: "客户姓名",
+    rmaCompany: "公司",
+    rmaCustomerPhone: "客户电话",
+    rmaPriorMatchPrefix: "此设备此前出现过",
+    rmaPriorMatchTimesSuffix: "次：",
+    rmaPriorMatchSuffix: '。请查看"设备历史"标签页获取完整详情。',
+    rmaReceivedDate: "接收日期",
+    rmaReceivedTime: "接收时间",
+    rmaReceivedBy: "接收人",
+    rmaEta: "预计完成时间（ETA）",
+    rmaEtaHint: "默认接收日期 + 3 天",
+    rmaDoNumber: "客户送货单号",
+    rmaCourierName: "寄件人 / 快递名称",
+    rmaUnitQty: "设备数量",
+    rmaPhysicalCondition: "接收时的外观状况",
+    rmaAccessories: "配件 / Accessories",
+    rmaReceivingNotes: "接收备注",
+    rmaPhotoHint:
+      "此网页版本尚不支持上传设备/SN/MAC 标签照片 — 需要真实的文件存储后端（第 3 阶段以后）。",
+    rmaInitialProblem: "初始故障描述",
+    rmaSymptom: "现象",
+    rmaCheckingResult: "检测结果",
+    rmaRootCause: "根本原因",
+    rmaActionTaken: "处理措施",
+    rmaFinalResult: "最终结果",
+    rmaWaitingHint:
+      "仅当 RMA 状态为「等待中」时才需填写此部分 — 用于计算工单因某一方而延迟的时长。",
+    rmaWaitingReason: "等待原因",
+    rmaWaitingParty: "等待对象",
+    rmaWaitingStart: "开始等待",
+    rmaWaitingEnd: "结束等待",
+    rmaWaitingNote: "等待备注",
+    rmaWaitingDuration: "等待时长：",
+    rmaDays: "天",
+    rmaStillOngoing: "（仍在进行中）",
+    rmaWarrantyStatus: "保修状态",
+    rmaWarrantyDecision: "保修决定",
+    rmaWarrantyStart: "保修开始",
+    rmaWarrantyEnd: "保修结束",
+    rmaWarrantyReason: "保修决定原因",
+    rmaQcTesting: "QC / 测试",
+    rmaQcTester: "QC / 测试员",
+    rmaQcDate: "QC 日期",
+    rmaQcResult: "QC 结果",
+    rmaQcNotes: "QC 备注",
+    rmaQcFailHint: "QC 未通过 — 建议在概览标签页将状态改回「维修中」。",
+    rmaShippingSection: "发货",
+    rmaShippingMethod: "发货方式",
+    rmaTrackingNo: "运单号 / 送货单号",
+    rmaShippedDate: "发货日期",
+    rmaCustomerReceivedDate: "客户收货日期",
+    rmaClosedDate: "关闭日期",
+    rmaNotes: "备注",
+    rmaNoHistory: "暂无历史记录。",
+    rmaCreatedPrefix: "创建：",
+    rmaSaveTicket: "保存工单",
+    waCaseNo: "案例编号",
+    waCaseDate: "案例日期",
+    waEngineerTag: "工程师 / 标签",
+    waStatus: "状态",
+    waCustomerName: "客户姓名",
+    waCompany: "公司",
+    waCustomerPhone: "客户电话",
+    waDeviceType: "设备型号",
+    waSn: "SN",
+    waMac: "MAC",
+    waSolvedDate: "解决日期",
+    waInitialProblem: "初始故障描述",
+    waFinalAnalysis: "最终分析",
+    waCommHistory: "沟通记录",
+    waAdd: "添加",
+    waSummaryPlaceholder: "沟通摘要",
+    waResultPlaceholder: "结果",
+    waNoCommHistory: "暂无沟通记录 — 适用于一个案例由多位工程师处理的情况。",
+    waNotes: "备注",
+    waSaveCase: "保存案例",
   },
 };
 
@@ -610,7 +1097,8 @@ function Modal({ title, onClose, children, width = 720 }) {
     </div>
   );
 }
-function CopyButton({ text }) {
+function CopyButton({ text, t }) {
+  const tt = t || I18N.id;
   const [copied, setCopied] = useState(false);
   return (
     <Btn
@@ -622,7 +1110,7 @@ function CopyButton({ text }) {
       }}
     >
       {copied ? <Check size={14} /> : <Copy size={14} />}{" "}
-      {copied ? "Tersalin" : "Salin"}
+      {copied ? tt.copied : tt.copy}
     </Btn>
   );
 }
@@ -725,9 +1213,18 @@ function RmaForm({
   unitHistoryLookup,
   onSave,
   onClose,
+  t,
 }) {
   const isEdit = !!initial;
   const [tab, setTab] = useState("overview");
+  const TAB_LABELS = {
+    overview: t.tabOverview,
+    receiving: t.tabReceiving,
+    diagnosis: t.tabDiagnosis,
+    waiting: t.tabWaiting,
+    warranty: t.tabWarranty,
+    qc: t.tabQcShipping,
+  };
   const [f, setF] = useState(
     initial || {
       id: uid(),
@@ -782,7 +1279,7 @@ function RmaForm({
           to: master.statusRMA[0] || "",
           changedBy: "",
           changedAt: new Date().toISOString(),
-          note: "Tiket dibuat",
+          note: t.rmaTicketCreatedNote || "Tiket dibuat",
         },
       ],
     },
@@ -823,13 +1320,13 @@ function RmaForm({
         flexWrap: "wrap",
       }}
     >
-      {RMA_TABS.map((t) => {
-        const Icon = t.icon;
-        const active = tab === t.id;
+      {RMA_TABS.map((td) => {
+        const Icon = td.icon;
+        const active = tab === td.id;
         return (
           <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
+            key={td.id}
+            onClick={() => setTab(td.id)}
             style={{
               display: "flex",
               alignItems: "center",
@@ -848,7 +1345,7 @@ function RmaForm({
               marginBottom: -1,
             }}
           >
-            <Icon size={13} /> {t.label}
+            <Icon size={13} /> {TAB_LABELS[td.id]}
           </button>
         );
       })}
@@ -874,7 +1371,7 @@ function RmaForm({
             marginBottom: -1,
           }}
         >
-          <History size={13} /> Timeline
+          <History size={13} /> {t.tabTimeline}
         </button>
       )}
     </div>
@@ -886,6 +1383,7 @@ function RmaForm({
       {tab === "overview" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div
+            className="form-grid-2"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
             <Field label="No. Ticket">
@@ -963,6 +1461,7 @@ function RmaForm({
       {tab === "receiving" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div
+            className="form-grid-2"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
             <Field label="Tanggal Masuk">
@@ -1083,6 +1582,7 @@ function RmaForm({
             untuk menghitung berapa lama tiket tertahan karena pihak tertentu.
           </InlineHint>
           <div
+            className="form-grid-2"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
             <Field label="Alasan Menunggu">
@@ -1132,6 +1632,7 @@ function RmaForm({
       {tab === "warranty" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div
+            className="form-grid-2"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
             <Field label="Status Warranty">
@@ -1187,6 +1688,7 @@ function RmaForm({
             <ClipboardCheck size={14} color={T.cyan} /> QC / TESTING
           </div>
           <div
+            className="form-grid-2"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
             <Field label="QC / Tester">
@@ -1235,6 +1737,7 @@ function RmaForm({
             <Truck size={14} color={T.cyan} /> SHIPPING
           </div>
           <div
+            className="form-grid-2"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
             <Field label="Metode Pengiriman">
@@ -1391,7 +1894,10 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div
+        className="form-grid-2"
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+      >
         <Field label="No. Case">
           <TextInput
             value={f.caseNo}
@@ -2508,7 +3014,10 @@ function TagList({ label, items, onChange }) {
 function SettingsTab({ master, setMaster }) {
   const update = (k) => (arr) => setMaster((m) => ({ ...m, [k]: arr }));
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+    <div
+      className="form-grid-2"
+      style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}
+    >
       <TagList
         label="Engineer"
         items={master.engineers}
@@ -2624,7 +3133,10 @@ function GoodsReceiptForm({ master, onSave, onClose }) {
         untuk replacement.
       </InlineHint>
       {err && <InlineHint tone="warn">{err}</InlineHint>}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div
+        className="form-grid-2"
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+      >
         <Field label="No. Serial PCBA">
           <TextInput
             value={f.serialNo}
@@ -3242,6 +3754,7 @@ export default function App() {
   const { user } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
   const [tab, setTab] = useState("home");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [language, setLanguage] = useState(getStoredLanguage);
   const [loading, setLoading] = useState(true);
   const [rma, setRma] = useState([]);
@@ -3364,6 +3877,7 @@ export default function App() {
   ];
 
   if (loading) {
+    const tt = I18N[language] || I18N.id;
     return (
       <div
         style={{
@@ -3377,7 +3891,7 @@ export default function App() {
           gap: 10,
         }}
       >
-        <Loader2 className="spin" size={18} /> Memuat data...
+        <Loader2 className="spin" size={18} /> {tt.loadingData}
         <style>{`.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     );
@@ -3399,8 +3913,14 @@ export default function App() {
         border: `1px solid ${T.line}`,
       }}
     >
+      {mobileNavOpen && (
+        <div
+          className="hsgq-sidebar-backdrop"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
       <div
-        className="hsgq-sidebar"
+        className={`hsgq-sidebar${mobileNavOpen ? " mobile-open" : ""}`}
         style={{
           width: 230,
           background: T.panel,
@@ -3472,7 +3992,10 @@ export default function App() {
             return (
               <button
                 key={n.id}
-                onClick={() => setTab(n.id)}
+                onClick={() => {
+                  setTab(n.id);
+                  setMobileNavOpen(false);
+                }}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -3518,14 +4041,33 @@ export default function App() {
             flexShrink: 0,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Menu size={17} color={T.ink3} />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              minWidth: 0,
+            }}
+          >
+            <button
+              type="button"
+              className="hsgq-mobile-menu-button"
+              onClick={() => setMobileNavOpen(true)}
+              aria-label={t.openMenu}
+              title={t.openMenu}
+            >
+              <Menu size={17} />
+            </button>
+            <Menu size={17} color={T.ink3} className="hsgq-desktop-menu-icon" />
             <span
               style={{
                 fontFamily: sans,
                 fontWeight: 600,
                 fontSize: 14.5,
                 color: T.ink,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
               {activeNavLabel}
@@ -3594,9 +4136,7 @@ export default function App() {
                 marginBottom: 14,
               }}
             >
-              <AlertTriangle size={14} /> Firebase belum dikonfigurasi di{" "}
-              <code style={{ fontFamily: mono }}>src/firebase.js</code> — data
-              disimpan sementara di localStorage browser ini saja.
+              <AlertTriangle size={14} /> {t.firebaseWarning}
             </div>
           )}
           {saveErr && (
@@ -3632,14 +4172,14 @@ export default function App() {
           {tab === "rma" && (
             <>
               <SectionHeader
-                title="RMA Log Book"
-                subtitle="Daftar tiket RMA — Receiving, Diagnosis, Waiting, Warranty, QC, Shipping"
+                title={t.rmaPageTitle}
+                subtitle={t.rmaPageSubtitle}
                 action={
                   <Btn
                     variant="solid"
                     onClick={() => setRmaModal({ mode: "new" })}
                   >
-                    <Plus size={14} /> Tiket Baru
+                    <Plus size={14} /> {t.rmaNewTicket}
                   </Btn>
                 }
               />
@@ -3654,7 +4194,7 @@ export default function App() {
                 <SearchBar
                   value={search}
                   onChange={setSearch}
-                  placeholder="Cari tiket, customer, SN, MAC..."
+                  placeholder={t.rmaSearchPlaceholder}
                 />
                 <Select
                   options={master.statusRMA}
@@ -3697,7 +4237,7 @@ export default function App() {
                       }))
                     }
                   />
-                  Overdue saja
+                  {t.rmaOverdueOnly}
                 </label>
                 {(filters.status ||
                   filters.engineer ||
@@ -3714,16 +4254,16 @@ export default function App() {
                       })
                     }
                   >
-                    Reset Filter
+                    {t.resetFilter}
                   </Btn>
                 )}
               </div>
               <DataTable
                 columns={[
-                  { key: "ticketNo", label: "Ticket", mono: true },
+                  { key: "ticketNo", label: t.colTicket, mono: true },
                   {
                     key: "status",
-                    label: "Status",
+                    label: t.colStatus,
                     render: (r) => (
                       <div
                         style={{
@@ -3737,16 +4277,20 @@ export default function App() {
                       </div>
                     ),
                   },
-                  { key: "engineer", label: "Engineer" },
-                  { key: "product", label: "Produk" },
-                  { key: "customerName", label: "Customer" },
-                  { key: "warrantyStatus", label: "Warranty" },
+                  { key: "engineer", label: t.colEngineer },
+                  { key: "product", label: t.colProduct },
+                  { key: "customerName", label: t.colCustomer },
+                  { key: "warrantyStatus", label: t.colWarranty },
                   {
                     key: "receivedDate",
-                    label: "Masuk",
+                    label: t.colReceived,
                     render: (r) => fmtDate(r.receivedDate),
                   },
-                  { key: "eta", label: "ETA", render: (r) => fmtDate(r.eta) },
+                  {
+                    key: "eta",
+                    label: t.colEta,
+                    render: (r) => fmtDate(r.eta),
+                  },
                   {
                     key: "actions",
                     label: "",
@@ -3757,27 +4301,27 @@ export default function App() {
                           onClick={() =>
                             setWaMsgEntry({ kind: "rma", entry: r })
                           }
-                          title="Pesan WA"
+                          title={t.waMessageAction}
                         />
                         <IconBtn
                           icon={Pencil}
                           onClick={() =>
                             setRmaModal({ mode: "edit", entry: r })
                           }
-                          title="Edit"
+                          title={t.editAction}
                         />
                         <IconBtn
                           icon={Trash2}
                           danger
                           onClick={() => deleteRma(r.id)}
-                          title="Hapus"
+                          title={t.deleteAction}
                         />
                       </div>
                     ),
                   },
                 ]}
                 rows={filteredRma}
-                emptyLabel="Belum ada tiket RMA yang cocok dengan filter. Klik 'Tiket Baru' untuk mulai."
+                emptyLabel={t.rmaEmptyList}
               />
             </>
           )}
@@ -3785,42 +4329,42 @@ export default function App() {
           {tab === "wa" && (
             <>
               <SectionHeader
-                title="WhatsApp Log Book"
-                subtitle="Daftar case kendala via WhatsApp + riwayat komunikasi"
+                title={t.waPageTitle}
+                subtitle={t.waPageSubtitle}
                 action={
                   <Btn
                     variant="solid"
                     onClick={() => setWaModal({ mode: "new" })}
                   >
-                    <Plus size={14} /> Case Baru
+                    <Plus size={14} /> {t.waNewCase}
                   </Btn>
                 }
               />
               <SearchBar
                 value={search}
                 onChange={setSearch}
-                placeholder="Cari case, customer, SN, MAC..."
+                placeholder={t.waSearchPlaceholder}
               />
               <div style={{ height: 12 }} />
               <DataTable
                 columns={[
-                  { key: "caseNo", label: "Case", mono: true },
+                  { key: "caseNo", label: t.colCase, mono: true },
                   {
                     key: "status",
-                    label: "Status",
+                    label: t.colStatus,
                     render: (r) => <StatusLed status={r.status} />,
                   },
-                  { key: "engineerTag", label: "Engineer" },
-                  { key: "deviceType", label: "Type" },
-                  { key: "customerName", label: "Customer" },
+                  { key: "engineerTag", label: t.colEngineer },
+                  { key: "deviceType", label: t.colType },
+                  { key: "customerName", label: t.colCustomer },
                   {
                     key: "caseDate",
-                    label: "Tanggal",
+                    label: t.colDate,
                     render: (r) => fmtDate(r.caseDate),
                   },
                   {
                     key: "comm",
-                    label: "Komunikasi",
+                    label: t.colComm,
                     render: (r) => (r.commHistory || []).length + "x",
                   },
                   {
@@ -3833,25 +4377,25 @@ export default function App() {
                           onClick={() =>
                             setWaMsgEntry({ kind: "wa", entry: r })
                           }
-                          title="Pesan WA"
+                          title={t.waMessageAction}
                         />
                         <IconBtn
                           icon={Pencil}
                           onClick={() => setWaModal({ mode: "edit", entry: r })}
-                          title="Edit"
+                          title={t.editAction}
                         />
                         <IconBtn
                           icon={Trash2}
                           danger
                           onClick={() => deleteWa(r.id)}
-                          title="Hapus"
+                          title={t.deleteAction}
                         />
                       </div>
                     ),
                   },
                 ]}
                 rows={filteredWa}
-                emptyLabel="Belum ada case WhatsApp. Klik 'Case Baru' untuk mulai."
+                emptyLabel={t.waEmptyList}
               />
             </>
           )}
@@ -3859,30 +4403,30 @@ export default function App() {
           {tab === "unithistory" && (
             <>
               <SectionHeader
-                title="Unit History"
-                subtitle="Quick search riwayat unit berdasarkan SN/MAC lintas RMA & WhatsApp Case"
+                title={t.unitHistory}
+                subtitle={t.unitHistoryPageSubtitle}
               />
-              <UnitHistory rma={rma} wa={wa} />
+              <UnitHistory rma={rma} wa={wa} t={t} />
             </>
           )}
 
           {tab === "report" && (
             <>
               <SectionHeader
-                title="Weekly Report"
-                subtitle="Ringkasan mingguan otomatis dari RMA + WhatsApp log"
+                title={t.weeklyReport}
+                subtitle={t.reportPageSubtitle}
               />
-              <WeeklyReport rma={rma} wa={wa} />
+              <WeeklyReport rma={rma} wa={wa} t={t} />
             </>
           )}
 
           {tab === "settings" && (
             <>
               <SectionHeader
-                title="Pengaturan"
-                subtitle="Kelola daftar Engineer, status, dan opsi lainnya"
+                title={t.settings}
+                subtitle={t.settingsPageSubtitle}
               />
-              <SettingsTab master={master} setMaster={setMaster} />
+              <SettingsTab master={master} setMaster={setMaster} t={t} />
             </>
           )}
         </div>
@@ -3892,8 +4436,8 @@ export default function App() {
         <Modal
           title={
             rmaModal.mode === "new"
-              ? "TIKET RMA BARU"
-              : `EDIT ${rmaModal.entry.ticketNo}`
+              ? t.rmaModalNewTitle
+              : `${t.rmaModalEditPrefix} ${rmaModal.entry.ticketNo}`
           }
           onClose={() => setRmaModal(null)}
         >
@@ -3904,6 +4448,7 @@ export default function App() {
             unitHistoryLookup={unitHistoryLookup}
             onSave={saveRma}
             onClose={() => setRmaModal(null)}
+            t={t}
           />
         </Modal>
       )}
@@ -3911,8 +4456,8 @@ export default function App() {
         <Modal
           title={
             waModal.mode === "new"
-              ? "CASE WHATSAPP BARU"
-              : `EDIT ${waModal.entry.caseNo}`
+              ? t.waModalNewTitle
+              : `${t.rmaModalEditPrefix} ${waModal.entry.caseNo}`
           }
           onClose={() => setWaModal(null)}
         >
@@ -3922,12 +4467,13 @@ export default function App() {
             existingCaseNos={wa.map((e) => e.caseNo)}
             onSave={saveWa}
             onClose={() => setWaModal(null)}
+            t={t}
           />
         </Modal>
       )}
       {waMsgEntry && (
         <Modal
-          title="PESAN KONFIRMASI WHATSAPP"
+          title={t.waMsgModalTitle}
           onClose={() => setWaMsgEntry(null)}
           width={560}
         >
@@ -3958,6 +4504,7 @@ export default function App() {
                   ? rmaWaMessage(waMsgEntry.entry)
                   : waWaMessage(waMsgEntry.entry)
               }
+              t={t}
             />
           </div>
         </Modal>
