@@ -1749,17 +1749,35 @@ function Dashboard({ rma, wa, t, lastLoginLabel }) {
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={engineerCount}>
               <CartesianGrid stroke={T.line} vertical={false} />
-              <XAxis dataKey="name" stroke={T.ink3} fontSize={11} />
-              <YAxis stroke={T.ink3} fontSize={11} allowDecimals={false} />
+              <XAxis
+                dataKey="name"
+                stroke={T.ink3}
+                fontSize={11}
+                tick={{ fill: T.ink3 }}
+              />
+              <YAxis
+                stroke={T.ink3}
+                fontSize={11}
+                allowDecimals={false}
+                tick={{ fill: T.ink3 }}
+              />
               <Tooltip
                 contentStyle={{
                   background: T.panel2,
                   border: `1px solid ${T.line}`,
                   borderRadius: 6,
                   fontSize: 12,
+                  color: T.ink,
                 }}
+                labelStyle={{ color: T.ink }}
+                itemStyle={{ color: T.ink2 }}
               />
-              <Bar dataKey="cases" name={t.cases} fill={T.cyan} radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="cases"
+                name={t.cases}
+                fill={T.cyan}
+                radius={[4, 4, 0, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -1803,7 +1821,10 @@ function Dashboard({ rma, wa, t, lastLoginLabel }) {
                   border: `1px solid ${T.line}`,
                   borderRadius: 6,
                   fontSize: 12,
+                  color: T.ink,
                 }}
+                labelStyle={{ color: T.ink }}
+                itemStyle={{ color: T.ink2 }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -1835,17 +1856,35 @@ function Dashboard({ rma, wa, t, lastLoginLabel }) {
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={productCount}>
               <CartesianGrid stroke={T.line} vertical={false} />
-              <XAxis dataKey="name" stroke={T.ink3} fontSize={11} />
-              <YAxis stroke={T.ink3} fontSize={11} allowDecimals={false} />
+              <XAxis
+                dataKey="name"
+                stroke={T.ink3}
+                fontSize={11}
+                tick={{ fill: T.ink3 }}
+              />
+              <YAxis
+                stroke={T.ink3}
+                fontSize={11}
+                allowDecimals={false}
+                tick={{ fill: T.ink3 }}
+              />
               <Tooltip
                 contentStyle={{
                   background: T.panel2,
                   border: `1px solid ${T.line}`,
                   borderRadius: 6,
                   fontSize: 12,
+                  color: T.ink,
                 }}
+                labelStyle={{ color: T.ink }}
+                itemStyle={{ color: T.ink2 }}
               />
-              <Bar dataKey="count" name={t.count} fill={T.amber} radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="count"
+                name={t.count}
+                fill={T.amber}
+                radius={[4, 4, 0, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -1889,7 +1928,10 @@ function Dashboard({ rma, wa, t, lastLoginLabel }) {
                   border: `1px solid ${T.line}`,
                   borderRadius: 6,
                   fontSize: 12,
+                  color: T.ink,
                 }}
+                labelStyle={{ color: T.ink }}
+                itemStyle={{ color: T.ink2 }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -2517,7 +2559,10 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem("hsgq_language", language);
-    document.documentElement.setAttribute("lang", language === "zh" ? "zh-CN" : language);
+    document.documentElement.setAttribute(
+      "lang",
+      language === "zh" ? "zh-CN" : language,
+    );
   }, [language]);
 
   const persistRma = useCallback(async (arr) => {
@@ -2775,14 +2820,23 @@ export default function App() {
               type="button"
               className="header-icon-button"
               title={resolvedTheme === "dark" ? "Light" : "Dark"}
-              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+              onClick={() =>
+                setTheme(resolvedTheme === "dark" ? "light" : "dark")
+              }
             >
-              {resolvedTheme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+              {resolvedTheme === "dark" ? (
+                <Sun size={17} />
+              ) : (
+                <Moon size={17} />
+              )}
             </button>
 
             <label className="language-select" title={t.language}>
               <Languages size={15} />
-              <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+              >
                 {LANGUAGES.map((item) => (
                   <option key={item.code} value={item.code}>
                     {item.label}
@@ -2806,7 +2860,10 @@ export default function App() {
           </div>
         </div>
 
-        <div className="hsgq-content" style={{ flex: 1, padding: 22, overflowY: "auto" }}>
+        <div
+          className="hsgq-content"
+          style={{ flex: 1, padding: 22, overflowY: "auto" }}
+        >
           {!isUsingFirebase && (
             <div
               style={{
@@ -2846,10 +2903,7 @@ export default function App() {
 
           {tab === "home" && (
             <>
-              <SectionHeader
-                title={t.homeTitle}
-                subtitle={t.homeSubtitle}
-              />
+              <SectionHeader title={t.homeTitle} subtitle={t.homeSubtitle} />
               <Dashboard
                 rma={rma}
                 wa={wa}
