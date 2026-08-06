@@ -31,6 +31,10 @@ import {
   Moon,
   Sun,
   FileDown,
+  Boxes,
+  Wrench,
+  ArrowLeftRight,
+  ClipboardList,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -94,6 +98,7 @@ const I18N = {
     unitHistory: "Unit History",
     weeklyReport: "Weekly Report",
     settings: "Pengaturan",
+    pcbaInventory: "PCBA Inventory",
     homeTitle: "Home",
     homeSubtitle: "Ringkasan monitoring operasional RMA & WhatsApp support",
     totalDevices: "Total Devices",
@@ -122,6 +127,7 @@ const I18N = {
     unitHistory: "Unit History",
     weeklyReport: "Weekly Report",
     settings: "Settings",
+    pcbaInventory: "PCBA Inventory",
     homeTitle: "Home",
     homeSubtitle: "Operational monitoring summary for RMA & WhatsApp support",
     totalDevices: "Total Devices",
@@ -150,6 +156,7 @@ const I18N = {
     unitHistory: "设备历史",
     weeklyReport: "周报",
     settings: "设置",
+    pcbaInventory: "PCBA 库存",
     homeTitle: "主页",
     homeSubtitle: "RMA 与 WhatsApp 支持运营监控摘要",
     totalDevices: "设备总数",
@@ -259,6 +266,7 @@ const KEYS = {
   rma: "hsgq_rma_entries_v2",
   wa: "hsgq_wa_entries_v2",
   master: "hsgq_master_data_v2",
+  pcba: "hsgq_pcba_data_v1",
 };
 const DEFAULT_MASTER = {
   engineers: ["Yusuf", "Danang", "Aris", "Yusuf(Afif)", "Aris(Abdiel)"],
@@ -292,7 +300,33 @@ const DEFAULT_MASTER = {
   warrantyStatuses: ["In Warranty", "Out of Warranty", "Warranty Unknown"],
   qcResults: ["Pending", "Pass", "Fail"],
   pengiriman: ["EXPEDISI", "CJA JAKARTA", "CJA SURABAYA", "Pending Spare"],
+  pcbaTypes: ["G02ID", "G04ID", "G08ID", "E04ID", "XE08ID"],
+  suppliers: ["HSGQ HQ (China)", "Supplier Lokal"],
+  warehouseLocations: ["Gudang Jakarta", "Gudang Surabaya"],
+  minStockDefault: 5,
 };
+
+const PCBA_DEFAULT = {
+  items: [],
+  transactions: [],
+  replacements: [],
+  repairs: [],
+};
+const PCBA_STATUSES = [
+  "Good",
+  "Bad",
+  "Under Repair",
+  "Repaired",
+  "Used for Replacement",
+  "Scrapped",
+];
+function pcbaLed(status) {
+  if (status === "Good") return T.green;
+  if (status === "Bad" || status === "Scrapped") return T.red;
+  if (status === "Under Repair" || status === "Repaired") return T.amber;
+  if (status === "Used for Replacement") return T.grey;
+  return T.cyan;
+}
 // storeGet & storeSet sekarang diimpor dari ./firebase.js (Firestore / localStorage fallback)
 
 /* ============================================================
@@ -2515,6 +2549,688 @@ function SettingsTab({ master, setMaster }) {
         items={master.pengiriman}
         onChange={update("pengiriman")}
       />
+      <TagList
+        label="Tipe PCBA"
+        items={master.pcbaTypes}
+        onChange={update("pcbaTypes")}
+      />
+      <TagList
+        label="Supplier"
+        items={master.suppliers}
+        onChange={update("suppliers")}
+      />
+      <TagList
+        label="Lokasi Gudang"
+        items={master.warehouseLocations}
+        onChange={update("warehouseLocations")}
+      />
+      <Field label="Minimum Stok Default (unit)">
+        <TextInput
+          type="number"
+          min="0"
+          value={master.minStockDefault}
+          onChange={(e) =>
+            setMaster((m) => ({
+              ...m,
+              minStockDefault: Number(e.target.value) || 0,
+            }))
+          }
+        />
+      </Field>
+    </div>
+  );
+}
+
+/* ============================================================
+   PCBA INVENTORY & REPAIR
+   ============================================================ */
+function PcbaBadge({ status }) {
+  const c = pcbaLed(status);
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: 999,
+          background: c,
+          boxShadow: `0 0 6px ${c}99`,
+          flexShrink: 0,
+        }}
+      />
+      <span style={{ fontSize: 12.5, color: T.ink2, fontFamily: sans }}>
+        {status}
+      </span>
+    </span>
+  );
+}
+
+function GoodsReceiptForm({ master, onSave, onClose }) {
+  const [f, setF] = useState({
+    serialNo: "",
+    pcbaType: master.pcbaTypes[0] || "",
+    product: "",
+    supplier: master.suppliers[0] || "",
+    warehouseLocation: master.warehouseLocations[0] || "",
+    notes: "",
+  });
+  const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+  const [err, setErr] = useState("");
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <InlineHint>
+        Stok masuk (goods receipt) langsung berstatus "Good" dan siap dipakai
+        untuk replacement.
+      </InlineHint>
+      {err && <InlineHint tone="warn">{err}</InlineHint>}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <Field label="No. Serial PCBA">
+          <TextInput
+            value={f.serialNo}
+            onChange={set("serialNo")}
+            style={{ fontFamily: mono }}
+          />
+        </Field>
+        <Field label="Tipe PCBA">
+          <Select
+            options={master.pcbaTypes}
+            value={f.pcbaType}
+            onChange={set("pcbaType")}
+          />
+        </Field>
+        <Field label="Produk Terkait">
+          <TextInput
+            value={f.product}
+            onChange={set("product")}
+            placeholder="cth. G04ID"
+          />
+        </Field>
+        <Field label="Supplier">
+          <Select
+            options={master.suppliers}
+            value={f.supplier}
+            onChange={set("supplier")}
+          />
+        </Field>
+        <Field label="Lokasi Gudang">
+          <Select
+            options={master.warehouseLocations}
+            value={f.warehouseLocation}
+            onChange={set("warehouseLocation")}
+          />
+        </Field>
+      </div>
+      <Field label="Catatan">
+        <TextArea value={f.notes} onChange={set("notes")} />
+      </Field>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+        <Btn variant="ghost" onClick={onClose}>
+          Batal
+        </Btn>
+        <Btn
+          variant="solid"
+          onClick={() => {
+            if (!f.serialNo.trim()) {
+              setErr("No. Serial PCBA wajib diisi.");
+              return;
+            }
+            onSave(f);
+          }}
+        >
+          Simpan Stok Masuk
+        </Btn>
+      </div>
+    </div>
+  );
+}
+
+function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose }) {
+  const [f, setF] = useState({
+    rmaId: "",
+    newPcbaItemId: "",
+    oldSerialNo: "",
+    notes: "",
+  });
+  const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+  const [err, setErr] = useState("");
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <InlineHint>
+        Sistem menolak otomatis kalau stok PCBA Good untuk tipe terkait kosong.
+        PCBA lama yang dilepas akan otomatis masuk stok sebagai "Bad".
+      </InlineHint>
+      {err && <InlineHint tone="warn">{err}</InlineHint>}
+      <Field label="RMA Terkait">
+        <Select
+          options={rmaOpenList.map((r) => r.ticketNo)}
+          value={rmaOpenList.find((r) => r.id === f.rmaId)?.ticketNo || ""}
+          onChange={(e) => {
+            const found = rmaOpenList.find(
+              (r) => r.ticketNo === e.target.value,
+            );
+            setF((s) => ({ ...s, rmaId: found ? found.id : "" }));
+          }}
+        />
+      </Field>
+      <Field label="PCBA Baru (stok Good)">
+        <Select
+          options={goodItems.map((i) => `${i.serialNo} (${i.pcbaType})`)}
+          value={(() => {
+            const found = goodItems.find((i) => i.id === f.newPcbaItemId);
+            return found ? `${found.serialNo} (${found.pcbaType})` : "";
+          })()}
+          onChange={(e) => {
+            const found = goodItems.find(
+              (i) => `${i.serialNo} (${i.pcbaType})` === e.target.value,
+            );
+            setF((s) => ({ ...s, newPcbaItemId: found ? found.id : "" }));
+          }}
+        />
+      </Field>
+      {goodItems.length === 0 && (
+        <InlineHint tone="warn">
+          Tidak ada stok PCBA berstatus Good sama sekali. Lakukan "Terima PCBA
+          Baru" dulu di tab Stok.
+        </InlineHint>
+      )}
+      <Field label="No. Serial PCBA Lama (yang dilepas dari unit)">
+        <TextInput
+          value={f.oldSerialNo}
+          onChange={set("oldSerialNo")}
+          style={{ fontFamily: mono }}
+        />
+      </Field>
+      <Field label="Catatan">
+        <TextArea value={f.notes} onChange={set("notes")} />
+      </Field>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+        <Btn variant="ghost" onClick={onClose}>
+          Batal
+        </Btn>
+        <Btn
+          variant="solid"
+          onClick={() => {
+            if (!f.rmaId) return setErr("Pilih RMA terkait dulu.");
+            if (!f.newPcbaItemId)
+              return setErr("Pilih PCBA baru (stok Good) dulu.");
+            if (!f.oldSerialNo.trim())
+              return setErr("No. Serial PCBA lama wajib diisi.");
+            const res = onSave(f);
+            if (res && res.ok === false) setErr(res.error);
+          }}
+        >
+          Proses Replacement
+        </Btn>
+      </div>
+    </div>
+  );
+}
+
+function RepairForm({ master, badItems, onSave, onClose }) {
+  const [f, setF] = useState({
+    pcbaItemId: "",
+    engineer: "",
+    analysis: "",
+    actionTaken: "",
+    componentsReplaced: "",
+    testingResult: "",
+    repairResult: "",
+  });
+  const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+  const [err, setErr] = useState("");
+  const repairResultOptions = [
+    "Berhasil Diperbaiki",
+    "Tidak Dapat Diperbaiki",
+    "Perlu Follow-up Tim China",
+    "Return to Principal",
+    "Scrap",
+  ];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {err && <InlineHint tone="warn">{err}</InlineHint>}
+      <Field label="PCBA (status Bad / Under Repair)">
+        <Select
+          options={badItems.map((i) => `${i.serialNo} (${i.pcbaType})`)}
+          value={(() => {
+            const found = badItems.find((i) => i.id === f.pcbaItemId);
+            return found ? `${found.serialNo} (${found.pcbaType})` : "";
+          })()}
+          onChange={(e) => {
+            const found = badItems.find(
+              (i) => `${i.serialNo} (${i.pcbaType})` === e.target.value,
+            );
+            setF((s) => ({ ...s, pcbaItemId: found ? found.id : "" }));
+          }}
+        />
+      </Field>
+      {badItems.length === 0 && (
+        <InlineHint tone="warn">
+          Tidak ada PCBA berstatus Bad/Under Repair untuk direpair saat ini.
+        </InlineHint>
+      )}
+      <Field label="Engineer">
+        <Select
+          options={master.engineers}
+          value={f.engineer}
+          onChange={set("engineer")}
+        />
+      </Field>
+      <Field label="Analisis Kerusakan">
+        <TextArea value={f.analysis} onChange={set("analysis")} />
+      </Field>
+      <Field label="Tindakan">
+        <TextArea value={f.actionTaken} onChange={set("actionTaken")} />
+      </Field>
+      <Field label="Komponen Diganti">
+        <TextArea
+          value={f.componentsReplaced}
+          onChange={set("componentsReplaced")}
+          placeholder="cth. IC optical module x1, capacitor 10uF x2"
+        />
+      </Field>
+      <Field label="Hasil Testing">
+        <TextArea value={f.testingResult} onChange={set("testingResult")} />
+      </Field>
+      <Field label="Hasil Repair">
+        <Select
+          options={repairResultOptions}
+          value={f.repairResult}
+          onChange={set("repairResult")}
+        />
+      </Field>
+      {f.repairResult === "Berhasil Diperbaiki" && (
+        <InlineHint>
+          PCBA akan berstatus "Repaired" dan menunggu QC sebelum resmi kembali
+          ke stok Good.
+        </InlineHint>
+      )}
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+        <Btn variant="ghost" onClick={onClose}>
+          Batal
+        </Btn>
+        <Btn
+          variant="solid"
+          onClick={() => {
+            if (!f.pcbaItemId) return setErr("Pilih PCBA dulu.");
+            if (!f.repairResult) return setErr("Pilih hasil repair dulu.");
+            onSave(f);
+          }}
+        >
+          Simpan Repair
+        </Btn>
+      </div>
+    </div>
+  );
+}
+
+function PcbaInventoryTab({
+  pcba,
+  rma,
+  master,
+  onGoodsReceipt,
+  onReplacement,
+  onRepair,
+  onQc,
+}) {
+  const [subTab, setSubTab] = useState("stock");
+  const [modal, setModal] = useState(null);
+
+  const statusCounts = useMemo(() => {
+    const m = {};
+    PCBA_STATUSES.forEach((s) => (m[s] = 0));
+    pcba.items.forEach((i) => {
+      m[i.status] = (m[i.status] || 0) + 1;
+    });
+    return m;
+  }, [pcba.items]);
+
+  const lowStockTypes = useMemo(() => {
+    const byType = {};
+    pcba.items
+      .filter((i) => i.status === "Good")
+      .forEach((i) => {
+        byType[i.pcbaType] = (byType[i.pcbaType] || 0) + 1;
+      });
+    const minStock = master.minStockDefault || 5;
+    return master.pcbaTypes
+      .map((t) => ({ type: t, stock: byType[t] || 0 }))
+      .filter((x) => x.stock < minStock);
+  }, [pcba.items, master.pcbaTypes, master.minStockDefault]);
+
+  const goodItems = pcba.items.filter((i) => i.status === "Good");
+  const badItems = pcba.items.filter(
+    (i) => i.status === "Bad" || i.status === "Under Repair",
+  );
+  const rmaOpenList = rma.filter((r) => !RMA_DONE_STATUSES.includes(r.status));
+
+  const SUB_TABS = [
+    { id: "stock", label: "Stok", icon: Boxes },
+    { id: "replacement", label: "Replacement", icon: ArrowLeftRight },
+    { id: "repair", label: "Repair & QC", icon: Wrench },
+    { id: "transactions", label: "Transaksi", icon: ClipboardList },
+  ];
+
+  return (
+    <div>
+      <div
+        style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}
+      >
+        {PCBA_STATUSES.map((s) => (
+          <div
+            key={s}
+            style={{
+              background: T.panel,
+              border: `1px solid ${T.line}`,
+              borderRadius: 10,
+              padding: "12px 16px",
+              flex: 1,
+              minWidth: 110,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10.5,
+                letterSpacing: 0.4,
+                color: T.ink3,
+                textTransform: "uppercase",
+                fontFamily: sans,
+              }}
+            >
+              {s}
+            </div>
+            <div
+              style={{
+                fontSize: 22,
+                fontFamily: mono,
+                color: pcbaLed(s),
+                marginTop: 4,
+              }}
+            >
+              {statusCounts[s] || 0}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {lowStockTypes.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <InlineHint tone="warn">
+            Stok Good di bawah minimum ({master.minStockDefault || 5} unit)
+            untuk tipe:{" "}
+            {lowStockTypes.map((x) => `${x.type} (${x.stock})`).join(", ")}
+          </InlineHint>
+        </div>
+      )}
+
+      <div
+        style={{
+          display: "flex",
+          gap: 2,
+          borderBottom: `1px solid ${T.line}`,
+          marginBottom: 16,
+        }}
+      >
+        {SUB_TABS.map((t) => {
+          const Icon = t.icon;
+          const active = subTab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setSubTab(t.id)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 14px",
+                background: "none",
+                border: "none",
+                borderBottom: active
+                  ? `2px solid ${T.cyan}`
+                  : "2px solid transparent",
+                color: active ? T.cyan : T.ink3,
+                cursor: "pointer",
+                fontFamily: sans,
+                fontSize: 13,
+                fontWeight: 600,
+                marginBottom: -1,
+              }}
+            >
+              <Icon size={14} /> {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {subTab === "stock" && (
+        <>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: 12,
+            }}
+          >
+            <Btn variant="solid" onClick={() => setModal({ type: "receipt" })}>
+              <Plus size={14} /> Terima PCBA Baru
+            </Btn>
+          </div>
+          <DataTable
+            columns={[
+              { key: "serialNo", label: "Serial No", mono: true },
+              { key: "pcbaType", label: "Tipe" },
+              {
+                key: "status",
+                label: "Status",
+                render: (r) => <PcbaBadge status={r.status} />,
+              },
+              { key: "supplier", label: "Supplier" },
+              { key: "warehouseLocation", label: "Lokasi" },
+              {
+                key: "createdAt",
+                label: "Masuk",
+                render: (r) => fmtDate(r.createdAt),
+              },
+            ]}
+            rows={pcba.items}
+            emptyLabel="Belum ada PCBA di stok. Klik 'Terima PCBA Baru' untuk mulai."
+          />
+        </>
+      )}
+
+      {subTab === "replacement" && (
+        <>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: 12,
+            }}
+          >
+            <Btn
+              variant="solid"
+              onClick={() => setModal({ type: "replacement" })}
+            >
+              <Plus size={14} /> Replacement Baru
+            </Btn>
+          </div>
+          <DataTable
+            columns={[
+              { key: "replacementNo", label: "No. Replacement", mono: true },
+              {
+                key: "rmaId",
+                label: "RMA",
+                render: (r) =>
+                  rma.find((x) => x.id === r.rmaId)?.ticketNo || "-",
+              },
+              {
+                key: "oldPcbaItemId",
+                label: "PCBA Lama",
+                render: (r) =>
+                  pcba.items.find((i) => i.id === r.oldPcbaItemId)?.serialNo ||
+                  "-",
+              },
+              {
+                key: "newPcbaItemId",
+                label: "PCBA Baru",
+                render: (r) =>
+                  pcba.items.find((i) => i.id === r.newPcbaItemId)?.serialNo ||
+                  "-",
+              },
+              { key: "replacedBy", label: "Oleh" },
+              {
+                key: "replacedAt",
+                label: "Tanggal",
+                render: (r) => fmtDate(r.replacedAt),
+              },
+            ]}
+            rows={pcba.replacements}
+            emptyLabel="Belum ada replacement PCBA."
+          />
+        </>
+      )}
+
+      {subTab === "repair" && (
+        <>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: 12,
+            }}
+          >
+            <Btn variant="solid" onClick={() => setModal({ type: "repair" })}>
+              <Plus size={14} /> Mulai Repair
+            </Btn>
+          </div>
+          <DataTable
+            columns={[
+              { key: "repairNo", label: "No. Repair", mono: true },
+              {
+                key: "pcbaItemId",
+                label: "PCBA",
+                render: (r) =>
+                  pcba.items.find((i) => i.id === r.pcbaItemId)?.serialNo ||
+                  "-",
+              },
+              { key: "engineer", label: "Engineer" },
+              { key: "repairResult", label: "Hasil Repair" },
+              {
+                key: "qcStatus",
+                label: "QC",
+                render: (r) =>
+                  r.qcStatus ? (
+                    <PcbaBadge
+                      status={
+                        r.qcStatus === "Passed"
+                          ? "Good"
+                          : r.qcStatus === "Failed"
+                            ? "Bad"
+                            : "Under Repair"
+                      }
+                    />
+                  ) : (
+                    "-"
+                  ),
+              },
+              {
+                key: "actions",
+                label: "",
+                render: (r) =>
+                  r.qcStatus === "Pending" ? (
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <Btn variant="solid" onClick={() => onQc(r.id, "Passed")}>
+                        Pass
+                      </Btn>
+                      <Btn
+                        variant="danger"
+                        onClick={() => onQc(r.id, "Failed")}
+                      >
+                        Fail
+                      </Btn>
+                    </div>
+                  ) : null,
+              },
+            ]}
+            rows={pcba.repairs}
+            emptyLabel="Belum ada repair PCBA."
+          />
+        </>
+      )}
+
+      {subTab === "transactions" && (
+        <DataTable
+          columns={[
+            { key: "transactionNo", label: "No. Transaksi", mono: true },
+            {
+              key: "pcbaItemId",
+              label: "PCBA",
+              render: (r) =>
+                pcba.items.find((i) => i.id === r.pcbaItemId)?.serialNo || "-",
+            },
+            { key: "type", label: "Tipe" },
+            {
+              key: "rmaId",
+              label: "RMA",
+              render: (r) => rma.find((x) => x.id === r.rmaId)?.ticketNo || "-",
+            },
+            { key: "reason", label: "Keterangan" },
+            {
+              key: "createdAt",
+              label: "Tanggal",
+              render: (r) => fmtDate(r.createdAt),
+            },
+          ]}
+          rows={pcba.transactions}
+          emptyLabel="Belum ada transaksi stok. Transaksi tercatat otomatis (append-only, tidak bisa diedit/dihapus)."
+        />
+      )}
+
+      {modal?.type === "receipt" && (
+        <Modal
+          title="TERIMA PCBA BARU (GOODS RECEIPT)"
+          onClose={() => setModal(null)}
+        >
+          <GoodsReceiptForm
+            master={master}
+            onSave={(data) => {
+              onGoodsReceipt(data);
+              setModal(null);
+            }}
+            onClose={() => setModal(null)}
+          />
+        </Modal>
+      )}
+      {modal?.type === "replacement" && (
+        <Modal title="REPLACEMENT PCBA" onClose={() => setModal(null)}>
+          <ReplacementForm
+            master={master}
+            rmaOpenList={rmaOpenList}
+            goodItems={goodItems}
+            onSave={(data) => {
+              const res = onReplacement(data);
+              if (!res || res.ok !== false) setModal(null);
+              return res;
+            }}
+            onClose={() => setModal(null)}
+          />
+        </Modal>
+      )}
+      {modal?.type === "repair" && (
+        <Modal title="MULAI REPAIR PCBA" onClose={() => setModal(null)}>
+          <RepairForm
+            master={master}
+            badItems={badItems}
+            onSave={(data) => {
+              onRepair(data);
+              setModal(null);
+            }}
+            onClose={() => setModal(null)}
+          />
+        </Modal>
+      )}
     </div>
   );
 }
