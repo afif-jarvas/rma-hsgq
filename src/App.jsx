@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   LayoutDashboard,
   PackageSearch,
@@ -14,6 +14,8 @@ import {
   ChevronDown,
   Trash2,
   Pencil,
+  Eye,
+  ZoomIn,
   CalendarRange,
   AlertTriangle,
   Loader2,
@@ -48,7 +50,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { storeGet, storeSet, isUsingFirebase } from "./firebase.js";
+import { storeGet, storeSet, isUsingFirebase, uploadRmaPhoto } from "./firebase.js";
 import UserCenter from "./components/UserCenter.jsx";
 import { useAuth } from "./auth/AuthContext.jsx";
 import { useTheme } from "./context/ThemeContext.jsx";
@@ -820,6 +822,12 @@ function pcbaLed(status) {
    UTILS
    ============================================================ */
 const pad2 = (n) => String(n).padStart(2, "0");
+const fmtSize = (bytes) => {
+  if (!bytes || isNaN(bytes)) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
 const fmtDate = (d) => {
   if (!d) return "";
   const dt = new Date(d);
@@ -1195,6 +1203,318 @@ function InlineHint({ children, tone = "info" }) {
 }
 
 /* ============================================================
+   PHOTO PICKER CARD
+   ============================================================ */
+/**
+ * PhotoPickerCard — real HTML file input with local thumbnail previews.
+ * previewUrl is a temporary browser object URL and is NEVER persisted
+ * to Firestore or localStorage. It is revoked when the item is removed.
+ */
+/**
+ * fileRegistry stores File objects keyed by photo id.
+ * This is module-level so PhotoPickerCard and the upload logic can share it.
+ * File objects are NEVER persisted — they only live in memory during the session.
+ */
+const fileRegistry = new Map();
+
+function PhotoPickerCard({ title, photos, onAdd, onRemove, addLabel, capture }) {
+  const inputRef = useRef(null);
+  const MAX = 3;
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    const remaining = MAX - photos.length;
+    files.slice(0, remaining).forEach((file) => {
+      const id = crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random()}`;
+      const previewUrl = URL.createObjectURL(file);
+      // Store File object in registry so upload can access it later
+      fileRegistry.set(id, file);
+      onAdd({
+        id,
+        name: file.name,
+        size: file.size,
+        previewUrl, // temporary — NOT stored in Firestore/localStorage
+        uploadedAt: new Date().toISOString(),
+      });
+    });
+    e.target.value = "";
+  };
+
+  return (
+    <div className="attachment-section-card">
+      <div style={{ fontWeight: 600, fontSize: 13 }}>
+        {title} (Maks. {MAX})
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {photos.length === 0 && (
+          <div style={{ fontSize: 12, color: "var(--ink3)", fontStyle: "italic" }}>
+            Belum ada foto yang dipilih.
+          </div>
+        )}
+        {photos.map((item, idx) => (
+          <div key={item.id || idx} className="attachment-preview-item">
+            {item.previewUrl || item.url ? (
+              <img
+                src={item.previewUrl || item.url}
+                alt={item.name}
+                className="attachment-thumb"
+              />
+            ) : (
+              <div className="attachment-thumb-placeholder">📷</div>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {item.name}
+              </div>
+              {item.size != null && (
+                <div style={{ fontSize: 11, color: "var(--ink3)" }}>
+                  {fmtSize(item.size)}
+                </div>
+              )}
+              <div style={{ fontSize: 10, color: "var(--ink3)", marginTop: 2 }}>
+                {item.url
+                  ? "✓ Tersimpan di cloud."
+                  : "Preview lokal. Akan diupload saat tiket disimpan."}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                fileRegistry.delete(item.id);
+                onRemove(idx);
+              }}
+              title="Hapus foto"
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--ink3)",
+                fontSize: 16,
+                padding: "4px 6px",
+                borderRadius: 4,
+                flexShrink: 0,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Hidden real file input */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture={capture}
+        multiple={MAX - photos.length > 1}
+        style={{ display: "none" }}
+        onChange={handleFileChange}
+      />
+
+      {photos.length < MAX && (
+        <button
+          type="button"
+          onClick={() => inputRef.current && inputRef.current.click()}
+          style={{
+            background: "none",
+            border: "1px dashed var(--line)",
+            borderRadius: 6,
+            padding: "7px 12px",
+            cursor: "pointer",
+            fontSize: 12,
+            color: "var(--accent)",
+            textAlign: "left",
+            fontWeight: 500,
+          }}
+        >
+          {addLabel}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+   RMA DETAIL PREVIEW MODAL (Read-only)
+   ============================================================ */
+function PhotoLightbox({ photo, category, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.88)",
+        zIndex: 200,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, maxWidth: "90vw", maxHeight: "90vh" }}
+      >
+        <img
+          src={photo.url || photo.previewUrl}
+          alt={photo.name}
+          style={{ maxWidth: "100%", maxHeight: "75vh", borderRadius: 10, objectFit: "contain", boxShadow: "0 8px 40px rgba(0,0,0,0.5)" }}
+        />
+        <div style={{ color: "#fff", fontSize: 13, textAlign: "center" }}>
+          <div style={{ fontWeight: 600 }}>{photo.name}</div>
+          <div style={{ opacity: 0.6, fontSize: 11, marginTop: 2 }}>{category}</div>
+        </div>
+        <button
+          onClick={onClose}
+          style={{
+            background: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            borderRadius: 8,
+            color: "#fff",
+            padding: "6px 18px",
+            cursor: "pointer",
+            fontSize: 13,
+          }}
+        >
+          ✕ Tutup
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function RmaDetailModal({ entry, onClose }) {
+  const [lightbox, setLightbox] = useState(null); // { photo, category }
+
+  const unitPhotos = Array.isArray(entry.unitPhotos) ? entry.unitPhotos : [];
+  const labelPhotos = Array.isArray(entry.labelPhotos) ? entry.labelPhotos : [];
+
+  const Row = ({ label, value }) => (
+    <div style={{ display: "flex", gap: 10, padding: "6px 0", borderBottom: `1px solid var(--line)`, alignItems: "flex-start" }}>
+      <div style={{ minWidth: 160, fontSize: 12, color: "var(--text-3)", flexShrink: 0 }}>{label}</div>
+      <div style={{ fontSize: 13, color: "var(--text)", flex: 1, wordBreak: "break-word" }}>{value || <span style={{ color: "var(--text-3)", fontStyle: "italic" }}>—</span>}</div>
+    </div>
+  );
+
+  const Section = ({ title, icon: Icon, children }) => (
+    <div style={{ marginBottom: 20 }}>
+      <div className="form-section-title" style={{ marginBottom: 10 }}>
+        {Icon && <Icon size={14} />} {title}
+      </div>
+      {children}
+    </div>
+  );
+
+  const PhotoGrid = ({ photos, category }) => (
+    <div className="rma-detail-photo-grid">
+      {photos.length === 0 ? (
+        <div style={{ fontSize: 12, color: "var(--text-3)", fontStyle: "italic", gridColumn: "1/-1" }}>Tidak ada foto.</div>
+      ) : (
+        photos.map((p, i) => (
+          <div
+            key={p.id || i}
+            className="rma-detail-photo-thumb"
+            onClick={() => (p.url || p.previewUrl) && setLightbox({ photo: p, category })}
+            title={p.name}
+          >
+            {p.url || p.previewUrl ? (
+              <img src={p.url || p.previewUrl} alt={p.name} />
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, color: "var(--text-3)", fontSize: 11 }}>
+                <span style={{ fontSize: 22 }}>📷</span>
+                <span>Foto tidak tersedia</span>
+              </div>
+            )}
+            {(p.url || p.previewUrl) && (
+              <div className="rma-detail-photo-overlay"><ZoomIn size={16} /></div>
+            )}
+          </div>
+        ))
+      )}
+    </div>
+  );
+
+  return (
+    <>
+      <Modal title={`DETAIL RMA — ${entry.ticketNo}`} onClose={onClose} width={860}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+
+          <Section title="Informasi Tiket" icon={PackageSearch}>
+            <Row label="No. Tiket" value={entry.ticketNo} />
+            <Row label="Status" value={entry.status} />
+            <Row label="Engineer" value={entry.engineer} />
+            <Row label="Produk" value={entry.product} />
+            <Row label="Customer" value={entry.customerName} />
+            <Row label="No. HP Customer" value={entry.customerPhone} />
+            <Row label="Garansi" value={entry.warrantyStatus} />
+            <Row label="SN" value={entry.sn} />
+            <Row label="MAC" value={entry.mac} />
+            <Row label="Keluhan Customer" value={entry.customerComplaint} />
+          </Section>
+
+          <Section title="Receiving" icon={Truck}>
+            <Row label="Tanggal Masuk" value={fmtDate(entry.receivedDate)} />
+            <Row label="Jam Diterima" value={entry.receivedTime} />
+            <Row label="Diterima Oleh" value={entry.receivedBy} />
+            <Row label="ETA" value={fmtDate(entry.eta)} />
+            <Row label="No. DO / Surat Jalan" value={entry.doNumber} />
+            <Row label="Pengirim / Kurir" value={entry.courierName} />
+            <Row label="Jumlah Unit" value={entry.unitQty} />
+          </Section>
+
+          <Section title="Kondisi Fisik" icon={AlertTriangle}>
+            <Row label="Kondisi Fisik Saat Diterima" value={entry.physicalCondition} />
+            <Row label="Kelengkapan / Accessories" value={entry.accessories} />
+            <Row label="Catatan Kerusakan Fisik" value={entry.physicalDamageNotes} />
+            <Row label="Catatan Receiving" value={entry.receivingNotes} />
+          </Section>
+
+          {unitPhotos.length > 0 && (
+            <Section title="Foto Unit Perangkat" icon={ScanSearch}>
+              <PhotoGrid photos={unitPhotos} category="Foto Unit" />
+            </Section>
+          )}
+
+          {labelPhotos.length > 0 && (
+            <Section title="Foto Label SN / MAC" icon={ScanSearch}>
+              <PhotoGrid photos={labelPhotos} category="Foto Label SN/MAC" />
+            </Section>
+          )}
+
+        </div>
+      </Modal>
+      {lightbox && (
+        <PhotoLightbox
+          photo={lightbox.photo}
+          category={lightbox.category}
+          onClose={() => setLightbox(null)}
+        />
+      )}
+    </>
+  );
+}
+
+/* ============================================================
    RMA FORM (tabbed: Overview / Receiving / Diagnosis / Waiting / Warranty / QC / Shipping / Timeline)
    ============================================================ */
 const RMA_TABS = [
@@ -1215,6 +1535,13 @@ function RmaForm({
   onClose,
   t,
 }) {
+  const { user, profile } = useAuth();
+  const currentUserDisplayName =
+    profile?.displayName ||
+    user?.displayName ||
+    user?.email?.split("@")[0] ||
+    "";
+
   const isEdit = !!initial;
   const [tab, setTab] = useState("overview");
   const TAB_LABELS = {
@@ -1225,8 +1552,16 @@ function RmaForm({
     warranty: t.tabWarranty,
     qc: t.tabQcShipping,
   };
-  const [f, setF] = useState(
-    initial || {
+  const [f, setF] = useState(() => {
+    if (initial) {
+      return {
+        ...initial,
+        physicalDamageNotes: initial.physicalDamageNotes || "",
+        unitPhotos: Array.isArray(initial.unitPhotos) ? initial.unitPhotos : [],
+        labelPhotos: Array.isArray(initial.labelPhotos) ? initial.labelPhotos : [],
+      };
+    }
+    return {
       id: uid(),
       ticketNo: genTicket("RMA", existingTicketNos),
       status: master.statusRMA[0] || "",
@@ -1238,14 +1573,17 @@ function RmaForm({
       company: "",
       customerPhone: "",
       receivedDate: todayISO(),
-      receivedTime: "",
-      receivedBy: "",
+      receivedTime: new Date().toTimeString().slice(0, 5),
+      receivedBy: currentUserDisplayName,
       doNumber: "",
       courierName: "",
       physicalCondition: "",
+      physicalDamageNotes: "",
       accessories: "",
       unitQty: 1,
       receivingNotes: "",
+      unitPhotos: [],
+      labelPhotos: [],
       eta: addDaysISO(todayISO(), 3),
       closedDate: "",
       initialProblem: "",
@@ -1277,13 +1615,13 @@ function RmaForm({
         {
           from: null,
           to: master.statusRMA[0] || "",
-          changedBy: "",
+          changedBy: currentUserDisplayName || "",
           changedAt: new Date().toISOString(),
           note: t.rmaTicketCreatedNote || "Tiket dibuat",
         },
       ],
-    },
-  );
+    };
+  });
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
 
   const priorMatches = useMemo(() => {
@@ -1307,7 +1645,20 @@ function RmaForm({
     }
     let eta = f.eta;
     if (!eta && f.receivedDate) eta = addDaysISO(f.receivedDate, 3);
-    onSave({ ...f, eta, statusHistory });
+
+    // Strip temporary previewUrls before persisting — previewUrls are
+    // browser object URLs only valid for the current session.
+    // Do NOT persist them to Firestore or localStorage.
+    const stripPreview = (photos) =>
+      (photos || []).map(({ previewUrl: _p, ...rest }) => rest);
+
+    onSave({
+      ...f,
+      eta,
+      statusHistory,
+      unitPhotos: stripPreview(f.unitPhotos),
+      labelPhotos: stripPreview(f.labelPhotos),
+    });
   };
 
   const Tabs = (
@@ -1459,7 +1810,11 @@ function RmaForm({
       )}
 
       {tab === "receiving" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Section 1: Receiving Information */}
+          <div className="form-section-title">
+            <ClipboardList size={15} /> Informasi Receiving
+          </div>
           <div
             className="form-grid-2"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
@@ -1479,15 +1834,25 @@ function RmaForm({
               />
             </Field>
             <Field label="Diterima Oleh">
-              <Select
-                options={master.engineers}
+              <TextInput
                 value={f.receivedBy}
                 onChange={set("receivedBy")}
+                placeholder="Nama penerima unit..."
               />
             </Field>
             <Field label="Estimasi Selesai (ETA)" hint="Default masuk + 3 hari">
               <TextInput type="date" value={f.eta} onChange={set("eta")} />
             </Field>
+          </div>
+
+          {/* Section 2: Delivery / Unit Information */}
+          <div className="form-section-title">
+            <Truck size={15} /> Informasi Pengiriman & Unit
+          </div>
+          <div
+            className="form-grid-2"
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+          >
             <Field label="No. DO / Surat Jalan Customer">
               <TextInput value={f.doNumber} onChange={set("doNumber")} />
             </Field>
@@ -1503,6 +1868,11 @@ function RmaForm({
               />
             </Field>
           </div>
+
+          {/* Section 3: Physical Condition */}
+          <div className="form-section-title">
+            <Boxes size={15} /> Kondisi Fisik & Kelengkapan
+          </div>
           <Field label="Kondisi Fisik Saat Diterima">
             <TextArea
               value={f.physicalCondition}
@@ -1517,16 +1887,86 @@ function RmaForm({
               placeholder="cth. adaptor, kabel LAN, tanpa dus"
             />
           </Field>
-          <Field label="Catatan Receiving">
+
+          {/* Section 4: Pre-Inspection Damage Notes */}
+          <div className="form-section-title">
+            <AlertTriangle size={15} /> Kerusakan Fisik Sebelum Pengecekan
+          </div>
+          <Field
+            label="Catatan Kerusakan Fisik Sebelum Pengecekan"
+            hint="Dokumentasikan kerusakan fisik yang terlihat sebelum unit diperiksa / dibongkar oleh teknisi (cth. port LAN bengkok, casing retak, indikator cairan berubah warna)"
+          >
+            <TextArea
+              value={f.physicalDamageNotes}
+              onChange={set("physicalDamageNotes")}
+              placeholder="Catatan rincian kerusakan fisik awal..."
+            />
+          </Field>
+
+          <Field label="Catatan General Receiving">
             <TextArea
               value={f.receivingNotes}
               onChange={set("receivingNotes")}
             />
           </Field>
-          <InlineHint>
-            Foto unit/label SN/MAC belum bisa diunggah di versi web ini — perlu
-            backend penyimpanan file sungguhan (Tahap 3+).
+
+          {/* Section 5: Unit & Label Photo Attachments */}
+          <div className="form-section-title">
+            <ScanSearch size={15} /> Lampiran Foto Unit & Label SN/MAC
+          </div>
+
+          <InlineHint tone="info">
+            Preview lokal. Penyimpanan cloud belum dikonfigurasi — foto hanya tampil selama sesi ini dan tidak diunggah ke server.
           </InlineHint>
+
+          <div
+            className="form-grid-2"
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+          >
+            {/* ---- Foto Unit Card ---- */}
+            <PhotoPickerCard
+              title="Foto Unit Perangkat"
+              photos={f.unitPhotos || []}
+              onAdd={(newItem) =>
+                setF((s) => ({
+                  ...s,
+                  unitPhotos: [...(s.unitPhotos || []), newItem],
+                }))
+              }
+              onRemove={(idx) => {
+                const removed = (f.unitPhotos || [])[idx];
+                if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+                setF((s) => ({
+                  ...s,
+                  unitPhotos: (s.unitPhotos || []).filter((_, i) => i !== idx),
+                }));
+              }}
+              addLabel="+ Tambah Foto Unit"
+              capture="environment"
+            />
+
+            {/* ---- Foto Label SN/MAC Card ---- */}
+            <PhotoPickerCard
+              title="Foto Label SN / MAC"
+              photos={f.labelPhotos || []}
+              onAdd={(newItem) =>
+                setF((s) => ({
+                  ...s,
+                  labelPhotos: [...(s.labelPhotos || []), newItem],
+                }))
+              }
+              onRemove={(idx) => {
+                const removed = (f.labelPhotos || [])[idx];
+                if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+                setF((s) => ({
+                  ...s,
+                  labelPhotos: (s.labelPhotos || []).filter((_, i) => i !== idx),
+                }));
+              }}
+              addLabel="+ Tambah Foto Label SN / MAC"
+              capture="environment"
+            />
+          </div>
         </div>
       )}
 
@@ -2075,12 +2515,18 @@ function DataTable({ columns, rows, onRowClick, emptyLabel }) {
     <div
       style={{
         overflowX: "auto",
+        WebkitOverflowScrolling: "touch",
         border: `1px solid ${T.line}`,
         borderRadius: 8,
       }}
     >
       <table
-        style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
+        style={{
+          width: "100%",
+          minWidth: 680,
+          borderCollapse: "collapse",
+          fontSize: 13,
+        }}
       >
         <thead>
           <tr style={{ background: T.panel2 }}>
@@ -3761,6 +4207,7 @@ export default function App() {
   const [wa, setWa] = useState([]);
   const [master, setMaster] = useState(DEFAULT_MASTER);
   const [rmaModal, setRmaModal] = useState(null);
+  const [rmaPreview, setRmaPreview] = useState(null);
   const [waModal, setWaModal] = useState(null);
   const [waMsgEntry, setWaMsgEntry] = useState(null);
   const [search, setSearch] = useState("");
@@ -3808,12 +4255,51 @@ export default function App() {
     storeSet(KEYS.master, master);
   }, [master]);
 
-  const saveRma = (entry) => {
-    const exists = rma.some((e) => e.id === entry.id);
+  const saveRma = async (entry) => {
+    // Upload any new photos that have a File object in fileRegistry.
+    // Photos already saved (have a real url, no pending file) are kept as-is.
+    const uploadCategory = async (photos, category) => {
+      const results = [];
+      for (const photo of photos) {
+        const file = fileRegistry.get(photo.id);
+        if (file) {
+          // New photo — upload to Firebase Storage
+          try {
+            const meta = await uploadRmaPhoto(file, entry.ticketNo, category, photo.id);
+            fileRegistry.delete(photo.id);
+            // Revoke local previewUrl to free memory
+            if (photo.previewUrl) URL.revokeObjectURL(photo.previewUrl);
+            results.push(meta); // clean metadata only — url is Firebase Storage URL
+          } catch (err) {
+            console.error(`[HSGQ] Upload ${category} gagal:`, err);
+            setSaveErr(`Upload foto gagal: ${err.message}. Tiket disimpan tanpa foto tersebut.`);
+            // Skip this photo — do not persist previewUrl or corrupt the ticket
+          }
+        } else {
+          // Existing photo already in Firestore — keep metadata, strip previewUrl
+          const { previewUrl: _p, ...rest } = photo;
+          results.push(rest);
+        }
+      }
+      return results;
+    };
+
+    const [uploadedUnitPhotos, uploadedLabelPhotos] = await Promise.all([
+      uploadCategory(entry.unitPhotos || [], "unit"),
+      uploadCategory(entry.labelPhotos || [], "label"),
+    ]);
+
+    const finalEntry = {
+      ...entry,
+      unitPhotos: uploadedUnitPhotos,
+      labelPhotos: uploadedLabelPhotos,
+    };
+
+    const exists = rma.some((e) => e.id === finalEntry.id);
     persistRma(
       exists
-        ? rma.map((e) => (e.id === entry.id ? entry : e))
-        : [entry, ...rma],
+        ? rma.map((e) => (e.id === finalEntry.id ? finalEntry : e))
+        : [finalEntry, ...rma],
     );
     setRmaModal(null);
   };
@@ -3931,12 +4417,17 @@ export default function App() {
         }}
       >
         <div
+          onClick={() => {
+            setTab("home");
+            setMobileNavOpen(false);
+          }}
           style={{
             padding: "18px 18px 16px",
             borderBottom: `1px solid ${T.line}`,
             display: "flex",
             alignItems: "center",
             gap: 10,
+            cursor: "pointer",
           }}
         >
           <div
@@ -4297,6 +4788,11 @@ export default function App() {
                     render: (r) => (
                       <div style={{ display: "flex", gap: 6 }}>
                         <IconBtn
+                          icon={Eye}
+                          onClick={() => setRmaPreview(r)}
+                          title="Preview Detail"
+                        />
+                        <IconBtn
                           icon={MessageSquare}
                           onClick={() =>
                             setWaMsgEntry({ kind: "rma", entry: r })
@@ -4432,6 +4928,9 @@ export default function App() {
         </div>
       </div>
 
+      {rmaPreview && (
+        <RmaDetailModal entry={rmaPreview} onClose={() => setRmaPreview(null)} />
+      )}
       {rmaModal && (
         <Modal
           title={

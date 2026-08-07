@@ -5,6 +5,12 @@ import {
   setPersistence,
   browserLocalPersistence,
 } from "firebase/auth";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
 
 /*
 ============================================================
@@ -34,6 +40,7 @@ export const isUsingFirebase = !Object.values(firebaseConfig).some((value) =>
 let app = null;
 let db = null;
 let auth = null;
+let storage = null;
 
 if (isUsingFirebase) {
   app = initializeApp(firebaseConfig);
@@ -41,6 +48,7 @@ if (isUsingFirebase) {
   db = getFirestore(app);
 
   auth = getAuth(app);
+  storage = getStorage(app);
 
   setPersistence(auth, browserLocalPersistence).catch((error) => {
     console.error("Firebase persistence gagal:", error);
@@ -52,7 +60,54 @@ if (isUsingFirebase) {
   );
 }
 
-export { db, auth };
+export { db, auth, storage };
+
+/*
+============================================================
+ FIREBASE STORAGE — RMA PHOTO UPLOAD
+============================================================
+*/
+
+/**
+ * Upload a single image File to Firebase Storage.
+ *
+ * Path: rma_photos/{ticketNo}/{category}/{uniqueFileName}
+ *
+ * Returns metadata object safe to persist in Firestore:
+ *   { id, name, url, size, uploadedAt }
+ *
+ * Throws on failure so the caller can handle the error and
+ * keep the ticket in a valid state.
+ *
+ * NEVER stores Base64, blob, or File objects in Firestore.
+ */
+export async function uploadRmaPhoto(file, ticketNo, category, id) {
+  if (!storage) {
+    throw new Error(
+      "Firebase Storage belum dikonfigurasi. Aktifkan Storage di Firebase Console.",
+    );
+  }
+
+  const ext = file.name.split(".").pop() || "jpg";
+  const uniqueName = `${id}.${ext}`;
+  const storagePath = `rma_photos/${ticketNo}/${category}/${uniqueName}`;
+  const storageRef = ref(storage, storagePath);
+
+  await uploadBytes(storageRef, file, {
+    contentType: file.type || "image/jpeg",
+    customMetadata: { originalName: file.name, ticketNo },
+  });
+
+  const url = await getDownloadURL(storageRef);
+
+  return {
+    id,
+    name: file.name,
+    url,
+    size: file.size,
+    uploadedAt: new Date().toISOString(),
+  };
+}
 
 /*
 ============================================================
