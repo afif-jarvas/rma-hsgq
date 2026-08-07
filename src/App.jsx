@@ -50,7 +50,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { storeGet, storeSet, isUsingFirebase, uploadRmaPhoto } from "./firebase.js";
+import { storeGet, storeSet, isUsingFirebase, uploadRmaPhoto, storage } from "./firebase.js";
 import UserCenter from "./components/UserCenter.jsx";
 import { useAuth } from "./auth/AuthContext.jsx";
 import { useTheme } from "./context/ThemeContext.jsx";
@@ -1041,6 +1041,12 @@ function Btn({ children, variant = "ghost", ...props }) {
   );
 }
 function Modal({ title, onClose, children, width = 720 }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
     <div
       onClick={onClose}
@@ -1220,6 +1226,7 @@ const fileRegistry = new Map();
 function PhotoPickerCard({ title, photos, onAdd, onRemove, addLabel, capture }) {
   const inputRef = useRef(null);
   const MAX = 3;
+  const storageAvailable = !!storage;
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files || []);
@@ -1247,6 +1254,12 @@ function PhotoPickerCard({ title, photos, onAdd, onRemove, addLabel, capture }) 
       <div style={{ fontWeight: 600, fontSize: 13 }}>
         {title} (Maks. {MAX})
       </div>
+
+      {!storageAvailable && (
+        <div style={{ fontSize: 11.5, color: "var(--amber)", padding: "6px 8px", background: "var(--amber-dim)", borderRadius: 6, marginBottom: 4 }}>
+          ⚠ Fitur foto sementara tidak tersedia (Firebase Storage belum aktif). Foto hanya preview lokal, tidak akan tersimpan.
+        </div>
+      )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {photos.length === 0 && (
@@ -1440,7 +1453,7 @@ function RmaDetailModal({ entry, onClose }) {
             {p.url || p.previewUrl ? (
               <img src={p.url || p.previewUrl} alt={p.name} />
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, color: "var(--text-3)", fontSize: 11 }}>
+              <div className="placeholder">
                 <span style={{ fontSize: 22 }}>📷</span>
                 <span>Foto tidak tersedia</span>
               </div>
@@ -1544,6 +1557,8 @@ function RmaForm({
 
   const isEdit = !!initial;
   const [tab, setTab] = useState("overview");
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
   const TAB_LABELS = {
     overview: t.tabOverview,
     receiving: t.tabReceiving,
@@ -1629,7 +1644,28 @@ function RmaForm({
     return unitHistoryLookup(f.sn, f.mac).filter((h) => h.id !== f.id);
   }, [f.sn, f.mac, unitHistoryLookup, f.id]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setFormError("");
+
+    // Required field validation
+    const required = {
+      ticketNo: t.rmaTicketNo,
+      status: t.rmaStatus,
+      engineer: t.rmaEngineer,
+      product: t.rmaProductType,
+      customerName: t.rmaCustomerName,
+    };
+    for (const [key, label] of Object.entries(required)) {
+      if (!f[key] || !f[key].trim()) {
+        setFormError(`${label} wajib diisi.`);
+        return;
+      }
+    }
+    if (!f.sn && !f.mac) {
+      setFormError("SN atau MAC minimal salah satu wajib diisi.");
+      return;
+    }
+
     let statusHistory = f.statusHistory || [];
     if (isEdit && initial.status !== f.status) {
       statusHistory = [
@@ -1652,13 +1688,18 @@ function RmaForm({
     const stripPreview = (photos) =>
       (photos || []).map(({ previewUrl: _p, ...rest }) => rest);
 
-    onSave({
+    setSaving(true);
+    const result = await onSave({
       ...f,
       eta,
       statusHistory,
       unitPhotos: stripPreview(f.unitPhotos),
       labelPhotos: stripPreview(f.labelPhotos),
     });
+    setSaving(false);
+    if (!result?.ok) {
+      setFormError("Gagal menyimpan tiket. Coba lagi.");
+    }
   };
 
   const Tabs = (
@@ -1731,6 +1772,23 @@ function RmaForm({
   return (
     <div>
       {Tabs}
+      {formError && (
+        <div
+          style={{
+            background: T.redDim,
+            color: T.red,
+            padding: "8px 12px",
+            borderRadius: 6,
+            fontSize: 12.5,
+            marginBottom: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <AlertTriangle size={14} /> {formError}
+        </div>
+      )}
       {tab === "overview" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div
@@ -2275,10 +2333,11 @@ function RmaForm({
           borderTop: `1px solid ${T.line}`,
         }}
       >
-        <Btn variant="ghost" onClick={onClose}>
+        <Btn variant="ghost" onClick={onClose} disabled={saving}>
           Batal
         </Btn>
-        <Btn variant="solid" onClick={handleSave}>
+        <Btn variant="solid" onClick={handleSave} disabled={saving}>
+          {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
           Simpan Tiket
         </Btn>
       </div>
@@ -2310,6 +2369,8 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
       commHistory: [],
     },
   );
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
   const addComm = () =>
     setF((s) => ({
@@ -2331,6 +2392,35 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
       ...s,
       commHistory: s.commHistory.filter((c) => c.id !== id),
     }));
+
+  const handleSave = async () => {
+    setFormError("");
+
+    const required = {
+      caseNo: "No. Case",
+      caseDate: "Tanggal Case",
+      engineerTag: "Engineer / Tagging",
+      status: "Status",
+      customerName: "Nama Customer",
+    };
+    for (const [key, label] of Object.entries(required)) {
+      if (!f[key] || !f[key].trim()) {
+        setFormError(`${label} wajib diisi.`);
+        return;
+      }
+    }
+    if (!f.sn && !f.mac) {
+      setFormError("SN atau MAC minimal salah satu wajib diisi.");
+      return;
+    }
+
+    setSaving(true);
+    const result = await onSave(f);
+    setSaving(false);
+    if (!result?.ok) {
+      setFormError("Gagal menyimpan case. Coba lagi.");
+    }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -2485,6 +2575,24 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
         </div>
       </div>
 
+      {formError && (
+        <div
+          style={{
+            background: T.redDim,
+            color: T.red,
+            padding: "8px 12px",
+            borderRadius: 6,
+            fontSize: 12.5,
+            marginBottom: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <AlertTriangle size={14} /> {formError}
+        </div>
+      )}
+
       <Field label="Keterangan">
         <TextArea value={f.notes} onChange={set("notes")} />
       </Field>
@@ -2496,10 +2604,11 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
           marginTop: 4,
         }}
       >
-        <Btn variant="ghost" onClick={onClose}>
+        <Btn variant="ghost" onClick={onClose} disabled={saving}>
           Batal
         </Btn>
-        <Btn variant="solid" onClick={() => onSave(f)}>
+        <Btn variant="solid" onClick={handleSave} disabled={saving}>
+          {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
           Simpan Case
         </Btn>
       </div>
@@ -2690,6 +2799,9 @@ function Dashboard({ rma, wa, t, lastLoginLabel }) {
           fontFamily: mono,
           color: accent || T.ink,
           marginTop: 6,
+          wordBreak: "break-word",
+          overflowWrap: "anywhere",
+          maxWidth: "100%",
         }}
       >
         {value}
@@ -3571,6 +3683,7 @@ function GoodsReceiptForm({ master, onSave, onClose }) {
   });
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
   const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -3623,19 +3736,23 @@ function GoodsReceiptForm({ master, onSave, onClose }) {
         <TextArea value={f.notes} onChange={set("notes")} />
       </Field>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-        <Btn variant="ghost" onClick={onClose}>
+        <Btn variant="ghost" onClick={onClose} disabled={saving}>
           Batal
         </Btn>
         <Btn
           variant="solid"
+          disabled={saving}
           onClick={() => {
             if (!f.serialNo.trim()) {
               setErr("No. Serial PCBA wajib diisi.");
               return;
             }
+            setSaving(true);
             onSave(f);
+            setSaving(false);
           }}
         >
+          {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
           Simpan Stok Masuk
         </Btn>
       </div>
@@ -3652,6 +3769,7 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose }) {
   });
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
   const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -3704,21 +3822,25 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose }) {
         <TextArea value={f.notes} onChange={set("notes")} />
       </Field>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-        <Btn variant="ghost" onClick={onClose}>
+        <Btn variant="ghost" onClick={onClose} disabled={saving}>
           Batal
         </Btn>
         <Btn
           variant="solid"
-          onClick={() => {
+          disabled={saving}
+          onClick={async () => {
             if (!f.rmaId) return setErr("Pilih RMA terkait dulu.");
             if (!f.newPcbaItemId)
               return setErr("Pilih PCBA baru (stok Good) dulu.");
             if (!f.oldSerialNo.trim())
               return setErr("No. Serial PCBA lama wajib diisi.");
-            const res = onSave(f);
+            setSaving(true);
+            const res = await onSave(f);
+            setSaving(false);
             if (res && res.ok === false) setErr(res.error);
           }}
         >
+          {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
           Proses Replacement
         </Btn>
       </div>
@@ -3738,6 +3860,7 @@ function RepairForm({ master, badItems, onSave, onClose }) {
   });
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
   const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
   const repairResultOptions = [
     "Berhasil Diperbaiki",
     "Tidak Dapat Diperbaiki",
@@ -3806,17 +3929,21 @@ function RepairForm({ master, badItems, onSave, onClose }) {
         </InlineHint>
       )}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-        <Btn variant="ghost" onClick={onClose}>
+        <Btn variant="ghost" onClick={onClose} disabled={saving}>
           Batal
         </Btn>
         <Btn
           variant="solid"
+          disabled={saving}
           onClick={() => {
             if (!f.pcbaItemId) return setErr("Pilih PCBA dulu.");
             if (!f.repairResult) return setErr("Pilih hasil repair dulu.");
+            setSaving(true);
             onSave(f);
+            setSaving(false);
           }}
         >
+          {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
           Simpan Repair
         </Btn>
       </div>
@@ -4241,28 +4368,17 @@ export default function App() {
     );
   }, [language]);
 
-  const persistRma = useCallback(async (arr) => {
-    setRma(arr);
-    const ok = await storeSet(KEYS.rma, arr);
-    if (!ok) setSaveErr("Gagal menyimpan data RMA. Coba lagi.");
-  }, []);
-  const persistWa = useCallback(async (arr) => {
-    setWa(arr);
-    const ok = await storeSet(KEYS.wa, arr);
-    if (!ok) setSaveErr("Gagal menyimpan data WhatsApp. Coba lagi.");
-  }, []);
-  useEffect(() => {
-    storeSet(KEYS.master, master);
-  }, [master]);
-
   const saveRma = async (entry) => {
+    // Check if Firebase Storage is available
+    const storageAvailable = !!storage;
+
     // Upload any new photos that have a File object in fileRegistry.
     // Photos already saved (have a real url, no pending file) are kept as-is.
     const uploadCategory = async (photos, category) => {
       const results = [];
       for (const photo of photos) {
         const file = fileRegistry.get(photo.id);
-        if (file) {
+        if (file && storageAvailable) {
           // New photo — upload to Firebase Storage
           try {
             const meta = await uploadRmaPhoto(file, entry.ticketNo, category, photo.id);
@@ -4276,7 +4392,7 @@ export default function App() {
             // Skip this photo — do not persist previewUrl or corrupt the ticket
           }
         } else {
-          // Existing photo already in Firestore — keep metadata, strip previewUrl
+          // Existing photo already in Firestore, or storage not available — keep metadata, strip previewUrl
           const { previewUrl: _p, ...rest } = photo;
           results.push(rest);
         }
@@ -4296,22 +4412,34 @@ export default function App() {
     };
 
     const exists = rma.some((e) => e.id === finalEntry.id);
-    persistRma(
+    const ok = await persistRma(
       exists
         ? rma.map((e) => (e.id === finalEntry.id ? finalEntry : e))
         : [finalEntry, ...rma],
     );
-    setRmaModal(null);
+    if (ok) setRmaModal(null);
+    return { ok: !!ok };
   };
-  const saveWa = (entry) => {
+  const persistRma = useCallback(async (arr) => {
+    setRma(arr);
+    const ok = await storeSet(KEYS.rma, arr);
+    if (!ok) setSaveErr("Gagal menyimpan data RMA. Coba lagi.");
+    return ok;
+  }, []);
+  const saveWa = async (entry) => {
     const exists = wa.some((e) => e.id === entry.id);
-    persistWa(
+    const ok = await persistWa(
       exists ? wa.map((e) => (e.id === entry.id ? entry : e)) : [entry, ...wa],
     );
-    setWaModal(null);
+    if (ok) setWaModal(null);
+    return { ok: !!ok };
   };
-  const deleteRma = (id) => persistRma(rma.filter((e) => e.id !== id));
-  const deleteWa = (id) => persistWa(wa.filter((e) => e.id !== id));
+  const persistWa = useCallback(async (arr) => {
+    setWa(arr);
+    const ok = await storeSet(KEYS.wa, arr);
+    if (!ok) setSaveErr("Gagal menyimpan data WhatsApp. Coba lagi.");
+    return ok;
+  }, []);
 
   const unitHistoryLookup = useCallback(
     (sn, mac) => {
