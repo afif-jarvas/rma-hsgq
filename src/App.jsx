@@ -55,6 +55,8 @@ import UserCenter from "./components/UserCenter.jsx";
 import { useAuth } from "./auth/AuthContext.jsx";
 import { useTheme } from "./context/ThemeContext.jsx";
 
+import hsgqLogo from "./assets/hsgq-logo.png";
+
 /* ============================================================
    TOKENS — "Fiber patch bay" console
    ============================================================ */
@@ -126,6 +128,91 @@ const I18N = {
     firebaseWarning:
       "Firebase belum dikonfigurasi di src/firebase.js — data disimpan sementara di localStorage browser ini saja.",
     cancel: "Batal",
+    userCenter: "User Center",
+    profile: "Profile",
+    editAccountInfo: "Edit informasi akun",
+    appearance: "Tampilan",
+    light: "Terang",
+    dark: "Gelap",
+    system: "Sistem",
+    logout: "Keluar",
+    manageProfile: "Kelola profile",
+    nickName: "Nama Panggilan",
+    yourName: "Nama kamu",
+    email: "Email",
+    phone: "Telepon",
+    phonePlaceholder: "08xxxxxxxxxx",
+    company: "Perusahaan",
+    companyPlaceholder: "PT HSGQ Indonesia",
+    address: "Alamat",
+    addressPlaceholder: "Alamat",
+    selectAppearance: "Pilih tampilan aplikasi",
+    saveChanges: "Simpan Perubahan",
+    saving: "Menyimpan...",
+    profileUpdated: "Profile berhasil diperbarui.",
+    profileUpdateFailed: "Gagal menyimpan profile.",
+    nameRequired: "Nama tidak boleh kosong.",
+    // Settings
+    settingsEngineer: "Engineer",
+    settingsStatusRma: "Status RMA (alur utama)",
+    settingsStatusWa: "Status WhatsApp",
+    settingsFinalResults: "Hasil Akhir",
+    settingsWaitingReasons: "Alasan Menunggu",
+    settingsWarrantyStatuses: "Status Warranty",
+    settingsQcResults: "Hasil QC",
+    settingsShippingMethod: "Metode Pengiriman",
+    settingsPcbaTypes: "Tipe PCBA",
+    settingsSuppliers: "Supplier",
+    settingsWarehouseLocations: "Lokasi Gudang",
+    settingsMinStockDefault: "Minimum Stok Default (unit)",
+    // PCBA Inventory
+    pcbaStock: "Stok",
+    pcbaReplacement: "Replacement",
+    pcbaRepair: "Repair & QC",
+    pcbaTransactions: "Transaksi",
+    pcbaReceiveNew: "Terima PCBA Baru",
+    pcbaLowStock: "Stok Good di bawah minimum ({min} unit) untuk tipe: {types}",
+    pcbaStatusGood: "Good",
+    pcbaStatusBad: "Bad",
+    pcbaStatusUnderRepair: "Under Repair",
+    pcbaStatusReplacement: "Replacement",
+    pcbaStatusScrap: "Scrap",
+    pcbaSerialNo: "No. Serial PCBA",
+    pcbaType: "Tipe PCBA",
+    pcbaProduct: "Produk Terkait",
+    pcbaSupplier: "Supplier",
+    pcbaWarehouseLocation: "Lokasi Gudang",
+    pcbaNotes: "Catatan",
+    pcbaReplaceOld: "PCBA Lama",
+    pcbaReplaceNew: "PCBA Baru",
+    pcbaSelectOld: "Pilih PCBA lama",
+    pcbaSelectNew: "Pilih PCBA baru (Good)",
+    pcbaRepairItem: "PCBA untuk Repair",
+    pcbaRepairNotes: "Catatan Repair",
+    pcbaQcResult: "Hasil QC",
+    pcbaQcNotes: "Catatan QC",
+    pcbaSelectItem: "Pilih PCBA",
+    pcbaAction: "Aksi",
+    pcbaOldSerial: "Serial Lama",
+    pcbaNewSerial: "Serial Baru",
+    // Unit History
+    unitHistorySearchPlaceholder: "Filter SN, MAC, customer, case...",
+    unitHistoryHint: "Cari SN/MAC untuk melihat apakah unit ini pernah punya riwayat RMA atau case WhatsApp sebelumnya — berguna sebelum bikin tiket baru untuk unit yang sama.",
+    unitHistoryNotFound: 'Tidak ditemukan riwayat untuk "{q}". Unit ini baru pertama kali masuk sistem.',
+    unitHistoryPriorWarning: "⚠ Unit ini pernah memiliki {n} riwayat sebelumnya.",
+    unitHistoryPartialMatch: "Kecocokan sebagian",
+    // Weekly Report
+    weeklyReportFromDate: "Dari Tanggal",
+    weeklyReportToDate: "Sampai Tanggal",
+    weeklyReportLast7Days: "7 Hari Terakhir",
+    weeklyReportExportPdf: "Export PDF",
+    weeklyReportEmptyRange: "Tidak ada case pada rentang tanggal ini.",
+    weeklyReportPopupBlocked: "Popup browser diblokir. Izinkan popup untuk export PDF.",
+    weeklyReportSummary: "Ringkasan Kegiatan",
+    weeklyReportMonitoring: "Monitoring OLT dan ONU / OLT and ONU Monitoring",
+    weeklyReportTroubleshooting: "Troubleshooting Issue Customer / Customer Issue Troubleshooting",
+    weeklyReportSupport: "Technical Support HSGQ Jakarta / HSGQ Jakarta Technical Support",
+    weeklyReportIssue: "Issue & Troubleshooting / Kendala & Penanganan",
     add: "Tambah",
     addItemPlaceholder: "Tambah item...",
     searchPlaceholder: "Cari...",
@@ -320,6 +407,30 @@ const I18N = {
     firebaseWarning:
       "Firebase is not configured yet in src/firebase.js — data is temporarily stored in this browser's localStorage only.",
     cancel: "Cancel",
+    userCenter: "User Center",
+    profile: "Profile",
+    editAccountInfo: "Edit account info",
+    appearance: "Appearance",
+    light: "Light",
+    dark: "Dark",
+    system: "System",
+    logout: "Logout",
+    manageProfile: "Manage profile",
+    nickName: "Nick Name",
+    yourName: "Your name",
+    email: "Email",
+    phone: "Phone",
+    phonePlaceholder: "08xxxxxxxxxx",
+    company: "Company",
+    companyPlaceholder: "PT HSGQ Indonesia",
+    address: "Address",
+    addressPlaceholder: "Address",
+    selectAppearance: "Select app appearance",
+    saveChanges: "Save Changes",
+    saving: "Saving...",
+    profileUpdated: "Profile updated successfully.",
+    profileUpdateFailed: "Failed to save profile.",
+    nameRequired: "Name cannot be empty.",
     add: "Add",
     addItemPlaceholder: "Add item...",
     searchPlaceholder: "Search...",
@@ -388,7 +499,54 @@ const I18N = {
     settingsSuppliers: "Supplier",
     settingsWarehouseLocations: "Warehouse Location",
     settingsMinStockDefault: "Default Minimum Stock (unit)",
-    tabOverview: "Overview",
+    // PCBA Inventory
+    pcbaStock: "Stock",
+    pcbaReplacement: "Replacement",
+    pcbaRepair: "Repair & QC",
+    pcbaTransactions: "Transactions",
+    pcbaReceiveNew: "Receive New PCBA",
+    pcbaLowStock: "Good stock below minimum ({min} units) for types: {types}",
+    pcbaStatusGood: "Good",
+    pcbaStatusBad: "Bad",
+    pcbaStatusUnderRepair: "Under Repair",
+    pcbaStatusReplacement: "Replacement",
+    pcbaStatusScrap: "Scrap",
+    pcbaSerialNo: "PCBA Serial No.",
+    pcbaType: "PCBA Type",
+    pcbaProduct: "Related Product",
+    pcbaSupplier: "Supplier",
+    pcbaWarehouseLocation: "Warehouse Location",
+    pcbaNotes: "Notes",
+    pcbaReplaceOld: "Old PCBA",
+    pcbaReplaceNew: "New PCBA",
+    pcbaSelectOld: "Select old PCBA",
+    pcbaSelectNew: "Select new PCBA (Good)",
+    pcbaRepairItem: "PCBA for Repair",
+    pcbaRepairNotes: "Repair Notes",
+    pcbaQcResult: "QC Result",
+    pcbaQcNotes: "QC Notes",
+    pcbaSelectItem: "Select PCBA",
+    pcbaAction: "Action",
+    pcbaOldSerial: "Old Serial",
+    pcbaNewSerial: "New Serial",
+    // Unit History
+    unitHistorySearchPlaceholder: "Filter SN, MAC, customer, case...",
+    unitHistoryHint: "Search SN/MAC to see if this unit already has RMA or WhatsApp case history — useful before creating a new ticket for the same unit.",
+    unitHistoryNotFound: 'No history found for "{q}". This unit is new to the system.',
+    unitHistoryPriorWarning: "⚠ This unit already has {n} previous history entries.",
+    unitHistoryPartialMatch: "Partial match",
+    // Weekly Report
+    weeklyReportFromDate: "From Date",
+    weeklyReportToDate: "To Date",
+    weeklyReportLast7Days: "Last 7 Days",
+    weeklyReportExportPdf: "Export PDF",
+    weeklyReportEmptyRange: "No cases in this date range.",
+    weeklyReportPopupBlocked: "Browser popup blocked. Allow popups to export PDF.",
+    weeklyReportSummary: "Activity Summary",
+    weeklyReportMonitoring: "OLT and ONU Monitoring / OLT and ONU Monitoring",
+    weeklyReportTroubleshooting: "Customer Issue Troubleshooting / Customer Issue Troubleshooting",
+    weeklyReportSupport: "HSGQ Jakarta Technical Support / HSGQ Jakarta Technical Support",
+    weeklyReportIssue: "Issue & Troubleshooting / Issue & Troubleshooting",
     tabReceiving: "Receiving",
     tabDiagnosis: "Diagnosis",
     tabWaiting: "Waiting",
@@ -513,6 +671,30 @@ const I18N = {
     firebaseWarning:
       "尚未在 src/firebase.js 中配置 Firebase — 数据暂时仅保存在此浏览器的 localStorage 中。",
     cancel: "取消",
+    userCenter: "用户中心",
+    profile: "个人资料",
+    editAccountInfo: "编辑账户信息",
+    appearance: "外观",
+    light: "浅色",
+    dark: "深色",
+    system: "跟随系统",
+    logout: "退出登录",
+    manageProfile: "管理个人资料",
+    nickName: "昵称",
+    yourName: "您的姓名",
+    email: "邮箱",
+    phone: "电话",
+    phonePlaceholder: "08xxxxxxxxxx",
+    company: "公司",
+    companyPlaceholder: "PT HSGQ Indonesia",
+    address: "地址",
+    addressPlaceholder: "地址",
+    selectAppearance: "选择应用外观",
+    saveChanges: "保存更改",
+    saving: "保存中...",
+    profileUpdated: "个人资料已更新。",
+    profileUpdateFailed: "保存个人资料失败。",
+    nameRequired: "姓名不能为空。",
     add: "添加",
     addItemPlaceholder: "添加项目...",
     searchPlaceholder: "搜索...",
@@ -577,7 +759,54 @@ const I18N = {
     settingsSuppliers: "供应商",
     settingsWarehouseLocations: "仓库位置",
     settingsMinStockDefault: "默认最低库存（件）",
-    tabOverview: "概览",
+    // PCBA Inventory
+    pcbaStock: "库存",
+    pcbaReplacement: "替换",
+    pcbaRepair: "维修与 QC",
+    pcbaTransactions: "交易",
+    pcbaReceiveNew: "接收新 PCBA",
+    pcbaLowStock: "良品库存低于最小值 ({min} 件) 的类型: {types}",
+    pcbaStatusGood: "良品",
+    pcbaStatusBad: "不良品",
+    pcbaStatusUnderRepair: "维修中",
+    pcbaStatusReplacement: "替换",
+    pcbaStatusScrap: "报废",
+    pcbaSerialNo: "PCBA 序列号",
+    pcbaType: "PCBA 类型",
+    pcbaProduct: "相关产品",
+    pcbaSupplier: "供应商",
+    pcbaWarehouseLocation: "仓库位置",
+    pcbaNotes: "备注",
+    pcbaReplaceOld: "旧 PCBA",
+    pcbaReplaceNew: "新 PCBA",
+    pcbaSelectOld: "选择旧 PCBA",
+    pcbaSelectNew: "选择新 PCBA (良品)",
+    pcbaRepairItem: "维修 PCBA",
+    pcbaRepairNotes: "维修备注",
+    pcbaQcResult: "QC 结果",
+    pcbaQcNotes: "QC 备注",
+    pcbaSelectItem: "选择 PCBA",
+    pcbaAction: "操作",
+    pcbaOldSerial: "旧序列号",
+    pcbaNewSerial: "新序列号",
+    // Unit History
+    unitHistorySearchPlaceholder: "按 SN、MAC、客户、案例筛选...",
+    unitHistoryHint: "搜索 SN/MAC 以查看该设备是否曾有 RMA 或 WhatsApp 案例记录 — 在为同一设备建立新工单前很有用。",
+    unitHistoryNotFound: '未找到 "{q}" 的历史记录。此设备是首次进入系统。',
+    unitHistoryPriorWarning: "⚠ 此设备此前已有 {n} 条历史记录。",
+    unitHistoryPartialMatch: "部分匹配",
+    // Weekly Report
+    weeklyReportFromDate: "起始日期",
+    weeklyReportToDate: "结束日期",
+    weeklyReportLast7Days: "最近 7 天",
+    weeklyReportExportPdf: "导出 PDF",
+    weeklyReportEmptyRange: "该日期范围内没有案例。",
+    weeklyReportPopupBlocked: "浏览器弹窗被拦截。请允许弹窗以导出 PDF。",
+    weeklyReportSummary: "活动摘要",
+    weeklyReportMonitoring: "OLT 和 ONU 监控 / OLT and ONU Monitoring",
+    weeklyReportTroubleshooting: "客户故障排查 / Customer Issue Troubleshooting",
+    weeklyReportSupport: "HSGQ Jakarta 技术支持 / HSGQ Jakarta Technical Support",
+    weeklyReportIssue: "问题与排查 / Issue & Troubleshooting",
     tabReceiving: "接收",
     tabDiagnosis: "诊断",
     tabWaiting: "等待",
@@ -3042,7 +3271,7 @@ function Dashboard({ rma, wa, t, lastLoginLabel }) {
 /* ============================================================
    WEEKLY REPORT
    ============================================================ */
-function WeeklyReport({ rma, wa }) {
+function WeeklyReport({ rma, wa, t }) {
   const [start, setStart] = useState(dateNDaysAgoISO(7));
   const [end, setEnd] = useState(todayISO());
 
@@ -3292,7 +3521,7 @@ Status / Status: ${c.status}
 /* ============================================================
    UNIT HISTORY / QUICK SEARCH SN-MAC
    ============================================================ */
-function UnitHistory({ rma, wa }) {
+function UnitHistory({ rma, wa, t }) {
   const [query, setQuery] = useState("");
 
   const results = useMemo(() => {
@@ -3386,27 +3615,24 @@ function UnitHistory({ rma, wa }) {
         <SearchBar
           value={query}
           onChange={setQuery}
-          placeholder="Filter SN, MAC, customer, case..."
+          placeholder={t.unitHistorySearchPlaceholder}
         />
       </div>
       {!query.trim() && (
         <InlineHint>
-          Cari SN/MAC untuk melihat apakah unit ini pernah punya riwayat RMA
-          atau case WhatsApp sebelumnya — berguna sebelum bikin tiket baru untuk
-          unit yang sama.
+          {t.unitHistoryHint}
         </InlineHint>
       )}
       {query.trim() && results.length === 0 && partialResults.length === 0 && (
         <div style={{ color: T.ink3, fontSize: 13 }}>
-          Tidak ditemukan riwayat untuk "{query}". Unit ini baru pertama kali
-          masuk sistem.
+          {t.unitHistoryNotFound.replace('"{q}"', `"${query}"`)}
         </div>
       )}
       {results.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {query.trim() && results.length > 1 && (
             <InlineHint tone="warn">
-              ⚠ Unit ini pernah memiliki {results.length} riwayat sebelumnya.
+              {t.unitHistoryPriorWarning.replace("{n}", results.length)}
             </InlineHint>
           )}
           {results.map((r, i) => (
@@ -3473,7 +3699,7 @@ function UnitHistory({ rma, wa }) {
               letterSpacing: 0.4,
             }}
           >
-            Kecocokan sebagian
+            {t.unitHistoryPartialMatch}
           </div>
           {partialResults.map((r, i) => (
             <div
@@ -3569,7 +3795,7 @@ function TagList({ label, items, onChange }) {
     </div>
   );
 }
-function SettingsTab({ master, setMaster }) {
+function SettingsTab({ master, setMaster, t }) {
   const update = (k) => (arr) => setMaster((m) => ({ ...m, [k]: arr }));
   return (
     <div
@@ -3577,61 +3803,61 @@ function SettingsTab({ master, setMaster }) {
       style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}
     >
       <TagList
-        label="Engineer"
+        label={t.settingsEngineer}
         items={master.engineers}
         onChange={update("engineers")}
       />
       <TagList
-        label="Status RMA (alur utama)"
+        label={t.settingsStatusRma}
         items={master.statusRMA}
         onChange={update("statusRMA")}
       />
       <TagList
-        label="Status WhatsApp"
+        label={t.settingsStatusWa}
         items={master.statusWA}
         onChange={update("statusWA")}
       />
       <TagList
-        label="Hasil Akhir"
+        label={t.settingsFinalResults}
         items={master.finalResults}
         onChange={update("finalResults")}
       />
       <TagList
-        label="Alasan Menunggu"
+        label={t.settingsWaitingReasons}
         items={master.waitingReasons}
         onChange={update("waitingReasons")}
       />
       <TagList
-        label="Status Warranty"
+        label={t.settingsWarrantyStatuses}
         items={master.warrantyStatuses}
         onChange={update("warrantyStatuses")}
       />
       <TagList
-        label="Hasil QC"
+        label={t.settingsQcResults}
         items={master.qcResults}
         onChange={update("qcResults")}
       />
       <TagList
-        label="Metode Pengiriman"
+        label={t.settingsShippingMethod}
         items={master.pengiriman}
         onChange={update("pengiriman")}
       />
       <TagList
-        label="Tipe PCBA"
+        label={t.settingsPcbaTypes}
         items={master.pcbaTypes}
         onChange={update("pcbaTypes")}
       />
       <TagList
-        label="Supplier"
+        label={t.settingsSuppliers}
         items={master.suppliers}
         onChange={update("suppliers")}
       />
       <TagList
-        label="Lokasi Gudang"
+        label={t.settingsWarehouseLocations}
         items={master.warehouseLocations}
         onChange={update("warehouseLocations")}
       />
-      <Field label="Minimum Stok Default (unit)">
+      <Field label={t.settingsMinStockDefault}>
         <TextInput
           type="number"
           min="0"
@@ -3959,6 +4185,7 @@ function PcbaInventoryTab({
   onReplacement,
   onRepair,
   onQc,
+  t,
 }) {
   const [subTab, setSubTab] = useState("stock");
   const [modal, setModal] = useState(null);
@@ -3981,7 +4208,7 @@ function PcbaInventoryTab({
       });
     const minStock = master.minStockDefault || 5;
     return master.pcbaTypes
-      .map((t) => ({ type: t, stock: byType[t] || 0 }))
+      .map((type) => ({ type, stock: byType[type] || 0 }))
       .filter((x) => x.stock < minStock);
   }, [pcba.items, master.pcbaTypes, master.minStockDefault]);
 
@@ -3992,10 +4219,10 @@ function PcbaInventoryTab({
   const rmaOpenList = rma.filter((r) => !RMA_DONE_STATUSES.includes(r.status));
 
   const SUB_TABS = [
-    { id: "stock", label: "Stok", icon: Boxes },
-    { id: "replacement", label: "Replacement", icon: ArrowLeftRight },
-    { id: "repair", label: "Repair & QC", icon: Wrench },
-    { id: "transactions", label: "Transaksi", icon: ClipboardList },
+    { id: "stock", label: t.pcbaStock, icon: Boxes },
+    { id: "replacement", label: t.pcbaReplacement, icon: ArrowLeftRight },
+    { id: "repair", label: t.pcbaRepair, icon: Wrench },
+    { id: "transactions", label: t.pcbaTransactions, icon: ClipboardList },
   ];
 
   return (
@@ -4043,9 +4270,7 @@ function PcbaInventoryTab({
       {lowStockTypes.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <InlineHint tone="warn">
-            Stok Good di bawah minimum ({master.minStockDefault || 5} unit)
-            untuk tipe:{" "}
-            {lowStockTypes.map((x) => `${x.type} (${x.stock})`).join(", ")}
+            {t.pcbaLowStock.replace("{min}", master.minStockDefault || 5).replace("{types}", lowStockTypes.map((x) => `${x.type} (${x.stock})`).join(", "))}
           </InlineHint>
         </div>
       )}
@@ -4058,13 +4283,13 @@ function PcbaInventoryTab({
           marginBottom: 16,
         }}
       >
-        {SUB_TABS.map((t) => {
-          const Icon = t.icon;
-          const active = subTab === t.id;
+        {SUB_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const active = subTab === tab.id;
           return (
             <button
-              key={t.id}
-              onClick={() => setSubTab(t.id)}
+              key={tab.id}
+              onClick={() => setSubTab(tab.id)}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -4083,7 +4308,7 @@ function PcbaInventoryTab({
                 marginBottom: -1,
               }}
             >
-              <Icon size={14} /> {t.label}
+              <Icon size={14} /> {tab.label}
             </button>
           );
         })}
@@ -4099,23 +4324,23 @@ function PcbaInventoryTab({
             }}
           >
             <Btn variant="solid" onClick={() => setModal({ type: "receipt" })}>
-              <Plus size={14} /> Terima PCBA Baru
+              <Plus size={14} /> {t.pcbaReceiveNew}
             </Btn>
           </div>
           <DataTable
             columns={[
-              { key: "serialNo", label: "Serial No", mono: true },
-              { key: "pcbaType", label: "Tipe" },
+              { key: "serialNo", label: t.pcbaSerialNo, mono: true },
+              { key: "pcbaType", label: t.pcbaType },
               {
                 key: "status",
-                label: "Status",
+                label: t.pcbaAction,
                 render: (r) => <PcbaBadge status={r.status} />,
               },
-              { key: "supplier", label: "Supplier" },
-              { key: "warehouseLocation", label: "Lokasi" },
+              { key: "supplier", label: t.pcbaSupplier },
+              { key: "warehouseLocation", label: t.pcbaWarehouseLocation },
               {
                 key: "createdAt",
-                label: "Masuk",
+                label: t.pcbaAction,
                 render: (r) => fmtDate(r.createdAt),
               },
             ]}
@@ -4125,7 +4350,7 @@ function PcbaInventoryTab({
         </>
       )}
 
-      {subTab === "replacement" && (
+{subTab === "replacement" && (
         <>
           <div
             style={{
@@ -4138,7 +4363,7 @@ function PcbaInventoryTab({
               variant="solid"
               onClick={() => setModal({ type: "replacement" })}
             >
-              <Plus size={14} /> Replacement Baru
+              <Plus size={14} /> {t.pcbaReplacement} Baru
             </Btn>
           </div>
           <DataTable
@@ -4152,14 +4377,14 @@ function PcbaInventoryTab({
               },
               {
                 key: "oldPcbaItemId",
-                label: "PCBA Lama",
+                label: t.pcbaReplaceOld,
                 render: (r) =>
                   pcba.items.find((i) => i.id === r.oldPcbaItemId)?.serialNo ||
                   "-",
               },
               {
                 key: "newPcbaItemId",
-                label: "PCBA Baru",
+                label: t.pcbaReplaceNew,
                 render: (r) =>
                   pcba.items.find((i) => i.id === r.newPcbaItemId)?.serialNo ||
                   "-",
@@ -4187,7 +4412,7 @@ function PcbaInventoryTab({
             }}
           >
             <Btn variant="solid" onClick={() => setModal({ type: "repair" })}>
-              <Plus size={14} /> Mulai Repair
+              <Plus size={14} /> {t.pcbaRepair} Baru
             </Btn>
           </div>
           <DataTable
@@ -4195,13 +4420,13 @@ function PcbaInventoryTab({
               { key: "repairNo", label: "No. Repair", mono: true },
               {
                 key: "pcbaItemId",
-                label: "PCBA",
+                label: t.pcbaRepairItem,
                 render: (r) =>
                   pcba.items.find((i) => i.id === r.pcbaItemId)?.serialNo ||
                   "-",
               },
               { key: "engineer", label: "Engineer" },
-              { key: "repairResult", label: "Hasil Repair" },
+              { key: "repairResult", label: t.pcbaQcResult },
               {
                 key: "qcStatus",
                 label: "QC",
@@ -4212,8 +4437,8 @@ function PcbaInventoryTab({
                         r.qcStatus === "Passed"
                           ? "Good"
                           : r.qcStatus === "Failed"
-                            ? "Bad"
-                            : "Under Repair"
+                          ? "Bad"
+                          : "Under Repair"
                       }
                     />
                   ) : (
@@ -4251,7 +4476,7 @@ function PcbaInventoryTab({
             { key: "transactionNo", label: "No. Transaksi", mono: true },
             {
               key: "pcbaItemId",
-              label: "PCBA",
+              label: t.pcbaSelectItem,
               render: (r) =>
                 pcba.items.find((i) => i.id === r.pcbaItemId)?.serialNo || "-",
             },
@@ -4261,7 +4486,7 @@ function PcbaInventoryTab({
               label: "RMA",
               render: (r) => rma.find((x) => x.id === r.rmaId)?.ticketNo || "-",
             },
-            { key: "reason", label: "Keterangan" },
+            { key: "reason", label: t.pcbaNotes },
             {
               key: "createdAt",
               label: "Tanggal",
@@ -4333,6 +4558,7 @@ export default function App() {
   const [rma, setRma] = useState([]);
   const [wa, setWa] = useState([]);
   const [master, setMaster] = useState(DEFAULT_MASTER);
+  const [pcba, setPcba] = useState(PCBA_DEFAULT);
   const [rmaModal, setRmaModal] = useState(null);
   const [rmaPreview, setRmaPreview] = useState(null);
   const [waModal, setWaModal] = useState(null);
@@ -4348,14 +4574,16 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const [r, w, m] = await Promise.all([
+      const [r, w, m, p] = await Promise.all([
         storeGet(KEYS.rma, []),
         storeGet(KEYS.wa, []),
         storeGet(KEYS.master, DEFAULT_MASTER),
+        storeGet(KEYS.pcba, PCBA_DEFAULT),
       ]);
       setRma(r);
       setWa(w);
       setMaster({ ...DEFAULT_MASTER, ...m });
+      setPcba(p);
       setLoading(false);
     })();
   }, []);
@@ -4441,6 +4669,190 @@ export default function App() {
     return ok;
   }, []);
 
+  const persistPcba = useCallback(async (data) => {
+    setPcba(data);
+    const ok = await storeSet(KEYS.pcba, data);
+    if (!ok) setSaveErr("Gagal menyimpan data PCBA. Coba lagi.");
+    return ok;
+  }, []);
+
+  const onGoodsReceipt = useCallback(
+    async (formData) => {
+      const newItem = {
+        id: uid(),
+        serialNo: formData.serialNo.trim(),
+        pcbaType: formData.pcbaType,
+        product: formData.product.trim(),
+        supplier: formData.supplier,
+        warehouseLocation: formData.warehouseLocation,
+        status: "Good",
+        notes: formData.notes.trim(),
+        createdAt: new Date().toISOString(),
+      };
+      const transaction = {
+        id: uid(),
+        transactionNo: `TRX-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-4)}`,
+        pcbaItemId: newItem.id,
+        type: "Goods Receipt",
+        rmaId: null,
+        reason: formData.notes.trim() || "Penerimaan stok baru",
+        createdAt: newItem.createdAt,
+      };
+      const newPcba = {
+        items: [newItem, ...pcba.items],
+        transactions: [transaction, ...pcba.transactions],
+        replacements: pcba.replacements,
+        repairs: pcba.repairs,
+      };
+      return persistPcba(newPcba);
+    },
+    [pcba, persistPcba]
+  );
+
+  const onReplacement = useCallback(
+    async (formData) => {
+      const newPcbaItem = pcba.items.find((i) => i.id === formData.newPcbaItemId);
+      if (!newPcbaItem) return { ok: false, error: "PCBA baru tidak ditemukan." };
+      if (newPcbaItem.status !== "Good") return { ok: false, error: "PCBA baru harus berstatus Good." };
+
+      const oldItem = {
+        id: uid(),
+        serialNo: formData.oldSerialNo.trim(),
+        pcbaType: newPcbaItem.pcbaType,
+        product: newPcbaItem.product,
+        supplier: newPcbaItem.supplier,
+        warehouseLocation: newPcbaItem.warehouseLocation,
+        status: "Bad",
+        notes: formData.notes.trim(),
+        createdAt: new Date().toISOString(),
+      };
+
+      const replacement = {
+        id: uid(),
+        replacementNo: `REP-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-4)}`,
+        rmaId: formData.rmaId,
+        oldPcbaItemId: oldItem.id,
+        newPcbaItemId: newPcbaItem.id,
+        replacedBy: "Engineer",
+        replacedAt: new Date().toISOString(),
+      };
+
+      const trxOut = {
+        id: uid(),
+        transactionNo: `TRX-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-4)}`,
+        pcbaItemId: newPcbaItem.id,
+        type: "Replacement Out",
+        rmaId: formData.rmaId,
+        reason: `Replacement untuk RMA ${rma.find((x) => x.id === formData.rmaId)?.ticketNo || "-"}`,
+        createdAt: new Date().toISOString(),
+      };
+
+      const trxIn = {
+        id: uid(),
+        transactionNo: `TRX-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-4)}`,
+        pcbaItemId: oldItem.id,
+        type: "Replacement In (Bad)",
+        rmaId: formData.rmaId,
+        reason: `PCBA lama dari RMA ${rma.find((x) => x.id === formData.rmaId)?.ticketNo || "-"}`,
+        createdAt: new Date().toISOString(),
+      };
+
+      const updatedItems = pcba.items.map((i) =>
+        i.id === newPcbaItem.id ? { ...i, status: "Used for Replacement" } : i
+      );
+      const newPcba = {
+        items: [oldItem, ...updatedItems],
+        transactions: [trxOut, trxIn, ...pcba.transactions],
+        replacements: [replacement, ...pcba.replacements],
+        repairs: pcba.repairs,
+      };
+      return persistPcba(newPcba);
+    },
+    [pcba, rma, persistPcba]
+  );
+
+  const onRepair = useCallback(
+    async (formData) => {
+      const item = pcba.items.find((i) => i.id === formData.pcbaItemId);
+      if (!item) return { ok: false, error: "PCBA tidak ditemukan." };
+      if (item.status === "Good") return { ok: false, error: "PCBA Good tidak perlu direpair." };
+
+      const repair = {
+        id: uid(),
+        repairNo: `RPR-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-4)}`,
+        pcbaItemId: item.id,
+        engineer: formData.engineer,
+        analysis: formData.analysis.trim(),
+        actionTaken: formData.actionTaken.trim(),
+        componentsReplaced: formData.componentsReplaced.trim(),
+        testingResult: formData.testingResult.trim(),
+        repairResult: formData.repairResult,
+        qcStatus: "Pending",
+        createdAt: new Date().toISOString(),
+      };
+
+      const trx = {
+        id: uid(),
+        transactionNo: `TRX-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-4)}`,
+        pcbaItemId: item.id,
+        type: "Repair Started",
+        rmaId: null,
+        reason: formData.analysis.trim() || "Mulai repair",
+        createdAt: new Date().toISOString(),
+      };
+
+      const updatedItems = pcba.items.map((i) =>
+        i.id === item.id ? { ...i, status: "Under Repair" } : i
+      );
+      const newPcba = {
+        items: updatedItems,
+        transactions: [trx, ...pcba.transactions],
+        replacements: pcba.replacements,
+        repairs: [repair, ...pcba.repairs],
+      };
+      return persistPcba(newPcba);
+    },
+    [pcba, persistPcba]
+  );
+
+  const onQc = useCallback(
+    async (repairId, qcStatus) => {
+      const repair = pcba.repairs.find((r) => r.id === repairId);
+      if (!repair) return { ok: false, error: "Repair tidak ditemukan." };
+
+      const item = pcba.items.find((i) => i.id === repair.pcbaItemId);
+      if (!item) return { ok: false, error: "PCBA terkait tidak ditemukan." };
+
+      const newStatus = qcStatus === "Passed" ? "Good" : "Bad";
+
+      const updatedRepairs = pcba.repairs.map((r) =>
+        r.id === repairId ? { ...r, qcStatus } : r
+      );
+      const updatedItems = pcba.items.map((i) =>
+        i.id === item.id ? { ...i, status: newStatus } : i
+      );
+
+      const trx = {
+        id: uid(),
+        transactionNo: `TRX-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-4)}`,
+        pcbaItemId: item.id,
+        type: qcStatus === "Passed" ? "QC Passed" : "QC Failed",
+        rmaId: null,
+        reason: `QC ${qcStatus} untuk repair ${repair.repairNo}`,
+        createdAt: new Date().toISOString(),
+      };
+
+      const newPcba = {
+        items: updatedItems,
+        transactions: [trx, ...pcba.transactions],
+        replacements: pcba.replacements,
+        repairs: updatedRepairs,
+      };
+      return persistPcba(newPcba);
+    },
+    [pcba, persistPcba]
+  );
+
   const unitHistoryLookup = useCallback(
     (sn, mac) => {
       const matches = (e, snField, macField) =>
@@ -4487,6 +4899,7 @@ export default function App() {
     { id: "wa", label: t.waLog, icon: MessageSquare },
     { id: "unithistory", label: t.unitHistory, icon: ScanSearch },
     { id: "report", label: t.weeklyReport, icon: FileClock },
+    { id: "pcba", label: t.pcbaInventory, icon: Boxes },
     { id: "settings", label: t.settings, icon: Settings2 },
   ];
 
@@ -4558,20 +4971,16 @@ export default function App() {
             cursor: "pointer",
           }}
         >
-          <div
+          <img
+            src={hsgqLogo}
+            alt="HSGQ"
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 9,
-              background: T.cyan,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              height: 55,
+              width: "auto",
+              objectFit: "contain",
               flexShrink: 0,
             }}
-          >
-            <Wifi size={17} color="#FFFFFF" />
-          </div>
+          />
           <div>
             <div
               style={{
@@ -4582,7 +4991,7 @@ export default function App() {
                 letterSpacing: 0.1,
               }}
             >
-              HSGQ Cloud
+                {"HSGQ RMA"}
             </div>
             <div
               style={{
@@ -4733,7 +5142,7 @@ export default function App() {
               {isUsingFirebase ? t.firestoreConnected : t.localMode}
             </div>
 
-            <UserCenter />
+            <UserCenter t={t} />
           </div>
         </div>
 
@@ -5041,6 +5450,25 @@ export default function App() {
                 subtitle={t.reportPageSubtitle}
               />
               <WeeklyReport rma={rma} wa={wa} t={t} />
+            </>
+          )}
+
+          {tab === "pcba" && (
+            <>
+              <SectionHeader
+                title={t.pcbaInventory}
+                subtitle="PCBA inventory management and repair tracking"
+              />
+              <PcbaInventoryTab
+                pcba={pcba}
+                rma={rma}
+                master={master}
+                onGoodsReceipt={onGoodsReceipt}
+                onReplacement={onReplacement}
+                onRepair={onRepair}
+                onQc={onQc}
+                t={t}
+              />
             </>
           )}
 

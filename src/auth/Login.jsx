@@ -21,6 +21,8 @@ import {
   ArrowLeft,
 } from "lucide-react";
 
+import hsgqLogo from "../assets/hsgq-logo.png";
+
 const COLORS = {
   blue: "#2563EB",
   blueDark: "#1D4ED8",
@@ -241,12 +243,20 @@ export default function Login() {
         {/* LOGO / HEADER */}
 
         <div style={styles.logoWrapper}>
-          <div style={styles.logo}>H</div>
+          <img
+            src={hsgqLogo}
+            alt="HSGQ"
+            style={{
+              height: 60,
+              width: "auto",
+              objectFit: "contain",
+            }}
+          />
 
           <div>
-            <div style={styles.brand}>HSGQ CLOUD</div>
+            <div style={styles.brand}>HSGQ RMA</div>
 
-            <div style={styles.subtitle}>RMA & Technical Support</div>
+            <div style={styles.subtitle}>RMA & Case Log Book</div>
           </div>
         </div>
 
@@ -554,19 +564,6 @@ const styles = {
     alignItems: "center",
     gap: 12,
     marginBottom: 32,
-  },
-
-  logo: {
-    width: 42,
-    height: 42,
-    borderRadius: 10,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: COLORS.blue,
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: 800,
   },
 
   brand: {

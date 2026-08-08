@@ -24,7 +24,7 @@ import { useAuth } from "../auth/AuthContext.jsx";
 
 import { useTheme } from "../context/ThemeContext.jsx";
 
-export default function UserCenter() {
+export default function UserCenter({ t }) {
   const { user, profile, setProfile, logout } = useAuth();
 
   const { theme, setTheme } = useTheme();
@@ -82,7 +82,7 @@ export default function UserCenter() {
     setError("");
 
     if (!form.displayName.trim()) {
-      setError("Nama tidak boleh kosong.");
+      setError(t.nameRequired);
       return;
     }
 
@@ -129,7 +129,7 @@ export default function UserCenter() {
         theme,
       }));
 
-      setMessage("Profile berhasil diperbarui.");
+      setMessage(t.profileUpdated);
 
       setTimeout(() => {
         setProfileOpen(false);
@@ -138,7 +138,7 @@ export default function UserCenter() {
     } catch (err) {
       console.error(err);
 
-      setError(err?.message || "Gagal menyimpan profile.");
+      setError(err?.message || t.profileUpdateFailed);
     } finally {
       setSaving(false);
     }
@@ -168,7 +168,7 @@ export default function UserCenter() {
         <span className="user-trigger-info">
           <strong>{displayName}</strong>
 
-          <small>User Center</small>
+          <small>{t.userCenter}</small>
         </span>
 
         <ChevronDown size={14} className={open ? "user-chevron-open" : ""} />
@@ -203,14 +203,14 @@ export default function UserCenter() {
               <User size={16} />
 
               <span>
-                <strong>Profile</strong>
+                <strong>{t.profile}</strong>
 
-                <small>Edit informasi akun</small>
+                <small>{t.editAccountInfo}</small>
               </span>
             </button>
 
             <div className="user-menu-section">
-              <div className="user-menu-section-title">Appearance</div>
+              <div className="user-menu-section-title">{t.appearance}</div>
 
               <div className="theme-options">
                 <button
@@ -220,7 +220,7 @@ export default function UserCenter() {
                   onClick={() => selectTheme("light")}
                 >
                   <Sun size={15} />
-                  <span>Light</span>
+                  <span>{t.light}</span>
                 </button>
 
                 <button
@@ -230,7 +230,7 @@ export default function UserCenter() {
                   onClick={() => selectTheme("dark")}
                 >
                   <Moon size={15} />
-                  <span>Dark</span>
+                  <span>{t.dark}</span>
                 </button>
 
                 <button
@@ -240,7 +240,7 @@ export default function UserCenter() {
                   onClick={() => selectTheme("system")}
                 >
                   <Monitor size={15} />
-                  <span>System</span>
+                  <span>{t.system}</span>
                 </button>
               </div>
             </div>
@@ -250,7 +250,7 @@ export default function UserCenter() {
             <button className="user-menu-item logout" onClick={handleLogout}>
               <LogOut size={16} />
 
-              <span>Logout</span>
+              <span>{t.logout}</span>
             </button>
           </div>
         </>
@@ -263,9 +263,9 @@ export default function UserCenter() {
           <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
             <div className="profile-modal-header">
               <div>
-                <h2>User Center</h2>
+                <h2>{t.userCenter}</h2>
 
-                <p>Kelola informasi profile kamu</p>
+                <p>{t.manageProfile}</p>
               </div>
 
               <button
@@ -291,20 +291,20 @@ export default function UserCenter() {
                 <label className="profile-field">
                   <span>
                     <User size={14} />
-                    Nick Name
+                    {t.nickName}
                   </span>
 
                   <input
                     value={form.displayName}
                     onChange={(e) => updateField("displayName", e.target.value)}
-                    placeholder="Nama kamu"
+                    placeholder={t.yourName}
                   />
                 </label>
 
                 <label className="profile-field">
                   <span>
                     <Mail size={14} />
-                    Email
+                    {t.email}
                   </span>
 
                   <input value={email} disabled />
@@ -313,39 +313,39 @@ export default function UserCenter() {
                 <label className="profile-field">
                   <span>
                     <Phone size={14} />
-                    Phone
+                    {t.phone}
                   </span>
 
                   <input
                     value={form.phone}
                     onChange={(e) => updateField("phone", e.target.value)}
-                    placeholder="08xxxxxxxxxx"
+                    placeholder={t.phonePlaceholder}
                   />
                 </label>
 
                 <label className="profile-field">
                   <span>
                     <Building2 size={14} />
-                    Company
+                    {t.company}
                   </span>
 
                   <input
                     value={form.company}
                     onChange={(e) => updateField("company", e.target.value)}
-                    placeholder="PT HSGQ Indonesia"
+                    placeholder={t.companyPlaceholder}
                   />
                 </label>
 
                 <label className="profile-field full">
                   <span>
                     <MapPin size={14} />
-                    Address
+                    {t.address}
                   </span>
 
                   <textarea
                     value={form.address}
                     onChange={(e) => updateField("address", e.target.value)}
-                    placeholder="Alamat"
+                    placeholder={t.addressPlaceholder}
                     rows={3}
                   />
                 </label>
@@ -353,9 +353,9 @@ export default function UserCenter() {
 
               <div className="profile-theme-box">
                 <div>
-                  <strong>Appearance</strong>
+                  <strong>{t.appearance}</strong>
 
-                  <span>Pilih tampilan aplikasi</span>
+                  <span>{t.selectAppearance}</span>
                 </div>
 
                 <div className="theme-options">
@@ -367,7 +367,7 @@ export default function UserCenter() {
                     onClick={() => selectTheme("light")}
                   >
                     <Sun size={15} />
-                    Light
+                    {t.light}
                   </button>
 
                   <button
@@ -378,7 +378,7 @@ export default function UserCenter() {
                     onClick={() => selectTheme("dark")}
                   >
                     <Moon size={15} />
-                    Dark
+                    {t.dark}
                   </button>
 
                   <button
@@ -391,7 +391,7 @@ export default function UserCenter() {
                     onClick={() => selectTheme("system")}
                   >
                     <Monitor size={15} />
-                    System
+                    {t.system}
                   </button>
                 </div>
               </div>
@@ -408,7 +408,7 @@ export default function UserCenter() {
                   className="profile-cancel"
                   onClick={() => setProfileOpen(false)}
                 >
-                  Cancel
+                  {t.cancel}
                 </button>
 
                 <button
@@ -418,7 +418,7 @@ export default function UserCenter() {
                 >
                   <Save size={15} />
 
-                  {saving ? "Saving..." : "Save Changes"}
+                  {saving ? t.saving : t.saveChanges}
                 </button>
               </div>
             </form>
