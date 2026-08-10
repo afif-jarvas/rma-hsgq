@@ -253,14 +253,6 @@ const I18N = {
     waMsgModalTitle: "PESAN KONFIRMASI WHATSAPP",
     unitHistoryPageSubtitle:
       "Quick search riwayat unit berdasarkan SN/MAC lintas RMA & WhatsApp Case",
-    unitHistorySearchPlaceholder: "Filter SN, MAC, customer, case...",
-    unitHistoryHint:
-      "Cari SN/MAC untuk melihat apakah unit ini pernah punya riwayat RMA atau case WhatsApp sebelumnya — berguna sebelum bikin tiket baru untuk unit yang sama.",
-    unitHistoryNotFound:
-      'Tidak ditemukan riwayat untuk "{q}". Unit ini baru pertama kali masuk sistem.',
-    unitHistoryPriorWarning:
-      "⚠ Unit ini pernah memiliki {n} riwayat sebelumnya.",
-    unitHistoryPartialMatch: "Kecocokan sebagian",
     reportPageSubtitle: "Ringkasan mingguan otomatis dari RMA + WhatsApp log",
     reportFromDate: "Dari Tanggal",
     reportToDate: "Sampai Tanggal",
@@ -529,12 +521,6 @@ const I18N = {
     pcbaAction: "Action",
     pcbaOldSerial: "Old Serial",
     pcbaNewSerial: "New Serial",
-    // Unit History
-    unitHistorySearchPlaceholder: "Filter SN, MAC, customer, case...",
-    unitHistoryHint: "Search SN/MAC to see if this unit already has RMA or WhatsApp case history — useful before creating a new ticket for the same unit.",
-    unitHistoryNotFound: 'No history found for "{q}". This unit is new to the system.',
-    unitHistoryPriorWarning: "⚠ This unit already has {n} previous history entries.",
-    unitHistoryPartialMatch: "Partial match",
     // Weekly Report
     weeklyReportFromDate: "From Date",
     weeklyReportToDate: "To Date",
@@ -1576,7 +1562,7 @@ function PhotoPickerCard({ title, photos, onAdd, onRemove, addLabel, capture }) 
             padding: "7px 12px",
             cursor: "pointer",
             fontSize: 12,
-            color: "var(--accent)",
+            color: "var(--primary)",
             textAlign: "left",
             fontWeight: 500,
           }}
@@ -2226,7 +2212,7 @@ function RmaForm({
                 setF((s) => ({
                   ...s,
                   unitPhotos: (s.unitPhotos || []).filter((_, i) => i !== idx),
-                }));
+                }))
               }}
               addLabel="+ Tambah Foto Unit"
               capture="environment"
@@ -2248,7 +2234,7 @@ function RmaForm({
                 setF((s) => ({
                   ...s,
                   labelPhotos: (s.labelPhotos || []).filter((_, i) => i !== idx),
-                }));
+                }))
               }}
               addLabel="+ Tambah Foto Label SN / MAC"
               capture="environment"
@@ -2750,10 +2736,11 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
             <Plus size={13} /> Tambah
           </Btn>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="wa-comm-container" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {(f.commHistory || []).map((c) => (
             <div
               key={c.id}
+              className="wa-comm-grid"
               style={{
                 display: "grid",
                 gridTemplateColumns: "110px 110px 1fr 1fr 28px",
@@ -3050,7 +3037,7 @@ function Dashboard({ rma, wa, t, lastLoginLabel }) {
         <Stat label={t.avgTat} value={avgTAT} accent={T.cyan} />
         <Stat label={t.totalWa} value={wa.length} />
       </div>
-      <div
+      <div className="dashboard-chart-grid"
         style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 14 }}
       >
         <div
@@ -3157,7 +3144,7 @@ function Dashboard({ rma, wa, t, lastLoginLabel }) {
           </ResponsiveContainer>
         </div>
       </div>
-      <div
+      <div className="dashboard-chart-grid"
         style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 14 }}
       >
         <div
@@ -3629,14 +3616,14 @@ function UnitHistory({ rma, wa, t }) {
         </div>
       )}
       {results.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="unit-history-list" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {query.trim() && results.length > 1 && (
             <InlineHint tone="warn">
               {t.unitHistoryPriorWarning.replace("{n}", results.length)}
             </InlineHint>
           )}
           {results.map((r, i) => (
-            <div
+            <div className="unit-history-item"
               key={i}
               style={{
                 display: "flex",

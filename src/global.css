@@ -1151,3 +1151,59 @@ option {
     font-size: 16px !important;
   }
 }
+
+/* ============================================================
+   RESPONSIVE AUDIT P1 FIXES
+   ============================================================ */
+
+.hsgq-desktop-menu-icon {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hsgq-desktop-menu-icon {
+    display: inline-block;
+  }
+}
+
+.unit-history-list {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.unit-history-item {
+  min-width: 680px;
+}
+
+@media (max-width: 767px) {
+  .hsgq-sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 140;
+    background: rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+  }
+
+  .dashboard-chart-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .wa-comm-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .wa-comm-grid {
+    min-width: 520px;
+  }
+}
+
