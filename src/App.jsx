@@ -12,6 +12,9 @@ import {
   Search,
   Wifi,
   ChevronDown,
+  ChevronUp,
+  ArrowUpDown,
+  ListFilter,
   Trash2,
   Pencil,
   Eye,
@@ -58,6 +61,7 @@ import { useTheme } from "./context/ThemeContext.jsx";
 
 import hsgqLogo from "./assets/hsgq-logo.png";
 import { exportRmaToExcel, parseRmaFromExcel } from "./utils/excelRma.js";
+import { exportWaToExcel, parseWaFromExcel } from "./utils/excelWa.js";
 
 /* ============================================================
    TOKENS — "Fiber patch bay" console
@@ -210,16 +214,12 @@ const I18N = {
     weeklyReportExportPdf: "Export PDF",
     weeklyReportEmptyRange: "Tidak ada case pada rentang tanggal ini.",
     weeklyReportPopupBlocked: "Popup browser diblokir. Izinkan popup untuk export PDF.",
-    weeklyReportSummary: "Ringkasan Kegiatan",
-    weeklyReportMonitoring: "Monitoring OLT dan ONU / OLT and ONU Monitoring",
-    weeklyReportTroubleshooting: "Troubleshooting Issue Customer / Customer Issue Troubleshooting",
-    weeklyReportSupport: "Technical Support HSGQ Jakarta / HSGQ Jakarta Technical Support",
-    weeklyReportIssue: "Issue & Troubleshooting / Kendala & Penanganan",
     add: "Tambah",
     addItemPlaceholder: "Tambah item...",
     searchPlaceholder: "Cari...",
     copy: "Salin",
     copied: "Tersalin",
+    copyFailed: "Gagal menyalin",
     editAction: "Edit",
     deleteAction: "Hapus",
     waMessageAction: "Pesan WA",
@@ -229,6 +229,91 @@ const I18N = {
     colStatus: "Status",
     colEngineer: "Engineer",
     colProduct: "Produk",
+    errCustomerPhoneRequired: "Nomor HP Customer wajib diisi.",
+    errDeviceTypeRequired: "Type Perangkat wajib diisi.",
+    errSnRequired: "SN wajib diisi.",
+    errMacRequired: "MAC wajib diisi.",
+    weeklyReportTitle: "RINGKASAN MINGGUAN - TECHNICAL SUPPORT",
+    weeklyReportPeriod: "Periode",
+    weeklyReportActivitySummary: "Ringkasan Kegiatan",
+    weeklyReportMonitoring: "Monitoring OLT dan ONU",
+    weeklyReportTroubleshooting: "Troubleshooting Issue Customer",
+    weeklyReportSupport: "Technical Support HSGQ Jakarta",
+    weeklyReportIssueSection: "Kendala & Penanganan",
+    weeklyReportDateLabel: "Tanggal",
+    weeklyReportCustomerLabel: "Customer / Perusahaan",
+    weeklyReportTypeLabel: "Tipe Perangkat",
+    weeklyReportProblemLabel: "Kendala",
+    weeklyReportAnalysisLabel: "Analisa",
+    weeklyReportSolutionLabel: "Solusi",
+    weeklyReportStatusLabel: "Status",
+    weeklyReportSolvedOn: "Selesai pada {date}",
+    weeklyReportFollowUp: "Follow up / monitoring",
+    statusCompleted: "Selesai",
+    statusCustomerReceived: "Diterima Customer",
+    statusOnProgress: "Sedang Diperbaiki",
+    statusOnChecking: "Sedang Dicek",
+    statusWaiting: "Menunggu",
+    pcbaStatusRepaired: "Repaired",
+    pcbaSubtitle: "Manajemen inventaris dan perbaikan PCBA",
+    colCompany: "Perusahaan",
+    colPhone: "No. HP",
+    colInitialProblem: "Kendala Awal",
+    colFinalAnalysis: "Analisa Akhir",
+    colSolvedDate: "Tgl Solved",
+    colCaseAge: "Umur (Hari)",
+    colDetail: "Detail",
+    viewDetail: "Lihat Detail",
+    pcbaEmptyStock: "Belum ada PCBA di stok. Klik 'Terima PCBA Baru' untuk mulai.",
+    pcbaEmptyReplacement: "Belum ada replacement PCBA.",
+    pcbaEmptyRepair: "Belum ada repair PCBA.",
+    pcbaEmptyTransactions: "Belum ada transaksi stok. Transaksi tercatat otomatis (append-only, tidak bisa diedit/dihapus).",
+    pcbaNewReplacement: "Replacement Baru",
+    pcbaNoReplacement: "No. Replacement",
+    pcbaNewRepair: "Repair Baru",
+    pcbaNoRepair: "No. Repair",
+    pcbaNoTransaction: "No. Transaksi",
+    pcbaReceiveNewTitle: "TERIMA PCBA BARU (GOODS RECEIPT)",
+    pcbaReplacementTitle: "REPLACEMENT PCBA",
+    pcbaDeleteConfirmTitle: "KONFIRMASI HAPUS PCBA",
+    pcbaStockHistory: "Riwayat Transaksi Stok ({n})",
+    pcbaRepairHistory: "Riwayat Repair ({n})",
+    close: "Tutup",
+    analysis: "Analisis",
+    action: "Tindakan",
+    pcbaSaveStockIn: "Simpan Stok Masuk",
+    pcbaRelatedRma: "RMA Terkait",
+    pcbaNewGoodStock: "PCBA Baru (stok Good)",
+    pcbaOldSerialLabel: "No. Serial PCBA Lama (yang dilepas dari unit)",
+    pcbaProcessReplacement: "Proses Replacement",
+    pcbaRepairTarget: "PCBA (status Bad / Under Repair)",
+    pcbaDamageAnalysis: "Analisis Kerusakan",
+    pcbaComponentsReplaced: "Komponen Diganti",
+    pcbaTestingResult: "Hasil Testing",
+    pcbaRepairResult: "Hasil Repair",
+    pcbaSaveRepair: "Simpan Repair",
+    toastPcbaUpdated: "Data PCBA berhasil diperbarui.",
+    toastPcbaDeleted: "Item PCBA berhasil dihapus.",
+    toastWaDeleted: "Case WhatsApp {no} berhasil dihapus.",
+    toastWaSaved: "Case WhatsApp berhasil disimpan.",
+    waSaveFailed: "Gagal menyimpan case. Coba lagi.",
+    toastRmaDeleted: "Tiket RMA {no} berhasil dihapus.",
+    deleteWaTitle: "HAPUS CASE WHATSAPP",
+    deleteRmaTitle: "HAPUS TIKET RMA",
+    deleteConfirmText: "Apakah Anda yakin ingin menghapus {type} berikut?",
+    waCase: "case WhatsApp",
+    rmaTicket: "tiket RMA",
+    waImportTotalDetected: "Total terdeteksi: {n} baris",
+    waImportDupeHandlingTitle: "Penanganan Duplikat:",
+    waImportDupeSkipNote: "({n} record duplikat dilewati)",
+    waImportDupeNewNote: "(generate Nomor Case baru)",
+    rmaInfoTicket: "Informasi Tiket",
+    rmaInfoReceiving: "Receiving",
+    rmaInfoPhysical: "Kondisi Fisik",
+    rmaUnitPhotos: "Foto Unit Perangkat",
+    rmaLabelPhotos: "Foto Label SN / MAC",
+    rmaCustomerComplaint: "Keluhan Customer",
+    rmaPhysicalDamageNotes: "Catatan Kerusakan Fisik",
     colCustomer: "Customer",
     colWarranty: "Warranty",
     colReceived: "Masuk",
@@ -242,6 +327,12 @@ const I18N = {
     rmaNewTicket: "Tiket Baru",
     rmaSearchPlaceholder: "Cari tiket, customer, SN, MAC...",
     rmaOverdueOnly: "Overdue saja",
+    rmaSortBy: "Urutkan",
+    rmaSortNewest: "Terbaru (Masuk)",
+    rmaSortOldest: "Terlama (Masuk)",
+    rmaSortLastUpdated: "Status Terbaru",
+    rmaSortOldestUpdated: "Status Terlama",
+    rmaShowing: "Menampilkan {shown} dari {total} tiket",
     rmaEmptyList:
       "Belum ada tiket RMA yang cocok dengan filter. Klik 'Tiket Baru' untuk mulai.",
     rmaModalNewTitle: "TIKET RMA BARU",
@@ -368,6 +459,23 @@ const I18N = {
     rmaImportConfirm: "Import {n} Tiket",
     rmaImportSuccess: "Berhasil mengimport {n} tiket baru.",
     rmaImportRowLabel: "Baris",
+    waExportExcel: "Export Excel",
+    waImportExcel: "Import Excel",
+    waImportModalTitle: "IMPORT WHATSAPP LOG DARI EXCEL",
+    waImportSelectFile: "Pilih file .xlsx / .xls",
+    waImportHint: "File harus menggunakan format Excel standar (LOGBOOKWhatsAPP.xlsx). Kolom wajib: Nama Customer dan Kendala Awal.",
+    waImportValidating: "Memvalidasi...",
+    waImportHeaderError: "Header tidak cocok",
+    waImportRowErrors: "Baris bermasalah",
+    waImportDuplicates: "Duplikat terdeteksi",
+    waImportValidRows: "Baris valid siap diimport",
+    waImportConfirm: "Import {n} Case",
+    waImportSuccess: "Berhasil mengimport {n} case WhatsApp baru.",
+    waImportRowLabel: "Baris",
+    waImportDupeSkip: "Dilewati",
+    waImportDupeImportNew: "Import duplikat sebagai case baru",
+    waExportAll: "Export Semua Record ({n})",
+    waExportFiltered: "Export Record Difilter ({n})",
   },
   en: {
     home: "Home",
@@ -431,6 +539,7 @@ const I18N = {
     searchPlaceholder: "Search...",
     copy: "Copy",
     copied: "Copied",
+    copyFailed: "Failed to copy",
     editAction: "Edit",
     deleteAction: "Delete",
     waMessageAction: "WA Message",
@@ -440,6 +549,91 @@ const I18N = {
     colStatus: "Status",
     colEngineer: "Engineer",
     colProduct: "Product",
+    errCustomerPhoneRequired: "Customer phone number is required.",
+    errDeviceTypeRequired: "Device type is required.",
+    errSnRequired: "SN is required.",
+    errMacRequired: "MAC is required.",
+    weeklyReportTitle: "WEEKLY SUMMARY - TECHNICAL SUPPORT",
+    weeklyReportPeriod: "Period",
+    weeklyReportActivitySummary: "Activity Summary",
+    weeklyReportMonitoring: "OLT and ONU Monitoring",
+    weeklyReportTroubleshooting: "Customer Issue Troubleshooting",
+    weeklyReportSupport: "HSGQ Jakarta Technical Support",
+    weeklyReportIssueSection: "Issue & Troubleshooting",
+    weeklyReportDateLabel: "Date",
+    weeklyReportCustomerLabel: "Customer / Company",
+    weeklyReportTypeLabel: "Device Type",
+    weeklyReportProblemLabel: "Problem / Issue",
+    weeklyReportAnalysisLabel: "Analysis",
+    weeklyReportSolutionLabel: "Solution",
+    weeklyReportStatusLabel: "Status",
+    weeklyReportSolvedOn: "Completed on {date}",
+    weeklyReportFollowUp: "Follow up / monitoring",
+    statusCompleted: "Completed",
+    statusCustomerReceived: "Customer Received",
+    statusOnProgress: "On Progress",
+    statusOnChecking: "On Checking",
+    statusWaiting: "Waiting",
+    pcbaStatusRepaired: "Repaired",
+    pcbaSubtitle: "PCBA inventory management and repair tracking",
+    colCompany: "Company",
+    colPhone: "Phone No.",
+    colInitialProblem: "Initial Problem",
+    colFinalAnalysis: "Final Analysis",
+    colSolvedDate: "Solved Date",
+    colCaseAge: "Age (Days)",
+    colDetail: "Detail",
+    viewDetail: "View Detail",
+    pcbaEmptyStock: "No PCBA in stock. Click 'Receive New PCBA' to begin.",
+    pcbaEmptyReplacement: "No PCBA replacements.",
+    pcbaEmptyRepair: "No PCBA repairs.",
+    pcbaEmptyTransactions: "No stock transactions. Transactions are logged automatically (append-only, cannot be edited/deleted).",
+    pcbaNewReplacement: "New Replacement",
+    pcbaNoReplacement: "Replacement No.",
+    pcbaNewRepair: "New Repair",
+    pcbaNoRepair: "Repair No.",
+    pcbaNoTransaction: "Transaction No.",
+    pcbaReceiveNewTitle: "RECEIVE NEW PCBA (GOODS RECEIPT)",
+    pcbaReplacementTitle: "REPLACEMENT PCBA",
+    pcbaDeleteConfirmTitle: "CONFIRM DELETE PCBA",
+    pcbaStockHistory: "Stock Transaction History ({n})",
+    pcbaRepairHistory: "Repair History ({n})",
+    close: "Close",
+    analysis: "Analysis",
+    action: "Action",
+    pcbaSaveStockIn: "Save Stock In",
+    pcbaRelatedRma: "Related RMA",
+    pcbaNewGoodStock: "New PCBA (Good stock)",
+    pcbaOldSerialLabel: "Old PCBA Serial No. (removed from unit)",
+    pcbaProcessReplacement: "Process Replacement",
+    pcbaRepairTarget: "PCBA (Bad / Under Repair status)",
+    pcbaDamageAnalysis: "Damage Analysis",
+    pcbaComponentsReplaced: "Components Replaced",
+    pcbaTestingResult: "Testing Result",
+    pcbaRepairResult: "Repair Result",
+    pcbaSaveRepair: "Save Repair",
+    toastPcbaUpdated: "PCBA data updated successfully.",
+    toastPcbaDeleted: "PCBA item deleted successfully.",
+    toastWaDeleted: "WhatsApp case {no} deleted successfully.",
+    toastWaSaved: "WhatsApp case saved successfully.",
+    waSaveFailed: "Failed to save case. Try again.",
+    toastRmaDeleted: "RMA ticket {no} deleted successfully.",
+    deleteWaTitle: "DELETE WHATSAPP CASE",
+    deleteRmaTitle: "DELETE RMA TICKET",
+    deleteConfirmText: "Are you sure you want to delete the following {type}?",
+    waCase: "WhatsApp case",
+    rmaTicket: "RMA ticket",
+    waImportTotalDetected: "Total detected: {n} rows",
+    waImportDupeHandlingTitle: "Duplicate Handling:",
+    waImportDupeSkipNote: "({n} duplicate records skipped)",
+    waImportDupeNewNote: "(generate new Case Number)",
+    rmaInfoTicket: "Ticket Information",
+    rmaInfoReceiving: "Receiving",
+    rmaInfoPhysical: "Physical Condition",
+    rmaUnitPhotos: "Device Unit Photos",
+    rmaLabelPhotos: "SN / MAC Label Photos",
+    rmaCustomerComplaint: "Customer Complaint",
+    rmaPhysicalDamageNotes: "Physical Damage Notes",
     colCustomer: "Customer",
     colWarranty: "Warranty",
     colReceived: "Received",
@@ -453,6 +647,12 @@ const I18N = {
     rmaNewTicket: "New Ticket",
     rmaSearchPlaceholder: "Search ticket, customer, SN, MAC...",
     rmaOverdueOnly: "Overdue only",
+    rmaSortBy: "Sort by",
+    rmaSortNewest: "Newest (Received)",
+    rmaSortOldest: "Oldest (Received)",
+    rmaSortLastUpdated: "Last Status Update",
+    rmaSortOldestUpdated: "Oldest Status Update",
+    rmaShowing: "Showing {shown} of {total} tickets",
     rmaEmptyList:
       "No RMA tickets match the filter yet. Click 'New Ticket' to start.",
     rmaModalNewTitle: "NEW RMA TICKET",
@@ -531,11 +731,6 @@ const I18N = {
     weeklyReportExportPdf: "Export PDF",
     weeklyReportEmptyRange: "No cases in this date range.",
     weeklyReportPopupBlocked: "Browser popup blocked. Allow popups to export PDF.",
-    weeklyReportSummary: "Activity Summary",
-    weeklyReportMonitoring: "OLT and ONU Monitoring / OLT and ONU Monitoring",
-    weeklyReportTroubleshooting: "Customer Issue Troubleshooting / Customer Issue Troubleshooting",
-    weeklyReportSupport: "HSGQ Jakarta Technical Support / HSGQ Jakarta Technical Support",
-    weeklyReportIssue: "Issue & Troubleshooting / Issue & Troubleshooting",
     tabReceiving: "Receiving",
     tabDiagnosis: "Diagnosis",
     tabWaiting: "Waiting",
@@ -639,6 +834,23 @@ const I18N = {
     rmaImportConfirm: "Import {n} Tickets",
     rmaImportSuccess: "Successfully imported {n} new tickets.",
     rmaImportRowLabel: "Row",
+    waExportExcel: "Export Excel",
+    waImportExcel: "Import Excel",
+    waImportModalTitle: "IMPORT WHATSAPP LOG FROM EXCEL",
+    waImportSelectFile: "Select .xlsx / .xls file",
+    waImportHint: "File must use the standard Excel format (LOGBOOKWhatsAPP.xlsx). Required columns: Customer Name and Initial Problem.",
+    waImportValidating: "Validating...",
+    waImportHeaderError: "Header mismatch",
+    waImportRowErrors: "Invalid rows",
+    waImportDuplicates: "Duplicates detected",
+    waImportValidRows: "Valid rows ready to import",
+    waImportConfirm: "Import {n} Cases",
+    waImportSuccess: "Successfully imported {n} new WhatsApp cases.",
+    waImportRowLabel: "Row",
+    waImportDupeSkip: "Skipped",
+    waImportDupeImportNew: "Import duplicates as new cases",
+    waExportAll: "Export All Records ({n})",
+    waExportFiltered: "Export Filtered Records ({n})",
   },
   zh: {
     home: "主页",
@@ -702,6 +914,7 @@ const I18N = {
     searchPlaceholder: "搜索...",
     copy: "复制",
     copied: "已复制",
+    copyFailed: "复制失败",
     editAction: "编辑",
     deleteAction: "删除",
     waMessageAction: "WA 消息",
@@ -711,6 +924,91 @@ const I18N = {
     colStatus: "状态",
     colEngineer: "工程师",
     colProduct: "产品",
+    errCustomerPhoneRequired: "客户电话号码为必填项。",
+    errDeviceTypeRequired: "设备型号为必填项。",
+    errSnRequired: "SN 为必填项。",
+    errMacRequired: "MAC 为必填项。",
+    weeklyReportTitle: "每周摘要 - 技术支持",
+    weeklyReportPeriod: "时间段",
+    weeklyReportActivitySummary: "活动摘要",
+    weeklyReportMonitoring: "OLT 和 ONU 监控",
+    weeklyReportTroubleshooting: "客户故障排查",
+    weeklyReportSupport: "HSGQ 雅加达技术支持",
+    weeklyReportIssueSection: "问题与排查",
+    weeklyReportDateLabel: "日期",
+    weeklyReportCustomerLabel: "客户 / 公司",
+    weeklyReportTypeLabel: "设备型号",
+    weeklyReportProblemLabel: "问题",
+    weeklyReportAnalysisLabel: "分析",
+    weeklyReportSolutionLabel: "解决方案",
+    weeklyReportStatusLabel: "状态",
+    weeklyReportSolvedOn: "完成于 {date}",
+    weeklyReportFollowUp: "跟进 / 监控",
+    statusCompleted: "已完成",
+    statusCustomerReceived: "客户已收货",
+    statusOnProgress: "处理中",
+    statusOnChecking: "检测中",
+    statusWaiting: "等待中",
+    pcbaStatusRepaired: "已修复",
+    pcbaSubtitle: "PCBA 库存管理与维修跟踪",
+    colCompany: "公司",
+    colPhone: "电话号码",
+    colInitialProblem: "初始故障描述",
+    colFinalAnalysis: "最终分析",
+    colSolvedDate: "解决日期",
+    colCaseAge: "时长 (天)",
+    colDetail: "详情",
+    viewDetail: "查看详情",
+    pcbaEmptyStock: "库存中暂无 PCBA。点击「接收新 PCBA」开始。",
+    pcbaEmptyReplacement: "暂无 PCBA 替换记录。",
+    pcbaEmptyRepair: "暂无 PCBA 维修记录。",
+    pcbaEmptyTransactions: "暂无库存交易记录。交易将自动记录（仅追加，不可编辑/删除）。",
+    pcbaNewReplacement: "新替换",
+    pcbaNoReplacement: "替换编号",
+    pcbaNewRepair: "新维修",
+    pcbaNoRepair: "维修编号",
+    pcbaNoTransaction: "交易编号",
+    pcbaReceiveNewTitle: "接收新 PCBA (入库)",
+    pcbaReplacementTitle: "PCBA 替换",
+    pcbaDeleteConfirmTitle: "确认删除 PCBA",
+    pcbaStockHistory: "库存交易历史 ({n})",
+    pcbaRepairHistory: "维修历史 ({n})",
+    close: "关闭",
+    analysis: "分析",
+    action: "处理措施",
+    pcbaSaveStockIn: "保存入库",
+    pcbaRelatedRma: "相关 RMA",
+    pcbaNewGoodStock: "新 PCBA (良品库存)",
+    pcbaOldSerialLabel: "旧 PCBA 序列号 (拆卸于设备)",
+    pcbaProcessReplacement: "处理替换",
+    pcbaRepairTarget: "PCBA (不良品 / 维修中状态)",
+    pcbaDamageAnalysis: "故障分析",
+    pcbaComponentsReplaced: "更换组件",
+    pcbaTestingResult: "测试结果",
+    pcbaRepairResult: "维修结果",
+    pcbaSaveRepair: "保存维修",
+    toastPcbaUpdated: "PCBA 数据更新成功。",
+    toastPcbaDeleted: "PCBA 项目删除成功。",
+    toastWaDeleted: "WhatsApp 案例 {no} 删除成功。",
+    toastWaSaved: "案例保存成功。",
+    waSaveFailed: "案例保存失败。请重试。",
+    toastRmaDeleted: "RMA 工单 {no} 删除成功。",
+    deleteWaTitle: "删除 WHATSAPP 案例",
+    deleteRmaTitle: "删除 RMA 工单",
+    deleteConfirmText: "确定要删除此 {type} 吗？",
+    waCase: "WhatsApp 案例",
+    rmaTicket: "RMA 工单",
+    waImportTotalDetected: "共检测到：{n} 行",
+    waImportDupeHandlingTitle: "重复项处理：",
+    waImportDupeSkipNote: "(跳过 {n} 条重复记录)",
+    waImportDupeNewNote: "(生成新的案例编号)",
+    rmaInfoTicket: "工单信息",
+    rmaInfoReceiving: "接收信息",
+    rmaInfoPhysical: "外观状况",
+    rmaUnitPhotos: "设备外观照片",
+    rmaLabelPhotos: "SN / MAC 标签照片",
+    rmaCustomerComplaint: "客户故障描述",
+    rmaPhysicalDamageNotes: "外观损坏备注",
     colCustomer: "客户",
     colWarranty: "保修",
     colReceived: "接收日期",
@@ -723,6 +1021,12 @@ const I18N = {
     rmaNewTicket: "新工单",
     rmaSearchPlaceholder: "搜索工单、客户、SN、MAC...",
     rmaOverdueOnly: "仅显示逾期",
+    rmaSortBy: "排序",
+    rmaSortNewest: "最新（接收日期）",
+    rmaSortOldest: "最早（接收日期）",
+    rmaSortLastUpdated: "最新状态更新",
+    rmaSortOldestUpdated: "最早状态更新",
+    rmaShowing: "显示 {shown} / {total} 张工单",
     rmaEmptyList: "暂无符合筛选条件的 RMA 工单。点击「新工单」开始。",
     rmaModalNewTitle: "新建 RMA 工单",
     rmaModalEditPrefix: "编辑",
@@ -798,11 +1102,6 @@ const I18N = {
     weeklyReportExportPdf: "导出 PDF",
     weeklyReportEmptyRange: "该日期范围内没有案例。",
     weeklyReportPopupBlocked: "浏览器弹窗被拦截。请允许弹窗以导出 PDF。",
-    weeklyReportSummary: "活动摘要",
-    weeklyReportMonitoring: "OLT 和 ONU 监控 / OLT and ONU Monitoring",
-    weeklyReportTroubleshooting: "客户故障排查 / Customer Issue Troubleshooting",
-    weeklyReportSupport: "HSGQ Jakarta 技术支持 / HSGQ Jakarta Technical Support",
-    weeklyReportIssue: "问题与排查 / Issue & Troubleshooting",
     tabReceiving: "接收",
     tabDiagnosis: "诊断",
     tabWaiting: "等待",
@@ -904,6 +1203,23 @@ const I18N = {
     rmaImportConfirm: "导入 {n} 张工单",
     rmaImportSuccess: "成功导入 {n} 张新工单。",
     rmaImportRowLabel: "行",
+    waExportExcel: "导出 Excel",
+    waImportExcel: "导入 Excel",
+    waImportModalTitle: "从 EXCEL 导入 WHATSAPP 日志",
+    waImportSelectFile: "选择 .xlsx / .xls 文件",
+    waImportHint: "文件必须使用标准 Excel 格式 (LOGBOOKWhatsAPP.xlsx)。必填列：Customer Name 和 Initial Problem。",
+    waImportValidating: "验证中...",
+    waImportHeaderError: "列标题不匹配",
+    waImportRowErrors: "无效行",
+    waImportDuplicates: "检测到重复项",
+    waImportValidRows: "有效行，准备导入",
+    waImportConfirm: "导入 {n} 个案例",
+    waImportSuccess: "成功导入 {n} 个新 WhatsApp 案例。",
+    waImportRowLabel: "行",
+    waImportDupeSkip: "已跳过",
+    waImportDupeImportNew: "将重复项导入为新案例",
+    waExportAll: "导出所有记录 ({n})",
+    waExportFiltered: "导出已筛选记录 ({n})",
   },
 };
 
@@ -916,7 +1232,48 @@ function getStoredLanguage() {
 /* ============================================================
    STATUS / OVERDUE HELPERS
    ============================================================ */
-const RMA_DONE_STATUSES = ["Closed", "Customer Received"];
+// RMA_DONE_NORMALIZED: explicit set of lowercase-trimmed status strings that
+// represent a genuinely completed/closed RMA case.
+// Rules:
+//   - Always lowercase + trimmed for comparison (handles whitespace & casing variance)
+//   - "Selesai" is included: some RMA records use this WA-originated status
+//   - "Closed" and "Customer Received" are the two canonical done statuses
+//   - Do NOT use substring matching — only exact normalized matches
+const RMA_DONE_NORMALIZED = new Set([
+  "selesai",
+  "closed",
+  "customer received",
+]);
+// Keep the old array for any external code that may reference it directly,
+// but ALL business logic must go through isRmaDone().
+const RMA_DONE_STATUSES = ["Closed", "Customer Received", "Selesai"];
+
+// isRmaDone: the single source of truth for "is this RMA completed?"
+// Returns true if the status, after trimming and lowercasing, is in RMA_DONE_NORMALIZED.
+// This handles:
+//   - "Selesai", "selesai", "  Selesai  " (whitespace-padded)
+//   - "Closed", "closed", "CLOSED"
+//   - "Customer Received"
+function isRmaDone(status) {
+  if (!status) return false;
+  return RMA_DONE_NORMALIZED.has(String(status).trim().toLowerCase());
+}
+
+// WhatsApp Done Status Whitelist
+const WA_DONE_NORMALIZED = new Set(["selesai", "closed"]);
+function isWaDone(status) {
+  if (!status) return false;
+  return WA_DONE_NORMALIZED.has(String(status).trim().toLowerCase());
+}
+
+function isWaOverdue(waEntry) {
+  if (!waEntry || !waEntry.caseDate) return false;
+  // A completed case or case with solvedDate is NEVER overdue
+  if (isWaDone(waEntry.status) || waEntry.solvedDate) return false;
+  // Target SLA resolution is 3 days from caseDate
+  const targetDate = addDaysISO(waEntry.caseDate, 3);
+  return targetDate < todayISO();
+}
 function ledColor(status) {
   const s = (status || "").toLowerCase();
   if (s.includes("closed") || s.includes("received") || s.includes("selesai"))
@@ -940,8 +1297,89 @@ function ledColor(status) {
   if (s.includes("reject") || s.includes("batal")) return T.red;
   return T.cyan;
 }
-function StatusLed({ status, size = 8 }) {
+const OPTION_DICT = {
+  // Statuses (WhatsApp & RMA & PCBA)
+  "on progress": { id: "On Progress", en: "In Progress", zh: "进行中" },
+  "selesai": { id: "Selesai", en: "Completed", zh: "已完成" },
+  "closed": { id: "Selesai", en: "Closed", zh: "已关闭" },
+  "fu tim china": { id: "FU Tim China", en: "Follow Up China Team", zh: "中国团队跟进" },
+  "belum ditag": { id: "Belum Ditag", en: "Not Tagged", zh: "尚未标记" },
+  "unit diterima": { id: "Unit Diterima", en: "Unit Received", zh: "设备已接收" },
+  "sedang dicek": { id: "Sedang Dicek", en: "On Checking", zh: "检测中" },
+  "on checking": { id: "Sedang Dicek", en: "On Checking", zh: "检测中" },
+  "dicek": { id: "Sedang Dicek", en: "On Checking", zh: "检测中" },
+  "menunggu": { id: "Menunggu", en: "Waiting", zh: "等待中" },
+  "waiting": { id: "Menunggu", en: "Waiting", zh: "等待中" },
+  "sedang diperbaiki": { id: "Sedang Diperbaiki", en: "Under Repair", zh: "维修中" },
+  "repairing": { id: "Sedang Diperbaiki", en: "Under Repair", zh: "维修中" },
+  "under repair": { id: "Sedang Diperbaiki", en: "Under Repair", zh: "维修中" },
+  "qc/testing": { id: "QC/Testing", en: "QC/Testing", zh: "QC/测试" },
+  "ready to ship": { id: "Ready to Ship", en: "Ready to Ship", zh: "准备发货" },
+  "shipped": { id: "Shipped", en: "Shipped", zh: "已发货" },
+  "customer received": { id: "Customer Received", en: "Customer Received", zh: "客户已收货" },
+  "pending": { id: "Pending", en: "Pending", zh: "待处理" },
+  "repaired": { id: "Repaired", en: "Repaired", zh: "已修复" },
+  "good": { id: "Good", en: "Good", zh: "良品" },
+  "bad": { id: "Bad", en: "Bad", zh: "不良品" },
+  "used for replacement": { id: "Used for Replacement", en: "Used for Replacement", zh: "用于替换" },
+  "scrap": { id: "Scrap", en: "Scrap", zh: "报废" },
+  "scrapped": { id: "Scrap", en: "Scrapped", zh: "已报废" },
+  "passed": { id: "Passed", en: "Passed", zh: "通过" },
+  "pass": { id: "Pass", en: "Pass", zh: "通过" },
+  "failed": { id: "Failed", en: "Failed", zh: "未通过" },
+  "fail": { id: "Fail", en: "Fail", zh: "未通过" },
+
+  // Final Results & Actions (Hasil Akhir & Tindakan)
+  "normal": { id: "Normal", en: "Normal", zh: "正常" },
+  "repair": { id: "Repair", en: "Repair", zh: "维修" },
+  "replace pcba": { id: "Replace PCBA", en: "Replace PCBA", zh: "更换 PCBA" },
+  "replace unit": { id: "Replace Unit", en: "Replace Unit", zh: "更换整机" },
+  "tidak dapat diperbaiki": { id: "Tidak Dapat Diperbaiki", en: "Cannot be Repaired", zh: "无法维修" },
+  "rejected": { id: "Rejected", en: "Rejected", zh: "已拒绝" },
+  "berhasil diperbaiki": { id: "Berhasil Diperbaiki", en: "Successfully Repaired", zh: "维修成功" },
+  "perlu follow-up tim china": { id: "Perlu Follow-up Tim China", en: "Follow-up China Team Needed", zh: "需要中国团队跟进" },
+  "return to principal": { id: "Return to Principal", en: "Return to Principal", zh: "退回原厂" },
+
+  // Waiting Reasons (Alasan Menunggu)
+  "spare part": { id: "Spare Part", en: "Spare Part", zh: "备件" },
+  "pending spare": { id: "Pending Spare", en: "Pending Spare", zh: "等待备件" },
+  "firmware": { id: "Firmware", en: "Firmware", zh: "固件" },
+  "hq / china": { id: "HQ / China", en: "HQ / China", zh: "总部 / 中国" },
+  "customer information": { id: "Customer Information", en: "Customer Information", zh: "客户信息" },
+  "other": { id: "Other", en: "Other", zh: "其他" },
+
+  // Warranty Statuses (Status Garansi)
+  "in warranty": { id: "In Warranty", en: "In Warranty", zh: "保修期内" },
+  "garansi ada": { id: "Garansi Ada", en: "In Warranty", zh: "保修期内" },
+  "out of warranty": { id: "Out of Warranty", en: "Out of Warranty", zh: "过保" },
+  "garansi habis": { id: "Garansi Habis", en: "Out of Warranty", zh: "过保" },
+  "warranty unknown": { id: "Warranty Unknown", en: "Warranty Unknown", zh: "保修未知" },
+  "garansi tidak diketahui": { id: "Garansi Tidak Diketahui", en: "Warranty Unknown", zh: "保修未知" },
+
+  // Shipping Methods / Pengiriman
+  "expedisi": { id: "EXPEDISI", en: "Expedition", zh: "物流快递" },
+  "cja jakarta": { id: "CJA JAKARTA", en: "CJA Jakarta", zh: "CJA 雅加达" },
+  "cja surabaya": { id: "CJA SURABAYA", en: "CJA Surabaya", zh: "CJA 泗水" },
+};
+
+function getLocalizedOption(val, t, lang) {
+  if (!val) return "—";
+  const str = String(val).trim();
+  const key = str.toLowerCase();
+  const found = OPTION_DICT[key];
+  if (!found) return str;
+
+  const currentLang = lang || (t?._lang) || localStorage.getItem("hsgq_language") || "id";
+  return found[currentLang] || found.id || str;
+}
+
+function getLocalizedStatus(status, t, lang) {
+  return getLocalizedOption(status, t, lang);
+}
+
+function StatusLed({ status, size = 8, t }) {
   const c = ledColor(status);
+  const displayLabel = getLocalizedStatus(status, t);
 
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -956,13 +1394,14 @@ function StatusLed({ status, size = 8 }) {
         }}
       />
       <span style={{ fontSize: 12.5, color: T.ink2, fontFamily: sans }}>
-        {status || "—"}
+        {displayLabel}
       </span>
     </span>
   );
 }
 function isOverdue(rma) {
-  if (!rma.eta || RMA_DONE_STATUSES.includes(rma.status)) return false;
+  // A completed/closed case is NEVER overdue, regardless of ETA.
+  if (!rma.eta || isRmaDone(rma.status)) return false;
   return rma.eta < todayISO();
 }
 function OverdueBadge() {
@@ -1203,7 +1642,10 @@ function TextArea(props) {
     />
   );
 }
-function Select({ options, ...props }) {
+function Select({ options, t, translateOptions = true, ...props }) {
+  const currentLang = localStorage.getItem("hsgq_language") || "id";
+  const curT = t || I18N[currentLang] || I18N.id;
+
   return (
     <div style={{ position: "relative" }}>
       <select
@@ -1219,7 +1661,7 @@ function Select({ options, ...props }) {
         <option value="">—</option>
         {options.map((o) => (
           <option key={o} value={o}>
-            {o}
+            {translateOptions ? getLocalizedOption(o, curT, currentLang) : o}
           </option>
         ))}
       </select>
@@ -1349,20 +1791,82 @@ function Modal({ title, onClose, children, width = 720 }) {
     </div>
   );
 }
+async function copyToClipboard(text) {
+  if (!text) return false;
+  // 1. Try modern Clipboard API if supported in current context
+  if (
+    typeof navigator !== "undefined" &&
+    navigator.clipboard &&
+    typeof navigator.clipboard.writeText === "function"
+  ) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      console.warn("navigator.clipboard.writeText failed, attempting fallback:", err);
+    }
+  }
+
+  // 2. Safe fallback for HTTP / restricted origins / older browsers
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.top = "-9999px";
+    textarea.style.opacity = "0";
+    textarea.setAttribute("readonly", "");
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const successful = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return Boolean(successful);
+  } catch (err) {
+    console.error("document.execCommand copy fallback failed:", err);
+    return false;
+  }
+}
+
 function CopyButton({ text, t }) {
   const tt = t || I18N.id;
-  const [copied, setCopied] = useState(false);
+  const [status, setStatus] = useState("idle"); // "idle" | "success" | "error"
+
+  const handleCopy = async () => {
+    if (!text) return;
+    const ok = await copyToClipboard(text);
+    if (ok) {
+      setStatus("success");
+      setTimeout(() => setStatus("idle"), 1800);
+    } else {
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 2200);
+    }
+  };
+
+  const isSuccess = status === "success";
+  const isError = status === "error";
+
+  const label = isSuccess
+    ? tt.copied || "Tersalin"
+    : isError
+    ? tt.copyFailed || "Gagal menyalin"
+    : tt.copy || "Salin";
+
   return (
     <Btn
-      variant={copied ? "solid" : "ghost"}
-      onClick={() => {
-        navigator.clipboard?.writeText(text).catch(() => {});
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      }}
+      variant={isSuccess ? "solid" : "ghost"}
+      style={isError ? { color: T.red, borderColor: T.red } : undefined}
+      onClick={handleCopy}
     >
-      {copied ? <Check size={14} /> : <Copy size={14} />}{" "}
-      {copied ? tt.copied : tt.copy}
+      {isSuccess ? (
+        <Check size={14} />
+      ) : isError ? (
+        <AlertTriangle size={14} />
+      ) : (
+        <Copy size={14} />
+      )}{" "}
+      {label}
     </Btn>
   );
 }
@@ -1654,11 +2158,13 @@ function PhotoLightbox({ photo, category, onClose }) {
   );
 }
 
-function RmaDetailModal({ entry, onClose }) {
+function RmaDetailModal({ entry, onClose, t }) {
   const [lightbox, setLightbox] = useState(null); // { photo, category }
 
   const unitPhotos = Array.isArray(entry.unitPhotos) ? entry.unitPhotos : [];
   const labelPhotos = Array.isArray(entry.labelPhotos) ? entry.labelPhotos : [];
+
+  const tt = t || I18N.id;
 
   const Row = ({ label, value }) => (
     <div style={{ display: "flex", gap: 10, padding: "6px 0", borderBottom: `1px solid var(--line)`, alignItems: "flex-start" }}>
@@ -1710,44 +2216,44 @@ function RmaDetailModal({ entry, onClose }) {
       <Modal title={`DETAIL RMA — ${entry.ticketNo}`} onClose={onClose} width={860}>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
 
-          <Section title="Informasi Tiket" icon={PackageSearch}>
-            <Row label="No. Tiket" value={entry.ticketNo} />
-            <Row label="Status" value={entry.status} />
-            <Row label="Engineer" value={entry.engineer} />
-            <Row label="Produk" value={entry.product} />
-            <Row label="Customer" value={entry.customerName} />
-            <Row label="No. HP Customer" value={entry.customerPhone} />
-            <Row label="Garansi" value={entry.warrantyStatus} />
+          <Section title={tt.rmaInfoTicket || "Informasi Tiket"} icon={PackageSearch}>
+            <Row label={tt.colTicket || "No. Tiket"} value={entry.ticketNo} />
+            <Row label={tt.colStatus || "Status"} value={getLocalizedStatus(entry.status, tt)} />
+            <Row label={tt.colEngineer || "Engineer"} value={entry.engineer} />
+            <Row label={tt.colProduct || "Produk"} value={entry.product} />
+            <Row label={tt.colCustomer || "Customer"} value={entry.customerName} />
+            <Row label={tt.colPhone || "No. HP Customer"} value={entry.customerPhone} />
+            <Row label={tt.colWarranty || "Garansi"} value={getLocalizedOption(entry.warrantyStatus, tt)} />
             <Row label="SN" value={entry.sn} />
             <Row label="MAC" value={entry.mac} />
-            <Row label="Keluhan Customer" value={entry.customerComplaint} />
+            <Row label={tt.rmaCustomerComplaint || "Keluhan Customer"} value={entry.customerComplaint} />
           </Section>
 
-          <Section title="Receiving" icon={Truck}>
-            <Row label="Tanggal Masuk" value={fmtDate(entry.receivedDate)} />
-            <Row label="Jam Diterima" value={entry.receivedTime} />
-            <Row label="Diterima Oleh" value={entry.receivedBy} />
-            <Row label="ETA" value={fmtDate(entry.eta)} />
-            <Row label="No. DO / Surat Jalan" value={entry.doNumber} />
-            <Row label="Pengirim / Kurir" value={entry.courierName} />
-            <Row label="Jumlah Unit" value={entry.unitQty} />
+          <Section title={tt.rmaInfoReceiving || "Receiving"} icon={Truck}>
+            <Row label={tt.colReceived || "Tanggal Masuk"} value={fmtDate(entry.receivedDate)} />
+            <Row label={tt.rmaReceivedTime || "Jam Diterima"} value={entry.receivedTime} />
+            <Row label={tt.rmaReceivedBy || "Diterima Oleh"} value={entry.receivedBy} />
+            <Row label={tt.colEta || "ETA"} value={fmtDate(entry.eta)} />
+            <Row label={tt.rmaDoNumber || "No. DO / Surat Jalan"} value={entry.doNumber} />
+            <Row label={tt.rmaCourierName || "Pengirim / Kurir"} value={entry.courierName} />
+            <Row label={tt.rmaUnitQty || "Jumlah Unit"} value={entry.unitQty} />
           </Section>
 
-          <Section title="Kondisi Fisik" icon={AlertTriangle}>
-            <Row label="Kondisi Fisik Saat Diterima" value={entry.physicalCondition} />
-            <Row label="Kelengkapan / Accessories" value={entry.accessories} />
-            <Row label="Catatan Kerusakan Fisik" value={entry.physicalDamageNotes} />
-            <Row label="Catatan Receiving" value={entry.receivingNotes} />
+          <Section title={tt.rmaInfoPhysical || "Kondisi Fisik"} icon={AlertTriangle}>
+            <Row label={tt.rmaPhysicalCondition || "Kondisi Fisik Saat Diterima"} value={entry.physicalCondition} />
+            <Row label={tt.rmaAccessories || "Kelengkapan / Accessories"} value={entry.accessories} />
+            <Row label={tt.rmaPhysicalDamageNotes || "Catatan Kerusakan Fisik"} value={entry.physicalDamageNotes} />
+            <Row label={tt.rmaReceivingNotes || "Catatan Receiving"} value={entry.receivingNotes} />
           </Section>
 
           {unitPhotos.length > 0 && (
-            <Section title="Foto Unit Perangkat" icon={ScanSearch}>
+            <Section title={tt.rmaUnitPhotos || "Foto Unit Perangkat"} icon={ScanSearch}>
               <PhotoGrid photos={unitPhotos} category="Foto Unit" />
             </Section>
           )}
 
           {labelPhotos.length > 0 && (
-            <Section title="Foto Label SN / MAC" icon={ScanSearch}>
+            <Section title={tt.rmaLabelPhotos || "Foto Label SN / MAC"} icon={ScanSearch}>
               <PhotoGrid photos={labelPhotos} category="Foto Label SN/MAC" />
             </Section>
           )}
@@ -1899,8 +2405,14 @@ function RmaForm({
         return;
       }
     }
-    if (!f.sn && !f.mac) {
-      setFormError("SN atau MAC minimal salah satu wajib diisi.");
+    const tt = t || I18N.id;
+
+    if (!f.sn || !f.sn.trim()) {
+      setFormError(tt.errSnRequired || "SN wajib diisi.");
+      return;
+    }
+    if (!f.mac || !f.mac.trim()) {
+      setFormError(tt.errMacRequired || "MAC wajib diisi.");
       return;
     }
 
@@ -2586,7 +3098,7 @@ function RmaForm({
 /* ============================================================
    WA FORM (with communication history)
    ============================================================ */
-function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
+function WaForm({ initial, master, existingCaseNos, onSave, onClose, t }) {
   const [f, setF] = useState(
     initial || {
       id: uid(),
@@ -2599,8 +3111,8 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
       sn: "",
       mac: "",
       initialProblem: "",
-      engineerTag: "",
-      status: master.statusWA[0] || "",
+      engineerTag: master.engineers?.[0] || "",
+      status: master.statusWA?.[0] || "Waiting",
       finalAnalysis: "",
       solvedDate: "",
       notes: "",
@@ -2609,13 +3121,14 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
   );
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const tt = t || I18N.id;
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
   const addComm = () =>
     setF((s) => ({
       ...s,
       commHistory: [
         ...(s.commHistory || []),
-        { id: uid(), date: todayISO(), handledBy: "", summary: "", result: "" },
+        { id: uid(), date: todayISO(), handledBy: master.engineers?.[0] || "", summary: "", result: "" },
       ],
     }));
   const updateComm = (id, key, val) =>
@@ -2634,21 +3147,12 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
   const handleSave = async () => {
     setFormError("");
 
-    const required = {
-      caseNo: "No. Case",
-      caseDate: "Tanggal Case",
-      engineerTag: "Engineer / Tagging",
-      status: "Status",
-      customerName: "Nama Customer",
-    };
-    for (const [key, label] of Object.entries(required)) {
-      if (!f[key] || !f[key].trim()) {
-        setFormError(`${label} wajib diisi.`);
-        return;
-      }
+    if (!f.customerPhone || !f.customerPhone.trim()) {
+      setFormError(tt.errCustomerPhoneRequired || "Nomor HP Customer wajib diisi.");
+      return;
     }
-    if (!f.sn && !f.mac) {
-      setFormError("SN atau MAC minimal salah satu wajib diisi.");
+    if (!f.deviceType || !f.deviceType.trim()) {
+      setFormError(tt.errDeviceTypeRequired || "Type Perangkat wajib diisi.");
       return;
     }
 
@@ -2656,7 +3160,7 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
     const result = await onSave(f);
     setSaving(false);
     if (!result?.ok) {
-      setFormError("Gagal menyimpan case. Coba lagi.");
+      setFormError(tt.waSaveFailed || "Gagal menyimpan case. Coba lagi.");
     }
   };
 
@@ -2666,44 +3170,44 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
         className="form-grid-2"
         style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
       >
-        <Field label="No. Case">
+        <Field label={tt.waCaseNo || "No. Case"}>
           <TextInput
             value={f.caseNo}
             onChange={set("caseNo")}
             style={{ fontFamily: mono }}
           />
         </Field>
-        <Field label="Tanggal Case">
+        <Field label={tt.waCaseDate || "Tanggal Case"}>
           <TextInput
             type="date"
             value={f.caseDate}
             onChange={set("caseDate")}
           />
         </Field>
-        <Field label="Engineer / Tagging">
+        <Field label={tt.waEngineerTag || "Engineer / Tagging"}>
           <Select
             options={master.engineers}
             value={f.engineerTag}
             onChange={set("engineerTag")}
           />
         </Field>
-        <Field label="Status">
+        <Field label={tt.colStatus || "Status"}>
           <Select
             options={master.statusWA}
             value={f.status}
             onChange={set("status")}
           />
         </Field>
-        <Field label="Nama Customer">
+        <Field label={tt.waCustomerName || "Nama Customer"}>
           <TextInput value={f.customerName} onChange={set("customerName")} />
         </Field>
-        <Field label="Perusahaan">
+        <Field label={tt.colCompany || "Perusahaan"}>
           <TextInput value={f.company} onChange={set("company")} />
         </Field>
-        <Field label="No. HP Customer">
+        <Field label={tt.colPhone || "No. HP Customer"}>
           <TextInput value={f.customerPhone} onChange={set("customerPhone")} />
         </Field>
-        <Field label="Type Perangkat">
+        <Field label={tt.colType || "Type Perangkat"}>
           <TextInput value={f.deviceType} onChange={set("deviceType")} />
         </Field>
         <Field label="SN">
@@ -2720,7 +3224,7 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose }) {
             style={{ fontFamily: mono }}
           />
         </Field>
-        <Field label="Tanggal Solved">
+        <Field label={tt.colSolvedDate || "Tanggal Solved"}>
           <TextInput
             type="date"
             value={f.solvedDate}
@@ -2947,6 +3451,415 @@ function DataTable({ columns, rows, onRowClick, emptyLabel }) {
 }
 
 /* ============================================================
+   RMA TABLE — per-column sort & filter (Excel-style)
+   ============================================================ */
+
+// COLUMN DEFINITIONS for RmaTable:
+// key        — field name on the RMA entry object
+// label      — display label (from t)
+// type       — "text" | "date" | "status" (drives sort comparator)
+// filterable — whether to show value-filter checkboxes
+// sortable   — whether to show sort options
+// valueKey   — actual field to read for unique values (defaults to key)
+
+function ColFilterPopover({ col, rows, colFilter, onApply, onClose, t }) {
+  // colFilter shape: { sort: "asc"|"desc"|null, values: Set<string> }
+  const currentSort = colFilter?.sort ?? null;
+  const currentValues = colFilter?.values ?? null; // null = all
+
+  // Collect all unique raw values from current (unfiltered) row set for THIS column
+  const allValues = useMemo(() => {
+    const vk = col.valueKey || col.key;
+    const seen = new Set();
+    rows.forEach((r) => {
+      const v = r[vk];
+      if (v !== undefined && v !== null && v !== "") seen.add(String(v));
+    });
+    return [...seen].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  }, [rows, col.key, col.valueKey]);
+
+  const [localSort, setLocalSort] = useState(currentSort);
+  const [localValues, setLocalValues] = useState(
+    currentValues !== null ? new Set(currentValues) : null
+  );
+  const [valSearch, setValSearch] = useState("");
+
+  const filteredVals = valSearch
+    ? allValues.filter((v) => v.toLowerCase().includes(valSearch.toLowerCase()))
+    : allValues;
+
+  const isAllChecked = localValues === null;
+  const toggleAll = () => {
+    if (isAllChecked) {
+      // deselect all
+      setLocalValues(new Set());
+    } else {
+      setLocalValues(null); // null = all
+    }
+  };
+  const toggleValue = (v) => {
+    if (localValues === null) {
+      // was all — now select only this one unchecked — invert
+      const s = new Set(allValues);
+      s.delete(v);
+      setLocalValues(s);
+    } else {
+      const s = new Set(localValues);
+      if (s.has(v)) s.delete(v);
+      else s.add(v);
+      setLocalValues(s.size === allValues.length ? null : s);
+    }
+  };
+  const isChecked = (v) => localValues === null || localValues.has(v);
+
+  const applyLabel = t?.apply || "Terapkan";
+  const clearLabel = t?.clearColFilter || "Hapus Filter Kolom ini";
+  const allLabel = t?.allValues || "Semua";
+
+  const sortLabels = col.type === "date"
+    ? { asc: t?.sortOldestNewest || "Terlama → Terbaru", desc: t?.sortNewestOldest || "Terbaru → Terlama" }
+    : col.type === "numeric"
+    ? { asc: "Kecil → Besar (1 → 9)", desc: "Besar → Kecil (9 → 1)" }
+    : { asc: t?.sortAZ || "A → Z", desc: t?.sortZA || "Z → A" };
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "100%",
+        left: 0,
+        zIndex: 9999,
+        background: T.panel,
+        border: `1px solid ${T.line}`,
+        borderRadius: 10,
+        boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+        minWidth: 210,
+        maxWidth: 260,
+        overflow: "hidden",
+        marginTop: 4,
+      }}
+    >
+      {/* Sort options */}
+      {col.sortable !== false && (
+        <div style={{ borderBottom: `1px solid ${T.line}`, padding: "6px 4px" }}>
+          {["asc", "desc"].map((dir) => (
+            <button
+              key={dir}
+              onClick={() => setLocalSort(localSort === dir ? null : dir)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                width: "100%",
+                padding: "6px 10px",
+                border: "none",
+                borderRadius: 6,
+                background: localSort === dir ? T.cyanDim : "transparent",
+                color: localSort === dir ? T.cyan : T.ink2,
+                fontSize: 12.5,
+                fontFamily: sans,
+                cursor: "pointer",
+                textAlign: "left",
+                fontWeight: localSort === dir ? 600 : 400,
+              }}
+            >
+              {dir === "asc" ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              {sortLabels[dir]}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Value filter */}
+      {col.filterable !== false && allValues.length > 0 && (
+        <div>
+          {/* Search within values */}
+          {allValues.length > 6 && (
+            <div style={{ padding: "6px 8px", borderBottom: `1px solid ${T.line}` }}>
+              <div style={{ position: "relative" }}>
+                <Search size={12} color={T.ink3} style={{ position: "absolute", left: 7, top: 7 }} />
+                <input
+                  value={valSearch}
+                  onChange={(e) => setValSearch(e.target.value)}
+                  placeholder={t?.searchValues || "Cari nilai..."}
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    height: 28,
+                    paddingLeft: 24,
+                    paddingRight: 8,
+                    border: `1px solid ${T.line}`,
+                    borderRadius: 6,
+                    background: T.void,
+                    color: T.ink,
+                    fontSize: 12,
+                    fontFamily: sans,
+                    outline: "none",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          {/* All option */}
+          <div style={{ maxHeight: 180, overflowY: "auto" }}>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "5px 10px",
+                cursor: "pointer",
+                fontSize: 12.5,
+                fontFamily: sans,
+                color: T.ink,
+                borderBottom: `1px solid ${T.line}`,
+                fontWeight: 600,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={isAllChecked}
+                onChange={toggleAll}
+                style={{ accentColor: T.cyan }}
+              />
+              {allLabel}
+            </label>
+            {filteredVals.map((v) => (
+              <label
+                key={v}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "5px 10px",
+                  cursor: "pointer",
+                  fontSize: 12.5,
+                  fontFamily: sans,
+                  color: T.ink2,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked(v)}
+                  onChange={() => toggleValue(v)}
+                  style={{ accentColor: T.cyan }}
+                />
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {v}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Footer buttons */}
+      <div
+        style={{
+          display: "flex",
+          gap: 6,
+          padding: "8px 8px",
+          borderTop: `1px solid ${T.line}`,
+          justifyContent: "space-between",
+        }}
+      >
+        <button
+          onClick={() => onApply({ sort: null, values: null })}
+          style={{
+            flex: 1,
+            fontSize: 11.5,
+            padding: "5px 8px",
+            border: `1px solid ${T.line}`,
+            borderRadius: 6,
+            background: "transparent",
+            color: T.ink3,
+            cursor: "pointer",
+            fontFamily: sans,
+          }}
+        >
+          {clearLabel}
+        </button>
+        <button
+          onClick={() =>
+            onApply({
+              sort: localSort,
+              values: localValues === null ? null : [...localValues],
+            })
+          }
+          style={{
+            flex: 1,
+            fontSize: 11.5,
+            padding: "5px 8px",
+            border: "none",
+            borderRadius: 6,
+            background: T.cyan,
+            color: "#fff",
+            cursor: "pointer",
+            fontFamily: sans,
+            fontWeight: 600,
+          }}
+        >
+          {applyLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function RmaTable({ columns, rows, allRows, colFilters, onColFilter, t, emptyLabel }) {
+  const [openCol, setOpenCol] = useState(null);
+  const popoverRef = useRef(null);
+
+  // Close popover on outside click
+  useEffect(() => {
+    if (!openCol) return;
+    const handler = (e) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
+        setOpenCol(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [openCol]);
+
+  return (
+    <div
+      style={{
+        overflowX: "auto",
+        WebkitOverflowScrolling: "touch",
+        border: `1px solid ${T.line}`,
+        borderRadius: 8,
+      }}
+    >
+      <table
+        style={{
+          width: "100%",
+          minWidth: 780,
+          borderCollapse: "collapse",
+          fontSize: 13,
+        }}
+      >
+        <thead>
+          <tr style={{ background: T.panel2 }}>
+            {columns.map((col) => {
+              const cf = colFilters[col.key];
+              const hasSort = cf?.sort;
+              const hasValFilter = cf?.values !== null && cf?.values !== undefined;
+              const isActive = hasSort || hasValFilter;
+              const isOpen = openCol === col.key;
+
+              return (
+                <th
+                  key={col.key}
+                  style={{
+                    textAlign: "left",
+                    padding: "10px 12px",
+                    color: isActive ? T.cyan : T.ink3,
+                    fontWeight: 600,
+                    fontSize: 11,
+                    letterSpacing: 0.4,
+                    textTransform: "uppercase",
+                    fontFamily: sans,
+                    borderBottom: `1px solid ${T.line}`,
+                    whiteSpace: "nowrap",
+                    position: "relative",
+                    userSelect: "none",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <span>{col.label}</span>
+                    {/* Sort indicator */}
+                    {hasSort && (
+                      <span style={{ color: T.cyan }}>
+                        {cf.sort === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                      </span>
+                    )}
+                    {/* Filter/sort toggle icon — only for filterable/sortable cols */}
+                    {(col.sortable !== false || col.filterable !== false) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenCol(isOpen ? null : col.key);
+                        }}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          background: isActive ? T.cyanDim : "transparent",
+                          border: isActive ? `1px solid ${T.cyan}44` : `1px solid transparent`,
+                          borderRadius: 4,
+                          padding: "1px 3px",
+                          cursor: "pointer",
+                          color: isActive ? T.cyan : T.ink3,
+                          lineHeight: 1,
+                        }}
+                        title={col.label}
+                      >
+                        {isActive ? <ListFilter size={11} /> : <ArrowUpDown size={11} />}
+                      </button>
+                    )}
+
+                    {/* Popover */}
+                    {isOpen && (
+                      <div ref={popoverRef} style={{ position: "absolute", top: "100%", left: 0, zIndex: 9999 }}>
+                        <ColFilterPopover
+                          col={col}
+                          rows={allRows}
+                          colFilter={cf}
+                          t={t}
+                          onApply={(applied) => {
+                            onColFilter(col.key, applied);
+                            setOpenCol(null);
+                          }}
+                          onClose={() => setOpenCol(null)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 && (
+            <tr>
+              <td
+                colSpan={columns.length}
+                style={{ padding: 24, textAlign: "center", color: T.ink3 }}
+              >
+                {emptyLabel}
+              </td>
+            </tr>
+          )}
+          {rows.map((row, i) => (
+            <tr
+              key={row.id || i}
+              style={{ borderBottom: `1px solid ${T.line}` }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = T.panel2)}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              {columns.map((col) => (
+                <td
+                  key={col.key}
+                  style={{
+                    padding: "9px 12px",
+                    color: T.ink,
+                    fontFamily: col.mono ? mono : sans,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {col.render ? col.render(row) : row[col.key]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ============================================================
    DASHBOARD
    ============================================================ */
 function Dashboard({ rma, wa, t, lastLoginLabel }) {
@@ -2993,10 +3906,10 @@ function Dashboard({ rma, wa, t, lastLoginLabel }) {
   }, [rma]);
 
   const rmaOpen = rma.filter(
-    (e) => !RMA_DONE_STATUSES.includes(e.status),
+    (e) => !isRmaDone(e.status),
   ).length;
   const rmaClosed = rma.filter((e) =>
-    RMA_DONE_STATUSES.includes(e.status),
+    isRmaDone(e.status),
   ).length;
   const rmaOverdue = rma.filter(isOverdue).length;
   const avgTAT = useMemo(() => {
@@ -3282,15 +4195,19 @@ function Dashboard({ rma, wa, t, lastLoginLabel }) {
    WEEKLY REPORT
    ============================================================ */
 function WeeklyReport({ rma, wa, t }) {
+  const tt = t || I18N.id;
   const [start, setStart] = useState(dateNDaysAgoISO(7));
   const [end, setEnd] = useState(todayISO());
 
   const cases = useMemo(() => {
     const inRange = (d) => d && d >= start && d <= end;
+
+    // RMA cases ALWAYS first (priority 0), sorted Date DESC
     const rmaCases = rma
       .filter((e) => inRange(e.receivedDate))
       .map((e) => ({
         channel: "RMA",
+        priority: 0,
         engineer: e.engineer,
         date: e.receivedDate,
         customer: e.customerName || e.company || "-",
@@ -3300,82 +4217,75 @@ function WeeklyReport({ rma, wa, t }) {
           [e.checkingResult, e.rootCause ? `Root cause: ${e.rootCause}` : ""]
             .filter(Boolean)
             .join(" | ") || "-",
-        solution: RMA_DONE_STATUSES.includes(e.status)
-          ? `Selesai pada ${fmtDate(e.closedDate || e.customerReceivedDate)}`
-          : e.actionTaken || "Follow up / monitoring",
+        solution: isRmaDone(e.status)
+          ? { isDone: true, doneDate: e.closedDate || e.customerReceivedDate }
+          : { isDone: false, action: e.actionTaken },
         status: e.status || "-",
-      }));
+      }))
+      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+
+    // WhatsApp cases ALWAYS second (priority 1), sorted Date DESC
     const waCases = wa
       .filter((e) => inRange(e.caseDate))
       .map((e) => ({
         channel: "WhatsApp",
+        priority: 1,
         engineer: e.engineerTag,
         date: e.caseDate,
         customer: e.customerName || e.company || "-",
         type: e.deviceType || "-",
         problem: e.initialProblem || "-",
         analysis: e.finalAnalysis || "-",
-        solution: (e.status || "").toLowerCase().includes("selesai")
-          ? `Selesai pada ${fmtDate(e.solvedDate)}`
-          : e.finalAnalysis || "Follow up / monitoring",
+        solution: isWaDone(e.status)
+          ? { isDone: true, doneDate: e.solvedDate }
+          : { isDone: false, action: e.finalAnalysis },
         status: e.status || "-",
-      }));
-    return [...rmaCases, ...waCases].sort((a, b) => (a.date > b.date ? 1 : -1));
+      }))
+      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+
+    // Combine: RMA first, then WA
+    return [...rmaCases, ...waCases];
   }, [rma, wa, start, end]);
 
-  const reportText = useMemo(() => {
-    const header = `WEEKLY SUMMARY / RINGKASAN MINGGUAN – TECHNICAL SUPPORT
-📅 Periode / Period:
-${fmtDate(start)} – ${fmtDate(end)}
-🧑‍💻 Ringkasan Kegiatan / Activity Summary:
-Monitoring OLT dan ONU / OLT and ONU Monitoring
-Troubleshooting Issue Customer / Customer Issue Troubleshooting
-Technical Support HSGQ Jakarta / HSGQ Jakarta Technical Support
-🚨 Issue & Troubleshooting / Kendala & Penanganan:
-============================================`;
-    const body = cases
-      .map(
-        (c, i) => `
-- Case ${i + 1} [${c.channel}] (${c.engineer || "-"})
-Tanggal / Date: ${fmtDate(c.date)}
-Customer / Company: ${c.customer}
-Type / Device Type: ${c.type}
-Problem / Issue: ${c.problem}
-Analisa / Analysis: ${c.analysis}
-Solusi / Solution: ${c.solution}
-Status / Status: ${c.status}
-============================================`,
-      )
-      .join("");
-    return header + body;
-  }, [cases, start, end]);
-
   const cleanReportText = useMemo(() => {
-    const header = `WEEKLY SUMMARY / RINGKASAN MINGGUAN - TECHNICAL SUPPORT
-Periode / Period:
+    const header = `${tt.weeklyReportTitle || "RINGKASAN MINGGUAN - TECHNICAL SUPPORT"}
+${tt.weeklyReportPeriod || "Periode"}:
 ${fmtDate(start)} - ${fmtDate(end)}
-Ringkasan Kegiatan / Activity Summary:
-Monitoring OLT dan ONU / OLT and ONU Monitoring
-Troubleshooting Issue Customer / Customer Issue Troubleshooting
-Technical Support HSGQ Jakarta / HSGQ Jakarta Technical Support
-Issue & Troubleshooting / Kendala & Penanganan:
+
+${tt.weeklyReportActivitySummary || "Ringkasan Kegiatan"}:
+- ${tt.weeklyReportMonitoring || "Monitoring OLT dan ONU"}
+- ${tt.weeklyReportTroubleshooting || "Troubleshooting Issue Customer"}
+- ${tt.weeklyReportSupport || "Technical Support HSGQ Jakarta"}
+
+${tt.weeklyReportIssueSection || "Kendala & Penanganan"}:
 ============================================`;
+
     const body = cases
-      .map(
-        (c, i) => `
+      .map((c, i) => {
+        const solText = c.solution.isDone
+          ? (tt.weeklyReportSolvedOn || "Selesai pada {date}").replace(
+              "{date}",
+              fmtDate(c.solution.doneDate)
+            )
+          : c.solution.action || tt.weeklyReportFollowUp || "Follow up / monitoring";
+
+        const locStatus = getLocalizedStatus(c.status, tt);
+
+        return `
 - Case ${i + 1} [${c.channel}] (${c.engineer || "-"})
-Tanggal / Date: ${fmtDate(c.date)}
-Customer / Company: ${c.customer}
-Type / Device Type: ${c.type}
-Problem / Issue: ${c.problem}
-Analisa / Analysis: ${c.analysis}
-Solusi / Solution: ${c.solution}
-Status / Status: ${c.status}
-============================================`,
-      )
+${tt.weeklyReportDateLabel || "Tanggal"}: ${fmtDate(c.date)}
+${tt.weeklyReportCustomerLabel || "Customer / Perusahaan"}: ${c.customer}
+${tt.weeklyReportTypeLabel || "Tipe Perangkat"}: ${c.type}
+${tt.weeklyReportProblemLabel || "Kendala"}: ${c.problem}
+${tt.weeklyReportAnalysisLabel || "Analisa"}: ${c.analysis}
+${tt.weeklyReportSolutionLabel || "Solusi"}: ${solText}
+${tt.weeklyReportStatusLabel || "Status"}: ${locStatus}
+============================================`;
+      })
       .join("");
+
     return header + body;
-  }, [cases, start, end]);
+  }, [cases, start, end, tt]);
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -3388,47 +4298,54 @@ Status / Status: ${c.status}
 
   function exportPdf() {
     const rows = cases
-      .map(
-        (c, i) => `
+      .map((c, i) => {
+        const solText = c.solution.isDone
+          ? (tt.weeklyReportSolvedOn || "Selesai pada {date}").replace(
+              "{date}",
+              fmtDate(c.solution.doneDate)
+            )
+          : c.solution.action || tt.weeklyReportFollowUp || "Follow up / monitoring";
+        const locStatus = getLocalizedStatus(c.status, tt);
+
+        return `
           <section class="case">
             <div class="case-title">Case ${i + 1} - ${escapeHtml(c.channel)}</div>
             <div class="grid">
-              <div><span>Date</span><strong>${escapeHtml(fmtDate(c.date))}</strong></div>
-              <div><span>Engineer</span><strong>${escapeHtml(c.engineer || "-")}</strong></div>
-              <div><span>Customer / Company</span><strong>${escapeHtml(c.customer)}</strong></div>
-              <div><span>Type / Device Type</span><strong>${escapeHtml(c.type)}</strong></div>
-              <div class="full"><span>Problem / Issue</span><strong>${escapeHtml(c.problem)}</strong></div>
-              <div class="full"><span>Analysis</span><strong>${escapeHtml(c.analysis)}</strong></div>
-              <div class="full"><span>Solution</span><strong>${escapeHtml(c.solution)}</strong></div>
-              <div><span>Status</span><strong>${escapeHtml(c.status)}</strong></div>
+              <div><span>${escapeHtml(tt.weeklyReportDateLabel || "Date")}</span><strong>${escapeHtml(fmtDate(c.date))}</strong></div>
+              <div><span>${escapeHtml(tt.colEngineer || "Engineer")}</span><strong>${escapeHtml(c.engineer || "-")}</strong></div>
+              <div><span>${escapeHtml(tt.weeklyReportCustomerLabel || "Customer / Company")}</span><strong>${escapeHtml(c.customer)}</strong></div>
+              <div><span>${escapeHtml(tt.weeklyReportTypeLabel || "Device Type")}</span><strong>${escapeHtml(c.type)}</strong></div>
+              <div class="full"><span>${escapeHtml(tt.weeklyReportProblemLabel || "Problem / Issue")}</span><strong>${escapeHtml(c.problem)}</strong></div>
+              <div class="full"><span>${escapeHtml(tt.weeklyReportAnalysisLabel || "Analysis")}</span><strong>${escapeHtml(c.analysis)}</strong></div>
+              <div class="full"><span>${escapeHtml(tt.weeklyReportSolutionLabel || "Solution")}</span><strong>${escapeHtml(solText)}</strong></div>
+              <div><span>${escapeHtml(tt.weeklyReportStatusLabel || "Status")}</span><strong>${escapeHtml(locStatus)}</strong></div>
             </div>
-          </section>`,
-      )
+          </section>`;
+      })
       .join("");
 
     const win = window.open("", "_blank");
     if (!win) {
-      window.alert("Popup browser diblokir. Izinkan popup untuk export PDF.");
+      window.alert(tt.weeklyReportPopupBlocked || "Popup browser diblokir. Izinkan popup untuk export PDF.");
       return;
     }
 
     win.document.write(`<!doctype html>
       <html>
         <head>
-          <title>Weekly Report ${escapeHtml(fmtDate(start))} - ${escapeHtml(fmtDate(end))}</title>
+          <title>${escapeHtml(tt.weeklyReportTitle || "Weekly Report")} ${escapeHtml(fmtDate(start))} - ${escapeHtml(fmtDate(end))}</title>
           <style>
             @page { size: A4; margin: 16mm; }
             * { box-sizing: border-box; }
             body { margin: 0; color: #111827; font-family: Arial, sans-serif; line-height: 1.45; }
             .toolbar { position: sticky; top: 0; display: flex; justify-content: flex-end; gap: 8px; padding: 10px 0; background: #fff; }
             button { border: 0; border-radius: 6px; background: #2563eb; color: #fff; padding: 9px 14px; font-weight: 700; cursor: pointer; }
-            .header { border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 18px; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2563eb; padding-bottom: 16px; margin-bottom: 22px; }
+            .header-text { flex: 1; min-width: 0; }
+            .header-logo { height: 135px; width: auto; max-width: 380px; object-fit: contain; flex-shrink: 0; margin-left: 24px; }
             .brand { font-size: 12px; font-weight: 700; color: #2563eb; letter-spacing: .4px; text-transform: uppercase; }
-            h1 { margin: 4px 0 6px; font-size: 24px; }
+            h1 { margin: 4px 0 6px; font-size: 24px; color: #111827; }
             .period { color: #4b5563; font-size: 12px; }
-            .summary { border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
-            .summary h2 { margin: 0 0 8px; font-size: 14px; }
-            .summary ul { margin: 0; padding-left: 18px; font-size: 12px; }
             .case { border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; margin-bottom: 12px; page-break-inside: avoid; }
             .case-title { font-weight: 700; color: #111827; margin-bottom: 10px; }
             .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 14px; }
@@ -3441,21 +4358,16 @@ Status / Status: ${c.status}
           </style>
         </head>
         <body>
-          <div class="toolbar"><button onclick="window.print()">Print / Save PDF</button></div>
+          <div class="toolbar"><button onclick="window.print()">${escapeHtml(tt.reportExportPdf || "Print / Save PDF")}</button></div>
           <div class="header">
-            <div class="brand">HSGQ Cloud</div>
-            <h1>Weekly Technical Support Report</h1>
-            <div class="period">${escapeHtml(fmtDate(start))} - ${escapeHtml(fmtDate(end))}</div>
+            <div class="header-text">
+              <div class="brand">HSGQ Cloud</div>
+              <h1>${escapeHtml(tt.weeklyReportTitle || "Weekly Technical Support Report")}</h1>
+              <div class="period">${escapeHtml(fmtDate(start))} - ${escapeHtml(fmtDate(end))}</div>
+            </div>
+            <img src="${hsgqLogo}" class="header-logo" alt="HSGQ Logo" />
           </div>
-          <section class="summary">
-            <h2>Activity Summary</h2>
-            <ul>
-              <li>Monitoring OLT dan ONU / OLT and ONU Monitoring</li>
-              <li>Troubleshooting Issue Customer / Customer Issue Troubleshooting</li>
-              <li>Technical Support HSGQ Jakarta / HSGQ Jakarta Technical Support</li>
-            </ul>
-          </section>
-          ${cases.length ? rows : '<div class="empty">Tidak ada case pada rentang tanggal ini.</div>'}
+          ${cases.length ? rows : `<div class="empty">${escapeHtml(tt.reportEmptyRange || "Tidak ada case pada rentang tanggal ini.")}</div>`}
         </body>
       </html>`);
     win.document.close();
@@ -3472,14 +4384,14 @@ Status / Status: ${c.status}
           flexWrap: "wrap",
         }}
       >
-        <Field label="Dari Tanggal">
+        <Field label={tt.weeklyReportFromDate || tt.reportFromDate || "Dari Tanggal"}>
           <TextInput
             type="date"
             value={start}
             onChange={(e) => setStart(e.target.value)}
           />
         </Field>
-        <Field label="Sampai Tanggal">
+        <Field label={tt.weeklyReportToDate || tt.reportToDate || "Sampai Tanggal"}>
           <TextInput
             type="date"
             value={end}
@@ -3493,13 +4405,13 @@ Status / Status: ${c.status}
             setEnd(todayISO());
           }}
         >
-          <CalendarRange size={14} /> 7 Hari Terakhir
+          <CalendarRange size={14} /> {tt.weeklyReportLast7Days || tt.reportLast7Days || "7 Hari Terakhir"}
         </Btn>
         <div style={{ flex: 1 }} />
         <Btn variant="ghost" onClick={exportPdf}>
-          <FileDown size={14} /> Export PDF
+          <FileDown size={14} /> {tt.weeklyReportExportPdf || tt.reportExportPdf || "Export PDF"}
         </Btn>
-        <CopyButton text={cleanReportText} />
+        <CopyButton text={cleanReportText} t={tt} />
       </div>
       <div
         style={{
@@ -3518,7 +4430,7 @@ Status / Status: ${c.status}
       >
         {cases.length === 0 ? (
           <span style={{ color: T.ink3 }}>
-            Tidak ada case pada rentang tanggal ini.
+            {tt.weeklyReportEmptyRange || tt.reportEmptyRange || "Tidak ada case pada rentang tanggal ini."}
           </span>
         ) : (
           cleanReportText
@@ -3531,7 +4443,7 @@ Status / Status: ${c.status}
 /* ============================================================
    UNIT HISTORY / QUICK SEARCH SN-MAC
    ============================================================ */
-function UnitHistory({ rma, wa, t }) {
+function UnitHistory({ rma, wa, t, onSelectDetail }) {
   const [query, setQuery] = useState("");
 
   const results = useMemo(() => {
@@ -3565,6 +4477,7 @@ function UnitHistory({ rma, wa, t }) {
         customer: e.customerName || e.company || "-",
         result: e.finalResult || "-",
         note: e.rootCause || e.checkingResult || "-",
+        raw: e,
       }));
     const waHits = wa
       .filter(
@@ -3594,6 +4507,7 @@ function UnitHistory({ rma, wa, t }) {
         customer: e.customerName || e.company || "-",
         result: e.finalAnalysis || "-",
         note: e.initialProblem || "-",
+        raw: e,
       }));
     return [...rmaHits, ...waHits].sort((a, b) => (a.date < b.date ? 1 : -1));
   }, [query, rma, wa]);
@@ -3615,6 +4529,7 @@ function UnitHistory({ rma, wa, t }) {
         status: e.status,
         sn: e.sn,
         mac: e.mac,
+        raw: e,
       }));
     return rmaHits.slice(0, 10);
   }, [query, rma, results]);
@@ -3687,13 +4602,18 @@ function UnitHistory({ rma, wa, t }) {
                 <span style={{ fontFamily: mono }}>{r.sn}</span> /{" "}
                 <span style={{ fontFamily: mono }}>{r.mac}</span>
               </div>
-              <div style={{ fontSize: 12, color: T.ink2, minWidth: 120 }}>
+              <div style={{ fontSize: 12, color: T.ink2, minWidth: 110 }}>
                 {r.customer}
               </div>
-              <div style={{ fontSize: 12.5, color: T.ink, flex: 1 }}>
+              <div style={{ fontSize: 12.5, color: T.ink, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {r.result}
               </div>
-              <div style={{ fontSize: 11.5, color: T.ink3 }}>{r.status}</div>
+              <div style={{ fontSize: 11.5, color: T.ink3, minWidth: 80 }}>{getLocalizedStatus(r.status, t)}</div>
+              <IconBtn
+                icon={Eye}
+                onClick={() => onSelectDetail && onSelectDetail(r.channel, r.raw)}
+                title={t.viewDetail || "Lihat detail"}
+              />
             </div>
           ))}
         </div>
@@ -3738,8 +4658,11 @@ function UnitHistory({ rma, wa, t }) {
 /* ============================================================
    SETTINGS / MASTER DATA
    ============================================================ */
-function TagList({ label, items, onChange }) {
+function TagList({ label, items, onChange, t }) {
   const [val, setVal] = useState("");
+  const currentLang = localStorage.getItem("hsgq_language") || "id";
+  const curT = t || I18N[currentLang] || I18N.id;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <span
@@ -3768,7 +4691,7 @@ function TagList({ label, items, onChange }) {
               color: T.ink,
             }}
           >
-            {it}
+            {getLocalizedOption(it, curT, currentLang)}
             <X
               size={12}
               style={{ cursor: "pointer", color: T.ink3 }}
@@ -3887,8 +4810,9 @@ function SettingsTab({ master, setMaster, t }) {
 /* ============================================================
    PCBA INVENTORY & REPAIR
    ============================================================ */
-function PcbaBadge({ status }) {
+function PcbaBadge({ status, t }) {
   const c = pcbaLed(status);
+  const displayLabel = getLocalizedStatus(status, t);
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
       <span
@@ -3902,13 +4826,13 @@ function PcbaBadge({ status }) {
         }}
       />
       <span style={{ fontSize: 12.5, color: T.ink2, fontFamily: sans }}>
-        {status}
+        {displayLabel}
       </span>
     </span>
   );
 }
 
-function GoodsReceiptForm({ master, onSave, onClose }) {
+function GoodsReceiptForm({ master, pcbaItems = [], onSave, onClose, t }) {
   const [f, setF] = useState({
     serialNo: "",
     pcbaType: master.pcbaTypes[0] || "",
@@ -3932,35 +4856,35 @@ function GoodsReceiptForm({ master, onSave, onClose }) {
         className="form-grid-2"
         style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
       >
-        <Field label="No. Serial PCBA">
+        <Field label={t.pcbaSerialNo || "No. Serial PCBA"}>
           <TextInput
             value={f.serialNo}
             onChange={set("serialNo")}
             style={{ fontFamily: mono }}
           />
         </Field>
-        <Field label="Tipe PCBA">
+        <Field label={t.pcbaType || "Tipe PCBA"}>
           <Select
             options={master.pcbaTypes}
             value={f.pcbaType}
             onChange={set("pcbaType")}
           />
         </Field>
-        <Field label="Produk Terkait">
+        <Field label={t.pcbaProduct || "Produk Terkait"}>
           <TextInput
             value={f.product}
             onChange={set("product")}
             placeholder="cth. G04ID"
           />
         </Field>
-        <Field label="Supplier">
+        <Field label={t.pcbaSupplier || "Supplier"}>
           <Select
             options={master.suppliers}
             value={f.supplier}
             onChange={set("supplier")}
           />
         </Field>
-        <Field label="Lokasi Gudang">
+        <Field label={t.pcbaWarehouseLocation || "Lokasi Gudang"}>
           <Select
             options={master.warehouseLocations}
             value={f.warehouseLocation}
@@ -3968,19 +4892,27 @@ function GoodsReceiptForm({ master, onSave, onClose }) {
           />
         </Field>
       </div>
-      <Field label="Catatan">
+      <Field label={t.pcbaNotes || "Catatan"}>
         <TextArea value={f.notes} onChange={set("notes")} />
       </Field>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
         <Btn variant="ghost" onClick={onClose} disabled={saving}>
-          Batal
+          {t.cancel || "Batal"}
         </Btn>
         <Btn
           variant="solid"
           disabled={saving}
           onClick={() => {
-            if (!f.serialNo.trim()) {
-              setErr("No. Serial PCBA wajib diisi.");
+            const sn = f.serialNo.trim();
+            if (!sn) {
+              setErr(t.errSnRequired || "No. Serial PCBA wajib diisi.");
+              return;
+            }
+            const isDupe = pcbaItems.some(
+              (i) => (i.serialNo || "").trim().toLowerCase() === sn.toLowerCase()
+            );
+            if (isDupe) {
+              setErr(`No. Serial PCBA "${sn}" sudah terdaftar di stok.`);
               return;
             }
             setSaving(true);
@@ -3989,14 +4921,358 @@ function GoodsReceiptForm({ master, onSave, onClose }) {
           }}
         >
           {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
-          Simpan Stok Masuk
+          {t.pcbaSaveStockIn || "Simpan Stok Masuk"}
         </Btn>
       </div>
     </div>
   );
 }
 
-function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose }) {
+function PcbaDetailModal({ item, pcba, rma, onClose, t }) {
+  if (!item) return null;
+
+  const itemTransactions = (pcba.transactions || []).filter((t) => t.pcbaItemId === item.id);
+  const itemRepairs = (pcba.repairs || []).filter((r) => r.pcbaItemId === item.id);
+
+  return (
+    <Modal title={`DETAIL PCBA — ${item.serialNo || "-"}`} onClose={onClose} width={640}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, maxHeight: "75vh", overflowY: "auto", paddingRight: 4 }}>
+        {/* Status Header */}
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            background: T.panel2,
+            padding: "12px 14px",
+            borderRadius: 8,
+            border: `1px solid ${T.line}`,
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3, textTransform: "uppercase", fontWeight: 600 }}>
+              {t.pcbaSerialNo || "No. Serial PCBA"}
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 700, fontFamily: mono, color: T.ink, marginTop: 2 }}>
+              {item.serialNo}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3, textTransform: "uppercase", fontWeight: 600 }}>
+              {t.colStatus || "Status"}
+            </div>
+            <div style={{ marginTop: 4 }}>
+              <PcbaBadge status={item.status} t={t} />
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3, textTransform: "uppercase", fontWeight: 600 }}>
+              {t.colReceived || "Tanggal Diterima"}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginTop: 2 }}>
+              {fmtDate(item.createdAt)}
+            </div>
+          </div>
+        </div>
+
+        {/* Metadata Grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+            gap: 10,
+            background: T.panel,
+            padding: "12px 14px",
+            borderRadius: 8,
+            border: `1px solid ${T.line}`,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>{t.pcbaType || "Tipe PCBA"}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{item.pcbaType || "—"}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>{t.pcbaProduct || "Produk Terkait"}</div>
+            <div style={{ fontSize: 13, color: T.ink }}>{item.product || "—"}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>{t.pcbaSupplier || "Supplier"}</div>
+            <div style={{ fontSize: 13, color: T.ink }}>{item.supplier || "—"}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>{t.pcbaWarehouseLocation || "Lokasi Gudang"}</div>
+            <div style={{ fontSize: 13, color: T.ink }}>{item.warehouseLocation || "—"}</div>
+          </div>
+        </div>
+
+        {/* Notes */}
+        {item.notes && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 6 }}>{t.pcbaNotes || "Catatan"}</div>
+            <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: T.ink, whiteSpace: "pre-wrap" }}>
+              {item.notes}
+            </div>
+          </div>
+        )}
+
+        {/* Transactions History */}
+        {itemTransactions.length > 0 && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 6 }}>
+              {(t.pcbaStockHistory || "Riwayat Transaksi Stok ({n})").replace("{n}", itemTransactions.length)}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {itemTransactions.map((trx) => (
+                <div
+                  key={trx.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    background: T.panel2,
+                    border: `1px solid ${T.line}`,
+                    borderRadius: 6,
+                    padding: "8px 12px",
+                    fontSize: 12,
+                  }}
+                >
+                  <div>
+                    <span style={{ fontFamily: mono, fontWeight: 600, color: T.cyan }}>{trx.transactionNo}</span>
+                    <span style={{ marginLeft: 8, color: T.ink }}>{trx.type}</span>
+                    {trx.reason && <span style={{ marginLeft: 8, color: T.ink3 }}>— {trx.reason}</span>}
+                  </div>
+                  <span style={{ fontSize: 11, color: T.ink3 }}>{fmtDate(trx.createdAt)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Repair History */}
+        {itemRepairs.length > 0 && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 6 }}>
+              {(t.pcbaRepairHistory || "Riwayat Repair ({n})").replace("{n}", itemRepairs.length)}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {itemRepairs.map((rpr) => (
+                <div
+                  key={rpr.id}
+                  style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 6, padding: "8px 12px", fontSize: 12 }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontFamily: mono, fontWeight: 600, color: T.cyan }}>{rpr.repairNo}</span>
+                    <span>{t.colEngineer || "Engineer"}: {rpr.engineer || "-"} | Result: {rpr.repairResult} | QC: {rpr.qcStatus}</span>
+                  </div>
+                  {rpr.analysis && <div style={{ color: T.ink2 }}>{t.analysis || "Analisis"}: {rpr.analysis}</div>}
+                  {rpr.actionTaken && <div style={{ color: T.ink2 }}>{t.action || "Tindakan"}: {rpr.actionTaken}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+          <Btn variant="solid" onClick={onClose}>
+            {t.close || "Tutup"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function EditPcbaModal({ item, pcbaItems = [], master, onSave, onClose, t }) {
+  const [f, setF] = useState({
+    serialNo: item.serialNo || "",
+    pcbaType: item.pcbaType || master.pcbaTypes[0] || "",
+    product: item.product || "",
+    supplier: item.supplier || master.suppliers[0] || "",
+    warehouseLocation: item.warehouseLocation || master.warehouseLocations[0] || "",
+    status: item.status || "Good",
+    notes: item.notes || "",
+  });
+  const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+  const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  return (
+    <Modal title={`${t.editAction || "EDIT"} PCBA — ${item.serialNo}`} onClose={onClose}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {err && <InlineHint tone="warn">{err}</InlineHint>}
+        <div className="form-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Field label={t.pcbaSerialNo || "No. Serial PCBA"}>
+            <TextInput
+              value={f.serialNo}
+              onChange={set("serialNo")}
+              style={{ fontFamily: mono }}
+            />
+          </Field>
+          <Field label={t.pcbaType || "Tipe PCBA"}>
+            <Select
+              options={master.pcbaTypes}
+              value={f.pcbaType}
+              onChange={set("pcbaType")}
+            />
+          </Field>
+          <Field label={t.pcbaProduct || "Produk Terkait"}>
+            <TextInput
+              value={f.product}
+              onChange={set("product")}
+              placeholder="cth. G04ID"
+            />
+          </Field>
+          <Field label={t.pcbaSupplier || "Supplier"}>
+            <Select
+              options={master.suppliers}
+              value={f.supplier}
+              onChange={set("supplier")}
+            />
+          </Field>
+          <Field label={t.pcbaWarehouseLocation || "Lokasi Gudang"}>
+            <Select
+              options={master.warehouseLocations}
+              value={f.warehouseLocation}
+              onChange={set("warehouseLocation")}
+            />
+          </Field>
+          <Field label={t.colStatus || "Status"}>
+            <Select
+              options={PCBA_STATUSES}
+              value={f.status}
+              onChange={set("status")}
+            />
+          </Field>
+        </div>
+        <Field label={t.pcbaNotes || "Catatan"}>
+          <TextArea value={f.notes} onChange={set("notes")} />
+        </Field>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <Btn variant="ghost" onClick={onClose} disabled={saving}>
+            {t.cancel || "Batal"}
+          </Btn>
+          <Btn
+            variant="solid"
+            disabled={saving}
+            onClick={async () => {
+              const sn = f.serialNo.trim();
+              if (!sn) {
+                setErr(t.errSnRequired || "No. Serial PCBA wajib diisi.");
+                return;
+              }
+              const isDupe = pcbaItems.some(
+                (i) => i.id !== item.id && (i.serialNo || "").trim().toLowerCase() === sn.toLowerCase()
+              );
+              if (isDupe) {
+                setErr(`No. Serial PCBA "${sn}" sudah terdaftar pada item lain.`);
+                return;
+              }
+              setSaving(true);
+              const ok = await onSave(item.id, {
+                ...item,
+                serialNo: sn,
+                pcbaType: f.pcbaType,
+                product: f.product.trim(),
+                supplier: f.supplier,
+                warehouseLocation: f.warehouseLocation,
+                status: f.status,
+                notes: f.notes.trim(),
+              });
+              setSaving(false);
+              if (ok) onClose();
+              else setErr("Gagal menyimpan perubahan.");
+            }}
+          >
+            {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
+            {t.saveChanges || "Simpan Perubahan"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function DeletePcbaModal({ item, pcba, onDelete, onClose, t }) {
+  const [deleting, setDeleting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  if (!item) return null;
+
+  const hasReplacements = (pcba.replacements || []).some(
+    (r) => r.oldPcbaItemId === item.id || r.newPcbaItemId === item.id
+  );
+  const hasRepairs = (pcba.repairs || []).some((r) => r.pcbaItemId === item.id);
+  const isReferenced = hasReplacements || hasRepairs;
+
+  const handleConfirm = async () => {
+    if (isReferenced) {
+      setErrorMsg("PCBA ini masih terhubung dengan riwayat replacement/repair dan tidak dapat dihapus.");
+      return;
+    }
+    setDeleting(true);
+    const ok = await onDelete(item.id);
+    setDeleting(false);
+    if (ok) {
+      onClose();
+    } else {
+      setErrorMsg("Gagal menghapus PCBA dari database.");
+    }
+  };
+
+  return (
+    <Modal title={t.pcbaDeleteConfirmTitle || "KONFIRMASI HAPUS PCBA"} onClose={onClose}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {isReferenced && (
+          <InlineHint tone="warn">
+            PCBA ini memiliki riwayat aktif pada tab Replacement atau Repair & QC. Demi integritas data, PCBA ini tidak dapat dihapus.
+          </InlineHint>
+        )}
+        <div style={{ fontSize: 13, color: T.ink }}>
+          Apakah Anda yakin ingin menghapus PCBA ini? Tindakan ini tidak dapat dibatalkan.
+        </div>
+        <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12.5 }}>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaSerialNo || "No. Serial PCBA"}:</div>
+            <div style={{ fontWeight: 700, fontFamily: mono, color: T.ink }}>{item.serialNo}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaType || "Tipe PCBA"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{item.pcbaType}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colStatus || "Status"}:</div>
+            <div style={{ marginTop: 2 }}><PcbaBadge status={item.status} t={t} /></div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaSupplier || "Supplier"} / {t.pcbaWarehouseLocation || "Lokasi"}:</div>
+            <div style={{ color: T.ink }}>{item.supplier} / {item.warehouseLocation}</div>
+          </div>
+        </div>
+
+        {errorMsg && <InlineHint tone="warn">{errorMsg}</InlineHint>}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 4 }}>
+          <Btn variant="ghost" onClick={onClose} disabled={deleting}>
+            {t.cancel || "Batal"}
+          </Btn>
+          <Btn
+            variant="solid"
+            style={{ background: T.red, borderColor: T.red }}
+            onClick={handleConfirm}
+            disabled={deleting || isReferenced}
+          >
+            {deleting && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+            {t.deleteAction || "Hapus"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose, t }) {
   const [f, setF] = useState({
     rmaId: "",
     newPcbaItemId: "",
@@ -4014,7 +5290,7 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose }) {
         PCBA lama yang dilepas akan otomatis masuk stok sebagai "Bad".
       </InlineHint>
       {err && <InlineHint tone="warn">{err}</InlineHint>}
-      <Field label="RMA Terkait">
+      <Field label={t.pcbaRelatedRma || "RMA Terkait"}>
         <Select
           options={rmaOpenList.map((r) => r.ticketNo)}
           value={rmaOpenList.find((r) => r.id === f.rmaId)?.ticketNo || ""}
@@ -4026,7 +5302,7 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose }) {
           }}
         />
       </Field>
-      <Field label="PCBA Baru (stok Good)">
+      <Field label={t.pcbaNewGoodStock || "PCBA Baru (stok Good)"}>
         <Select
           options={goodItems.map((i) => `${i.serialNo} (${i.pcbaType})`)}
           value={(() => {
@@ -4047,19 +5323,19 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose }) {
           Baru" dulu di tab Stok.
         </InlineHint>
       )}
-      <Field label="No. Serial PCBA Lama (yang dilepas dari unit)">
+      <Field label={t.pcbaOldSerialLabel || "No. Serial PCBA Lama (yang dilepas dari unit)"}>
         <TextInput
           value={f.oldSerialNo}
           onChange={set("oldSerialNo")}
           style={{ fontFamily: mono }}
         />
       </Field>
-      <Field label="Catatan">
+      <Field label={t.pcbaNotes || "Catatan"}>
         <TextArea value={f.notes} onChange={set("notes")} />
       </Field>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
         <Btn variant="ghost" onClick={onClose} disabled={saving}>
-          Batal
+          {t.cancel || "Batal"}
         </Btn>
         <Btn
           variant="solid"
@@ -4077,14 +5353,14 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose }) {
           }}
         >
           {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
-          Proses Replacement
+          {t.pcbaProcessReplacement || "Proses Replacement"}
         </Btn>
       </div>
     </div>
   );
 }
 
-function RepairForm({ master, badItems, onSave, onClose }) {
+function RepairForm({ master, badItems, onSave, onClose, t }) {
   const [f, setF] = useState({
     pcbaItemId: "",
     engineer: "",
@@ -4108,7 +5384,7 @@ function RepairForm({ master, badItems, onSave, onClose }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {err && <InlineHint tone="warn">{err}</InlineHint>}
-      <Field label="PCBA (status Bad / Under Repair)">
+      <Field label={t.pcbaRepairTarget || "PCBA (status Bad / Under Repair)"}>
         <Select
           options={badItems.map((i) => `${i.serialNo} (${i.pcbaType})`)}
           value={(() => {
@@ -4128,30 +5404,30 @@ function RepairForm({ master, badItems, onSave, onClose }) {
           Tidak ada PCBA berstatus Bad/Under Repair untuk direpair saat ini.
         </InlineHint>
       )}
-      <Field label="Engineer">
+      <Field label={t.colEngineer || "Engineer"}>
         <Select
           options={master.engineers}
           value={f.engineer}
           onChange={set("engineer")}
         />
       </Field>
-      <Field label="Analisis Kerusakan">
+      <Field label={t.pcbaDamageAnalysis || "Analisis Kerusakan"}>
         <TextArea value={f.analysis} onChange={set("analysis")} />
       </Field>
-      <Field label="Tindakan">
+      <Field label={t.action || "Tindakan"}>
         <TextArea value={f.actionTaken} onChange={set("actionTaken")} />
       </Field>
-      <Field label="Komponen Diganti">
+      <Field label={t.pcbaComponentsReplaced || "Komponen Diganti"}>
         <TextArea
           value={f.componentsReplaced}
           onChange={set("componentsReplaced")}
           placeholder="cth. IC optical module x1, capacitor 10uF x2"
         />
       </Field>
-      <Field label="Hasil Testing">
+      <Field label={t.pcbaTestingResult || "Hasil Testing"}>
         <TextArea value={f.testingResult} onChange={set("testingResult")} />
       </Field>
-      <Field label="Hasil Repair">
+      <Field label={t.pcbaRepairResult || "Hasil Repair"}>
         <Select
           options={repairResultOptions}
           value={f.repairResult}
@@ -4166,7 +5442,7 @@ function RepairForm({ master, badItems, onSave, onClose }) {
       )}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
         <Btn variant="ghost" onClick={onClose} disabled={saving}>
-          Batal
+          {t.cancel || "Batal"}
         </Btn>
         <Btn
           variant="solid"
@@ -4180,7 +5456,7 @@ function RepairForm({ master, badItems, onSave, onClose }) {
           }}
         >
           {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
-          Simpan Repair
+          {t.pcbaSaveRepair || "Simpan Repair"}
         </Btn>
       </div>
     </div>
@@ -4192,6 +5468,8 @@ function PcbaInventoryTab({
   rma,
   master,
   onGoodsReceipt,
+  onEditPcbaItem,
+  onDeletePcbaItem,
   onReplacement,
   onRepair,
   onQc,
@@ -4221,12 +5499,6 @@ function PcbaInventoryTab({
       .map((type) => ({ type, stock: byType[type] || 0 }))
       .filter((x) => x.stock < minStock);
   }, [pcba.items, master.pcbaTypes, master.minStockDefault]);
-
-  const goodItems = pcba.items.filter((i) => i.status === "Good");
-  const badItems = pcba.items.filter(
-    (i) => i.status === "Bad" || i.status === "Under Repair",
-  );
-  const rmaOpenList = rma.filter((r) => !RMA_DONE_STATUSES.includes(r.status));
 
   const SUB_TABS = [
     { id: "stock", label: t.pcbaStock, icon: Boxes },
@@ -4261,7 +5533,7 @@ function PcbaInventoryTab({
                 fontFamily: sans,
               }}
             >
-              {s}
+              {getLocalizedStatus(s, t)}
             </div>
             <div
               style={{
@@ -4343,24 +5615,24 @@ function PcbaInventoryTab({
               { key: "pcbaType", label: t.pcbaType },
               {
                 key: "status",
-                label: t.pcbaAction,
-                render: (r) => <PcbaBadge status={r.status} />,
+                label: t.colStatus || "Status",
+                render: (r) => <PcbaBadge status={r.status} t={t} />,
               },
               { key: "supplier", label: t.pcbaSupplier },
               { key: "warehouseLocation", label: t.pcbaWarehouseLocation },
               {
                 key: "createdAt",
-                label: t.pcbaAction,
+                label: t.colDate || "Tanggal",
                 render: (r) => fmtDate(r.createdAt),
               },
             ]}
             rows={pcba.items}
-            emptyLabel="Belum ada PCBA di stok. Klik 'Terima PCBA Baru' untuk mulai."
+            emptyLabel={t.pcbaEmptyStock || "Belum ada PCBA di stok. Klik 'Terima PCBA Baru' untuk mulai."}
           />
         </>
       )}
 
-{subTab === "replacement" && (
+      {subTab === "replacement" && (
         <>
           <div
             style={{
@@ -4373,12 +5645,12 @@ function PcbaInventoryTab({
               variant="solid"
               onClick={() => setModal({ type: "replacement" })}
             >
-              <Plus size={14} /> {t.pcbaReplacement} Baru
+              <Plus size={14} /> {t.pcbaNewReplacement || "Replacement Baru"}
             </Btn>
           </div>
           <DataTable
             columns={[
-              { key: "replacementNo", label: "No. Replacement", mono: true },
+              { key: "replacementNo", label: t.pcbaNoReplacement || "No. Replacement", mono: true },
               {
                 key: "rmaId",
                 label: "RMA",
@@ -4399,15 +5671,15 @@ function PcbaInventoryTab({
                   pcba.items.find((i) => i.id === r.newPcbaItemId)?.serialNo ||
                   "-",
               },
-              { key: "replacedBy", label: "Oleh" },
+              { key: "replacedBy", label: t.colEngineer || "Oleh" },
               {
                 key: "replacedAt",
-                label: "Tanggal",
+                label: t.colDate || "Tanggal",
                 render: (r) => fmtDate(r.replacedAt),
               },
             ]}
             rows={pcba.replacements}
-            emptyLabel="Belum ada replacement PCBA."
+            emptyLabel={t.pcbaEmptyReplacement || "Belum ada replacement PCBA."}
           />
         </>
       )}
@@ -4422,12 +5694,12 @@ function PcbaInventoryTab({
             }}
           >
             <Btn variant="solid" onClick={() => setModal({ type: "repair" })}>
-              <Plus size={14} /> {t.pcbaRepair} Baru
+              <Plus size={14} /> {t.pcbaNewRepair || "Repair Baru"}
             </Btn>
           </div>
           <DataTable
             columns={[
-              { key: "repairNo", label: "No. Repair", mono: true },
+              { key: "repairNo", label: t.pcbaNoRepair || "No. Repair", mono: true },
               {
                 key: "pcbaItemId",
                 label: t.pcbaRepairItem,
@@ -4435,8 +5707,8 @@ function PcbaInventoryTab({
                   pcba.items.find((i) => i.id === r.pcbaItemId)?.serialNo ||
                   "-",
               },
-              { key: "engineer", label: "Engineer" },
-              { key: "repairResult", label: t.pcbaQcResult },
+              { key: "engineer", label: t.colEngineer || "Engineer" },
+              { key: "repairResult", label: t.pcbaRepairResult || t.pcbaQcResult },
               {
                 key: "qcStatus",
                 label: "QC",
@@ -4450,6 +5722,7 @@ function PcbaInventoryTab({
                           ? "Bad"
                           : "Under Repair"
                       }
+                      t={t}
                     />
                   ) : (
                     "-"
@@ -4475,7 +5748,7 @@ function PcbaInventoryTab({
               },
             ]}
             rows={pcba.repairs}
-            emptyLabel="Belum ada repair PCBA."
+            emptyLabel={t.pcbaEmptyRepair || "Belum ada repair PCBA."}
           />
         </>
       )}
@@ -4483,14 +5756,14 @@ function PcbaInventoryTab({
       {subTab === "transactions" && (
         <DataTable
           columns={[
-            { key: "transactionNo", label: "No. Transaksi", mono: true },
+            { key: "transactionNo", label: t.pcbaNoTransaction || "No. Transaksi", mono: true },
             {
               key: "pcbaItemId",
               label: t.pcbaSelectItem,
               render: (r) =>
                 pcba.items.find((i) => i.id === r.pcbaItemId)?.serialNo || "-",
             },
-            { key: "type", label: "Tipe" },
+            { key: "type", label: t.colType || "Tipe" },
             {
               key: "rmaId",
               label: "RMA",
@@ -4499,32 +5772,68 @@ function PcbaInventoryTab({
             { key: "reason", label: t.pcbaNotes },
             {
               key: "createdAt",
-              label: "Tanggal",
+              label: t.colDate || "Tanggal",
               render: (r) => fmtDate(r.createdAt),
             },
           ]}
           rows={pcba.transactions}
-          emptyLabel="Belum ada transaksi stok. Transaksi tercatat otomatis (append-only, tidak bisa diedit/dihapus)."
+          emptyLabel={t.pcbaEmptyTransactions || "Belum ada transaksi stok. Transaksi tercatat otomatis (append-only, tidak bisa diedit/dihapus)."}
         />
       )}
 
       {modal?.type === "receipt" && (
         <Modal
-          title="TERIMA PCBA BARU (GOODS RECEIPT)"
+          title={t.pcbaReceiveNewTitle || "TERIMA PCBA BARU (GOODS RECEIPT)"}
           onClose={() => setModal(null)}
         >
           <GoodsReceiptForm
             master={master}
+            pcbaItems={pcba.items}
             onSave={(data) => {
               onGoodsReceipt(data);
               setModal(null);
             }}
             onClose={() => setModal(null)}
+            t={t}
           />
         </Modal>
       )}
+      {modal?.type === "view" && (
+        <PcbaDetailModal
+          item={modal.item}
+          pcba={pcba}
+          rma={rma}
+          onClose={() => setModal(null)}
+          t={t}
+        />
+      )}
+      {modal?.type === "edit" && (
+        <EditPcbaModal
+          item={modal.item}
+          pcbaItems={pcba.items}
+          master={master}
+          onSave={async (itemId, updatedData) => {
+            const ok = await onEditPcbaItem(itemId, updatedData);
+            return ok;
+          }}
+          onClose={() => setModal(null)}
+          t={t}
+        />
+      )}
+      {modal?.type === "delete" && (
+        <DeletePcbaModal
+          item={modal.item}
+          pcba={pcba}
+          onDelete={async (itemId) => {
+            const ok = await onDeletePcbaItem(itemId);
+            return ok;
+          }}
+          onClose={() => setModal(null)}
+          t={t}
+        />
+      )}
       {modal?.type === "replacement" && (
-        <Modal title="REPLACEMENT PCBA" onClose={() => setModal(null)}>
+        <Modal title={t.pcbaReplacementTitle || "REPLACEMENT PCBA"} onClose={() => setModal(null)}>
           <ReplacementForm
             master={master}
             rmaOpenList={rmaOpenList}
@@ -4535,6 +5844,7 @@ function PcbaInventoryTab({
               return res;
             }}
             onClose={() => setModal(null)}
+            t={t}
           />
         </Modal>
       )}
@@ -4709,6 +6019,507 @@ function RmaImportModal({ onClose, existingRma, onImport, t, currentUserDisplayN
   );
 }
 
+function WaImportModal({ existingWa, onImport, onClose, t }) {
+  const [parsing, setParsing] = useState(false);
+  const [parseResult, setParseResult] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [duplicateMode, setDuplicateMode] = useState("skip"); // "skip" | "import_new"
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setParsing(true);
+    setErrorMsg("");
+    try {
+      const res = await parseWaFromExcel(file, existingWa);
+      setParseResult(res);
+    } catch (err) {
+      setErrorMsg(err.message || "Gagal memproses file Excel.");
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!parseResult) return;
+
+    let itemsToProcess = [...parseResult.valid];
+    if (duplicateMode === "import_new" && parseResult.duplicates.length > 0) {
+      const dupeEntries = parseResult.duplicates.map((d) => d.entry);
+      itemsToProcess = [...itemsToProcess, ...dupeEntries];
+    }
+
+    if (itemsToProcess.length === 0) {
+      setErrorMsg("Tidak ada data valid untuk diimport.");
+      return;
+    }
+
+    setImporting(true);
+
+    const existingCaseNos = existingWa.map((e) => e.caseNo).filter(Boolean);
+
+    const newEntries = itemsToProcess.map((item) => {
+      let caseNo = item.caseNo;
+      const isDupe = parseResult.duplicates.some((d) => d.entry === item);
+      if (!caseNo || isDupe || existingCaseNos.includes(caseNo)) {
+        caseNo = genTicket("CASE", existingCaseNos);
+      }
+      existingCaseNos.push(caseNo);
+
+      return {
+        ...item,
+        id: uid(),
+        caseNo,
+        commHistory: item.commHistory || [],
+      };
+    });
+
+    const combined = [...newEntries, ...existingWa];
+    const ok = await onImport(combined);
+    setImporting(false);
+    if (ok !== false) {
+      onClose();
+    }
+  };
+
+  const totalDetected = parseResult
+    ? parseResult.valid.length + parseResult.duplicates.length + parseResult.errors.length
+    : 0;
+
+  const importCount = parseResult
+    ? duplicateMode === "import_new"
+      ? parseResult.valid.length + parseResult.duplicates.length
+      : parseResult.valid.length
+    : 0;
+
+  return (
+    <Modal title={t.waImportModalTitle || "IMPORT WHATSAPP LOG DARI EXCEL"} onClose={onClose} width={640}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <InlineHint>
+          {t.waImportHint || "File harus menggunakan format Excel (LOGBOOKWhatsAPP.xlsx). Kolom wajib: Nama Customer dan Kendala Awal."}
+        </InlineHint>
+
+        {errorMsg && <InlineHint tone="warn">{errorMsg}</InlineHint>}
+
+        <Field label={t.waImportSelectFile || "Pilih file .xlsx / .xls"}>
+          <input
+            type="file"
+            accept=".xlsx, .xls"
+            onChange={handleFileChange}
+            style={{
+              fontFamily: sans,
+              fontSize: 13,
+              color: T.ink,
+              background: T.panel2,
+              border: `1px solid ${T.line}`,
+              borderRadius: 6,
+              padding: "8px 12px",
+              width: "100%",
+            }}
+          />
+        </Field>
+
+        {parsing && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: T.ink2, fontSize: 13 }}>
+            <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+            {t.waImportValidating || "Memvalidasi..."}
+          </div>
+        )}
+
+        {parseResult && !parsing && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {parseResult.headerError && (
+              <InlineHint tone="warn">
+                <strong>{t.waImportHeaderError || "Header tidak cocok"}:</strong> {parseResult.headerError}
+              </InlineHint>
+            )}
+
+            <div style={{ fontSize: 12.5, color: T.ink, fontWeight: 600 }}>
+              {(t.waImportTotalDetected || "Total terdeteksi: {n} baris").replace("{n}", totalDetected)}
+            </div>
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ background: T.greenDim, color: T.green, padding: "8px 12px", borderRadius: 6, fontSize: 12.5, fontWeight: 600 }}>
+                ✓ {parseResult.valid.length} {t.waImportValidRows || "Baris valid"}
+              </div>
+
+              {parseResult.duplicates.length > 0 && (
+                <div style={{ background: T.amberDim, color: T.amber, padding: "8px 12px", borderRadius: 6, fontSize: 12.5, fontWeight: 600 }}>
+                  ⚠ {parseResult.duplicates.length} {t.waImportDuplicates || "Duplikat terdeteksi"}
+                </div>
+              )}
+
+              {parseResult.errors.length > 0 && (
+                <div style={{ background: T.redDim, color: T.red, padding: "8px 12px", borderRadius: 6, fontSize: 12.5, fontWeight: 600 }}>
+                  ✕ {parseResult.errors.length} {t.waImportRowErrors || "Baris bermasalah"}
+                </div>
+              )}
+            </div>
+
+            {/* Options for handling duplicates */}
+            {parseResult.duplicates.length > 0 && (
+              <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 6, padding: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>
+                  {t.waImportDupeHandlingTitle || "Penanganan Duplikat:"}
+                </div>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: T.ink2, cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="dupeHandling"
+                    value="skip"
+                    checked={duplicateMode === "skip"}
+                    onChange={() => setDuplicateMode("skip")}
+                    style={{ accentColor: T.cyan }}
+                  />
+                  {t.waImportDupeSkip || "Dilewati"} {(t.waImportDupeSkipNote || "({n} record duplikat dilewati)").replace("{n}", parseResult.duplicates.length)}
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: T.ink2, cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="dupeHandling"
+                    value="import_new"
+                    checked={duplicateMode === "import_new"}
+                    onChange={() => setDuplicateMode("import_new")}
+                    style={{ accentColor: T.cyan }}
+                  />
+                  {t.waImportDupeImportNew || "Import duplikat sebagai case baru"} {t.waImportDupeNewNote || "(generate Nomor Case baru)"}
+                </label>
+              </div>
+            )}
+
+            {/* Error row details */}
+            {parseResult.errors.length > 0 && (
+              <div style={{ maxHeight: 120, overflowY: "auto", background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 6, padding: 8, fontSize: 12 }}>
+                <strong style={{ color: T.red }}>{t.waImportRowErrors || "Detail Error Baris"}:</strong>
+                <ul style={{ margin: "4px 0 0 16px", padding: 0, color: T.ink2 }}>
+                  {parseResult.errors.map((err, i) => (
+                    <li key={i}>
+                      {(t.waImportRowLabel || "Baris")} {err.row}: {err.message}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 }}>
+          <Btn variant="ghost" onClick={onClose} disabled={importing}>
+            {t.cancel || "Batal"}
+          </Btn>
+          <Btn
+            variant="solid"
+            disabled={importing || !parseResult || importCount === 0}
+            onClick={handleConfirmImport}
+          >
+            {importing && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+            {(t.waImportConfirm || "Import {n} Case").replace("{n}", importCount)}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function DeleteConfirmModal({ confirmState, onConfirm, onClose, t }) {
+  const [deleting, setDeleting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const entry = confirmState?.entry;
+  const isWa = confirmState?.kind === "wa";
+  const refNo = isWa ? entry?.caseNo : entry?.ticketNo;
+
+  const handleConfirm = async () => {
+    setDeleting(true);
+    setErrorMsg("");
+    const ok = await onConfirm(confirmState);
+    setDeleting(false);
+    if (ok !== false) {
+      onClose();
+    } else {
+      setErrorMsg(
+        isWa
+          ? "Gagal menghapus case WhatsApp dari Firestore."
+          : "Gagal menghapus RMA dari Firestore."
+      );
+    }
+  };
+
+  return (
+    <Modal
+      title={isWa ? (t.deleteWaTitle || "HAPUS CASE WHATSAPP") : (t.deleteRmaTitle || "HAPUS TIKET RMA")}
+      onClose={onClose}
+      width={420}
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <p style={{ fontSize: 13, color: T.ink, margin: 0 }}>
+          {(t.deleteConfirmText || "Apakah Anda yakin ingin menghapus {type} berikut?").replace("{type}", isWa ? (t.waCase || "case WhatsApp") : (t.rmaTicket || "tiket RMA"))}
+        </p>
+
+        <div
+          style={{
+            background: T.panel2,
+            padding: "10px 14px",
+            borderRadius: 8,
+            border: `1px solid ${T.line}`,
+            fontWeight: 700,
+            fontSize: 14,
+            color: T.cyan,
+            fontFamily: mono,
+          }}
+        >
+          {refNo || "-"}
+        </div>
+
+        {entry?.customerName && (
+          <div style={{ fontSize: 12.5, color: T.ink2 }}>
+            {t.colCustomer || "Customer"}: <strong>{entry.customerName}</strong>{" "}
+            {entry.company ? `(${entry.company})` : ""}
+          </div>
+        )}
+
+        {errorMsg && <InlineHint tone="warn">{errorMsg}</InlineHint>}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 6 }}>
+          <Btn variant="ghost" onClick={onClose} disabled={deleting}>
+            {t.cancel || "Batal"}
+          </Btn>
+          <Btn
+            variant="solid"
+            style={{ background: T.red, borderColor: T.red }}
+            onClick={handleConfirm}
+            disabled={deleting}
+          >
+            {deleting && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+            {t.deleteAction || "Hapus"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function WaDetailModal({ entry, onClose, t }) {
+  if (!entry) return null;
+
+  const isSolved = isWaDone(entry.status) || Boolean(entry.solvedDate);
+  const caseAge = daysBetween(entry.caseDate, entry.solvedDate || todayISO());
+
+  // Deterministic summary based on actual stored fields
+  const summaryText = `Customer ${entry.customerName || "-"}${entry.company ? ` (${entry.company})` : ""} melaporkan kendala pada perangkat ${entry.deviceType || "-"}${entry.sn ? ` (SN: ${entry.sn})` : ""}. Case dibuka pada tanggal ${fmtDate(entry.caseDate)} dan ditangani oleh engineer ${entry.engineerTag || "-"}. Status saat ini: ${entry.status || "-"}${isSolved ? ` (selesai dalam ${caseAge} hari)` : ` (aktif selama ${caseAge} hari)`}.`;
+
+  return (
+    <Modal title={`DETAIL CASE — ${entry.caseNo || "-"}`} onClose={onClose} width={620}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+          maxHeight: "75vh",
+          overflowY: "auto",
+          paddingRight: 4,
+        }}
+      >
+        {/* Top Header Stats */}
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            flexWrap: "wrap",
+            background: T.panel2,
+            padding: "12px 14px",
+            borderRadius: 8,
+            border: `1px solid ${T.line}`,
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 120 }}>
+            <div style={{ fontSize: 11, color: T.ink3, textTransform: "uppercase", fontWeight: 600 }}>
+              Status
+            </div>
+            <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+              <StatusLed status={entry.status} />
+              {isWaOverdue(entry) && <OverdueBadge />}
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 120 }}>
+            <div style={{ fontSize: 11, color: T.ink3, textTransform: "uppercase", fontWeight: 600 }}>
+              Tanggal Case
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginTop: 2 }}>
+              {fmtDate(entry.caseDate)}
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 120 }}>
+            <div style={{ fontSize: 11, color: T.ink3, textTransform: "uppercase", fontWeight: 600 }}>
+              Tanggal Solved
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginTop: 2 }}>
+              {fmtDate(entry.solvedDate) || "—"}
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 120 }}>
+            <div style={{ fontSize: 11, color: T.ink3, textTransform: "uppercase", fontWeight: 600 }}>
+              Umur Case
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginTop: 2 }}>
+              {caseAge !== "" ? `${caseAge} Hari` : "—"}
+            </div>
+          </div>
+        </div>
+
+        {/* Customer & Device Meta Grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+            gap: 10,
+            background: T.panel,
+            padding: "12px 14px",
+            borderRadius: 8,
+            border: `1px solid ${T.line}`,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>Customer</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>
+              {entry.customerName || "—"}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>Perusahaan</div>
+            <div style={{ fontSize: 13, color: T.ink }}>{entry.company || "—"}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>No. HP</div>
+            <div style={{ fontSize: 13, fontFamily: mono, color: T.ink }}>
+              {entry.customerPhone || "—"}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>Perangkat</div>
+            <div style={{ fontSize: 13, color: T.ink }}>{entry.deviceType || "—"}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>SN</div>
+            <div style={{ fontSize: 13, fontFamily: mono, color: T.ink }}>
+              {entry.sn || "—"}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>MAC</div>
+            <div style={{ fontSize: 13, fontFamily: mono, color: T.ink }}>
+              {entry.mac || "—"}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>Engineer Tag</div>
+            <div style={{ fontSize: 13, color: T.ink }}>{entry.engineerTag || "—"}</div>
+          </div>
+        </div>
+
+        {/* Case Summary */}
+        <div
+          style={{
+            background: T.cyanDim,
+            border: `1px solid ${T.cyan}33`,
+            borderRadius: 8,
+            padding: "10px 14px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 11.5,
+              fontWeight: 700,
+              color: T.cyan,
+              textTransform: "uppercase",
+              marginBottom: 4,
+              letterSpacing: 0.3,
+            }}
+          >
+            Ringkasan Case (Summary)
+          </div>
+          <div style={{ fontSize: 12.5, color: T.ink, lineHeight: 1.5 }}>
+            {summaryText}
+          </div>
+        </div>
+
+        {/* Full Original Initial Problem */}
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 6 }}>
+            Kendala Awal (Initial Problem)
+          </div>
+          <div
+            style={{
+              background: T.panel2,
+              border: `1px solid ${T.line}`,
+              borderRadius: 8,
+              padding: "10px 14px",
+              fontSize: 13,
+              color: T.ink,
+              whiteSpace: "pre-wrap",
+              lineHeight: 1.5,
+            }}
+          >
+            {entry.initialProblem || "—"}
+          </div>
+        </div>
+
+        {/* Final Analysis if present */}
+        {entry.finalAnalysis && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 6 }}>
+              Analisa Akhir (Final Analysis)
+            </div>
+            <div
+              style={{
+                background: T.panel2,
+                border: `1px solid ${T.line}`,
+                borderRadius: 8,
+                padding: "10px 14px",
+                fontSize: 13,
+                color: T.ink,
+                whiteSpace: "pre-wrap",
+                lineHeight: 1.5,
+              }}
+            >
+              {entry.finalAnalysis}
+            </div>
+          </div>
+        )}
+
+        {/* Notes if present */}
+        {entry.notes && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 6 }}>
+              Keterangan / Notes
+            </div>
+            <div
+              style={{
+                background: T.panel2,
+                border: `1px solid ${T.line}`,
+                borderRadius: 8,
+                padding: "10px 14px",
+                fontSize: 12.5,
+                color: T.ink2,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {entry.notes}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+          <Btn variant="solid" onClick={onClose}>
+            Tutup
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 /* ============================================================
    MAIN APP
    ============================================================ */
@@ -4728,14 +6539,54 @@ export default function App() {
   const [waModal, setWaModal] = useState(null);
   const [waMsgEntry, setWaMsgEntry] = useState(null);
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState({
-    status: "",
-    engineer: "",
-    warranty: "",
-    overdueOnly: false,
-  });
+  // colFilters: per-column filter/sort state
+  // shape: { [colKey]: { sort: "asc"|"desc"|null, values: string[]|null } }
+  // values=null means "all values" (no filter)
+  const [colFilters, setColFilters] = useState({});
+  const [waColFilters, setWaColFilters] = useState({});
+  const [overdueOnly, setOverdueOnly] = useState(false);
+  const [waOverdueOnly, setWaOverdueOnly] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [waDetailModal, setWaDetailModal] = useState(null);
+  const [toastMsg, setToastMsg] = useState("");
+
+  const onColFilter = useCallback((colKey, applied) => {
+    setColFilters((prev) => {
+      // If sort is null and values is null, remove the key entirely (no active filter)
+      if (!applied.sort && applied.values === null) {
+        const next = { ...prev };
+        delete next[colKey];
+        return next;
+      }
+      return { ...prev, [colKey]: applied };
+    });
+  }, []);
+
+  const onWaColFilter = useCallback((colKey, applied) => {
+    setWaColFilters((prev) => {
+      if (!applied.sort && applied.values === null) {
+        const next = { ...prev };
+        delete next[colKey];
+        return next;
+      }
+      return { ...prev, [colKey]: applied };
+    });
+  }, []);
+
+  const resetAllFilters = useCallback(() => {
+    setColFilters({});
+    setOverdueOnly(false);
+    setSearch("");
+  }, [setSearch]);
+
+  const resetAllWaFilters = useCallback(() => {
+    setWaColFilters({});
+    setWaOverdueOnly(false);
+    setSearch("");
+  }, [setSearch]);
   const [saveErr, setSaveErr] = useState("");
   const [rmaImportModal, setRmaImportModal] = useState(false);
+  const [waImportModal, setWaImportModal] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -4824,7 +6675,11 @@ export default function App() {
     const ok = await persistWa(
       exists ? wa.map((e) => (e.id === entry.id ? entry : e)) : [entry, ...wa],
     );
-    if (ok) setWaModal(null);
+    if (ok) {
+      const curT = I18N[language] || I18N.id;
+      setToastMsg(curT.toastWaSaved || "Case WhatsApp berhasil disimpan.");
+      setWaModal(null);
+    }
     return { ok: !!ok };
   };
   const persistWa = useCallback(async (arr) => {
@@ -5018,6 +6873,34 @@ export default function App() {
     [pcba, persistPcba]
   );
 
+  const onEditPcbaItem = useCallback(
+    async (itemId, updatedItemData) => {
+      const updatedItems = pcba.items.map((i) => (i.id === itemId ? updatedItemData : i));
+      const newPcba = { ...pcba, items: updatedItems };
+      const ok = await persistPcba(newPcba);
+      if (ok) {
+        const curT = I18N[language] || I18N.id;
+        setToastMsg(curT.toastPcbaUpdated || "Data PCBA berhasil diperbarui.");
+      }
+      return ok;
+    },
+    [pcba, persistPcba, language]
+  );
+
+  const onDeletePcbaItem = useCallback(
+    async (itemId) => {
+      const updatedItems = pcba.items.filter((i) => i.id !== itemId);
+      const newPcba = { ...pcba, items: updatedItems };
+      const ok = await persistPcba(newPcba);
+      if (ok) {
+        const curT = I18N[language] || I18N.id;
+        setToastMsg(curT.toastPcbaDeleted || "Item PCBA berhasil dihapus.");
+      }
+      return ok;
+    },
+    [pcba, persistPcba, language]
+  );
+
   const unitHistoryLookup = useCallback(
     (sn, mac) => {
       const matches = (e, snField, macField) =>
@@ -5035,21 +6918,185 @@ export default function App() {
   );
 
   const filteredRma = useMemo(() => {
-    const q = search.toLowerCase();
-    return rma.filter((e) => {
-      if (q && !JSON.stringify(e).toLowerCase().includes(q)) return false;
-      if (filters.status && e.status !== filters.status) return false;
-      if (filters.engineer && e.engineer !== filters.engineer) return false;
-      if (filters.warranty && e.warrantyStatus !== filters.warranty)
-        return false;
-      if (filters.overdueOnly && !isOverdue(e)) return false;
+    const q = search.toLowerCase().trim();
+
+    // Step 1: text search across key fields
+    let result = rma.filter((e) => {
+      if (q) {
+        const haystack = [
+          e.ticketNo, e.customerName, e.company, e.sn, e.mac,
+          e.engineer, e.product, e.initialProblem, e.symptom,
+          e.notes, e.trackingNo,
+        ].filter(Boolean).join(" ").toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
       return true;
     });
-  }, [rma, search, filters]);
+
+    // Step 2: overdue filter
+    if (overdueOnly) result = result.filter(isOverdue);
+
+    // Step 3: per-column value filters
+    // colKey → valueKey mapping for columns where field != key
+    const keyMap = { warrantyStatus: "warrantyStatus" };
+    Object.entries(colFilters).forEach(([colKey, cf]) => {
+      if (!cf || cf.values === null) return; // null = all, skip
+      const vals = new Set(cf.values);
+      if (vals.size === 0) { result = []; return; }
+      const vk = keyMap[colKey] || colKey;
+      result = result.filter((e) => vals.has(String(e[vk] ?? "")));
+    });
+
+    // Step 4: sorting — use the FIRST column that has a sort defined
+    const sortEntry = Object.entries(colFilters).find(([, cf]) => cf?.sort);
+    if (sortEntry) {
+      const [sortKey, { sort }] = sortEntry;
+      const isDate = ["receivedDate", "eta", "closedDate"].includes(sortKey);
+      result = [...result].sort((a, b) => {
+        let av = a[sortKey] ?? "";
+        let bv = b[sortKey] ?? "";
+        if (isDate) {
+          // Compare as actual dates for correct chronological order
+          const da = av ? new Date(av).getTime() : 0;
+          const db = bv ? new Date(bv).getTime() : 0;
+          return sort === "asc" ? da - db : db - da;
+        }
+        // Text comparison
+        const cmp = String(av).localeCompare(String(bv), undefined, { sensitivity: "base" });
+        return sort === "asc" ? cmp : -cmp;
+      });
+    } else {
+      // Default: newest receivedDate first
+      result = [...result].sort((a, b) =>
+        (b.receivedDate || "").localeCompare(a.receivedDate || "")
+      );
+    }
+
+    return result;
+  }, [rma, search, overdueOnly, colFilters]);
+
   const filteredWa = useMemo(() => {
-    const q = search.toLowerCase();
-    return wa.filter((e) => !q || JSON.stringify(e).toLowerCase().includes(q));
-  }, [wa, search]);
+    const q = search.toLowerCase().trim();
+
+    // Step 1: Text search across WA schema fields
+    let result = wa.filter((e) => {
+      if (q) {
+        const haystack = [
+          e.caseNo,
+          e.customerPhone,
+          e.customerName,
+          e.company,
+          e.deviceType,
+          e.sn,
+          e.mac,
+          e.initialProblem,
+          e.engineerTag,
+          e.status,
+          e.finalAnalysis,
+          e.notes,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+
+    // Step 2: Overdue filter
+    if (waOverdueOnly) {
+      result = result.filter(isWaOverdue);
+    }
+
+    // Step 2: Per-column value filters
+    Object.entries(waColFilters).forEach(([colKey, cf]) => {
+      if (!cf || cf.values === null) return;
+      const vals = new Set(cf.values);
+      if (vals.size === 0) {
+        result = [];
+        return;
+      }
+      result = result.filter((e) => {
+        let val;
+        if (colKey === "caseAge") {
+          val = String(daysBetween(e.caseDate, e.solvedDate || todayISO()));
+        } else {
+          val = String(e[colKey] ?? "");
+        }
+        return vals.has(val);
+      });
+    });
+
+    // Step 3: Sorting — use the FIRST column that has a sort defined
+    const sortEntry = Object.entries(waColFilters).find(([, cf]) => cf?.sort);
+    if (sortEntry) {
+      const [sortKey, { sort }] = sortEntry;
+      const isDate = ["caseDate", "solvedDate"].includes(sortKey);
+      const isNumeric = ["caseAge"].includes(sortKey);
+
+      result = [...result].sort((a, b) => {
+        if (isNumeric) {
+          const numA = Number(daysBetween(a.caseDate, a.solvedDate || todayISO())) || 0;
+          const numB = Number(daysBetween(b.caseDate, b.solvedDate || todayISO())) || 0;
+          return sort === "asc" ? numA - numB : numB - numA;
+        }
+
+        if (isDate) {
+          const av = a[sortKey] ?? "";
+          const bv = b[sortKey] ?? "";
+          if (!av && !bv) return 0;
+          if (!av) return 1;
+          if (!bv) return -1;
+          const da = new Date(av).getTime();
+          const db = dbDate(bv);
+          return sort === "asc" ? da - db : db - da;
+        }
+
+        // Text comparison (case-insensitive)
+        const av = String(a[sortKey] ?? "");
+        const bv = String(b[sortKey] ?? "");
+        const cmp = av.localeCompare(bv, undefined, { sensitivity: "base" });
+        return sort === "asc" ? cmp : -cmp;
+      });
+    } else {
+      // Default: newest caseDate first
+      result = [...result].sort((a, b) =>
+        (b.caseDate || "").localeCompare(a.caseDate || "")
+      );
+    }
+
+    return result;
+  }, [wa, search, waOverdueOnly, waColFilters]);
+
+  // Helper for date parsing in sort
+  const dbDate = (v) => (v ? new Date(v).getTime() : 0);
+
+  const handleConfirmDelete = async ({ kind, entry }) => {
+    const curT = I18N[language] || I18N.id;
+    if (kind === "wa") {
+      const updated = wa.filter((e) => e.id !== entry.id);
+      const ok = await persistWa(updated);
+      if (ok) {
+        setToastMsg((curT.toastWaDeleted || "Case WhatsApp {no} berhasil dihapus.").replace("{no}", entry.caseNo));
+        return true;
+      }
+      return false;
+    } else if (kind === "rma") {
+      const updated = rma.filter((e) => e.id !== entry.id);
+      const ok = await persistRma(updated);
+      if (ok) {
+        setToastMsg((curT.toastRmaDeleted || "Tiket RMA {no} berhasil dihapus.").replace("{no}", entry.ticketNo));
+        return true;
+      }
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    if (!toastMsg) return;
+    const timer = setTimeout(() => setToastMsg(""), 4000);
+    return () => clearTimeout(timer);
+  }, [toastMsg]);
 
   const t = I18N[language] || I18N.id;
   const lastLoginLabel = user?.metadata?.lastSignInTime
@@ -5096,13 +7143,13 @@ export default function App() {
       className="hsgq-app-shell"
       style={{
         display: "flex",
-        minHeight: 680,
+        height: "100vh",
+        maxHeight: "100vh",
         background: T.void,
         color: T.ink,
         fontFamily: sans,
-        borderRadius: 12,
+        borderRadius: 0,
         overflow: "hidden",
-        border: `1px solid ${T.line}`,
       }}
     >
       {mobileNavOpen && (
@@ -5115,11 +7162,13 @@ export default function App() {
         className={`hsgq-sidebar${mobileNavOpen ? " mobile-open" : ""}`}
         style={{
           width: 230,
+          height: "100%",
           background: T.panel,
           borderRight: `1px solid ${T.line}`,
           display: "flex",
           flexDirection: "column",
           flexShrink: 0,
+          overflowY: "auto",
         }}
       >
         <div
@@ -5217,9 +7266,11 @@ export default function App() {
         className="hsgq-main"
         style={{
           flex: 1,
+          height: "100%",
           display: "flex",
           flexDirection: "column",
           minWidth: 0,
+          overflow: "hidden",
         }}
       >
         <div
@@ -5392,39 +7443,20 @@ export default function App() {
                   </div>
                 }
               />
+              {/* ── Toolbar: search + overdue + reset ── */}
               <div
                 style={{
                   display: "flex",
                   gap: 8,
                   flexWrap: "wrap",
-                  marginBottom: 12,
+                  marginBottom: 8,
+                  alignItems: "center",
                 }}
               >
                 <SearchBar
                   value={search}
                   onChange={setSearch}
                   placeholder={t.rmaSearchPlaceholder}
-                />
-                <Select
-                  options={master.statusRMA}
-                  value={filters.status}
-                  onChange={(e) =>
-                    setFilters((f) => ({ ...f, status: e.target.value }))
-                  }
-                />
-                <Select
-                  options={master.engineers}
-                  value={filters.engineer}
-                  onChange={(e) =>
-                    setFilters((f) => ({ ...f, engineer: e.target.value }))
-                  }
-                />
-                <Select
-                  options={master.warrantyStatuses}
-                  value={filters.warranty}
-                  onChange={(e) =>
-                    setFilters((f) => ({ ...f, warranty: e.target.value }))
-                  }
                 />
                 <label
                   style={{
@@ -5434,108 +7466,125 @@ export default function App() {
                     fontSize: 12.5,
                     color: T.ink2,
                     cursor: "pointer",
+                    flexShrink: 0,
                   }}
                 >
                   <input
                     type="checkbox"
-                    checked={filters.overdueOnly}
-                    onChange={(e) =>
-                      setFilters((f) => ({
-                        ...f,
-                        overdueOnly: e.target.checked,
-                      }))
-                    }
+                    checked={overdueOnly}
+                    onChange={(e) => setOverdueOnly(e.target.checked)}
+                    style={{ accentColor: T.cyan }}
                   />
                   {t.rmaOverdueOnly}
                 </label>
-                {(filters.status ||
-                  filters.engineer ||
-                  filters.warranty ||
-                  filters.overdueOnly) && (
-                  <Btn
-                    variant="ghost"
-                    onClick={() =>
-                      setFilters({
-                        status: "",
-                        engineer: "",
-                        warranty: "",
-                        overdueOnly: false,
-                      })
-                    }
-                  >
+                {(Object.keys(colFilters).length > 0 || overdueOnly || search) && (
+                  <Btn variant="ghost" onClick={resetAllFilters}>
                     {t.resetFilter}
                   </Btn>
                 )}
               </div>
-              <DataTable
+              {/* Record count */}
+              <div
+                style={{
+                  fontSize: 12,
+                  color: T.ink2,
+                  marginBottom: 8,
+                  fontFamily: sans,
+                }}
+              >
+                {(t.rmaShowing || "Menampilkan {shown} dari {total} tiket")
+                  .replace("{shown}", filteredRma.length)
+                  .replace("{total}", rma.length)}
+              </div>
+              {/* ── RMA Table with per-column sort/filter ── */}
+              <RmaTable
+                allRows={rma}
+                rows={filteredRma}
+                colFilters={colFilters}
+                onColFilter={onColFilter}
+                t={t}
+                emptyLabel={t.rmaEmptyList}
                 columns={[
-                  { key: "ticketNo", label: t.colTicket, mono: true },
+                  {
+                    key: "ticketNo",
+                    label: t.colTicket,
+                    mono: true,
+                    type: "text",
+                    filterable: false,
+                  },
                   {
                     key: "status",
                     label: t.colStatus,
+                    type: "status",
                     render: (r) => (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                        }}
-                      >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <StatusLed status={r.status} />
                         {isOverdue(r) && <OverdueBadge />}
                       </div>
                     ),
                   },
-                  { key: "engineer", label: t.colEngineer },
-                  { key: "product", label: t.colProduct },
-                  { key: "customerName", label: t.colCustomer },
-                  { key: "warrantyStatus", label: t.colWarranty },
+                  {
+                    key: "engineer",
+                    label: t.colEngineer,
+                    type: "text",
+                  },
+                  {
+                    key: "product",
+                    label: t.colProduct,
+                    type: "text",
+                  },
+                  {
+                    key: "customerName",
+                    label: t.colCustomer,
+                    type: "text",
+                  },
+                  {
+                    key: "warrantyStatus",
+                    label: t.colWarranty,
+                    type: "text",
+                  },
                   {
                     key: "receivedDate",
                     label: t.colReceived,
+                    type: "date",
+                    filterable: false,
                     render: (r) => fmtDate(r.receivedDate),
                   },
                   {
                     key: "eta",
                     label: t.colEta,
+                    type: "date",
+                    filterable: false,
                     render: (r) => fmtDate(r.eta),
                   },
                   {
                     key: "actions",
                     label: "",
+                    sortable: false,
+                    filterable: false,
                     render: (r) => (
                       <div style={{ display: "flex", gap: 6 }}>
-                        <IconBtn
-                          icon={Eye}
-                          onClick={() => setRmaPreview(r)}
-                          title="Preview Detail"
-                        />
+                        <IconBtn icon={Eye} onClick={() => setRmaPreview(r)} title={t.viewDetail || "Preview Detail"} />
                         <IconBtn
                           icon={MessageSquare}
-                          onClick={() =>
-                            setWaMsgEntry({ kind: "rma", entry: r })
-                          }
+                          onClick={() => setWaMsgEntry({ kind: "rma", entry: r })}
                           title={t.waMessageAction}
                         />
                         <IconBtn
                           icon={Pencil}
-                          onClick={() =>
-                            setRmaModal({ mode: "edit", entry: r })
-                          }
+                          onClick={() => setRmaModal({ mode: "edit", entry: r })}
                           title={t.editAction}
                         />
                         <IconBtn
                           icon={Trash2}
                           danger
-                          onClick={() => deleteRma(r.id)}
+                          onClick={() => setDeleteConfirm({ kind: "rma", entry: r })}
                           title={t.deleteAction}
                         />
                       </div>
                     ),
                   },
                 ]}
-                rows={filteredRma}
-                emptyLabel={t.rmaEmptyList}
               />
             </>
           )}
@@ -5546,51 +7595,303 @@ export default function App() {
                 title={t.waPageTitle}
                 subtitle={t.waPageSubtitle}
                 action={
-                  <Btn
-                    variant="solid"
-                    onClick={() => setWaModal({ mode: "new" })}
-                  >
-                    <Plus size={14} /> {t.waNewCase}
-                  </Btn>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                    <Btn
+                      variant="ghost"
+                      onClick={() => exportWaToExcel(wa)}
+                      title="Export seluruh data WhatsApp Log ke .xlsx"
+                    >
+                      <FileDown size={14} /> {t.waExportExcel || "Export Excel"}
+                    </Btn>
+                    {search && (
+                      <Btn
+                        variant="ghost"
+                        onClick={() => exportWaToExcel(filteredWa, "LOGBOOK_WhatsApp_Filtered")}
+                        title="Export data WhatsApp Log yang difilter ke .xlsx"
+                      >
+                        <FileDown size={14} /> {(t.waExportFiltered || "Export Record Difilter ({n})").replace("{n}", filteredWa.length)}
+                      </Btn>
+                    )}
+                    <Btn
+                      variant="ghost"
+                      onClick={() => setWaImportModal(true)}
+                      title="Import WhatsApp Log dari file .xlsx / .xls"
+                    >
+                      <FileUp size={14} /> {t.waImportExcel || "Import Excel"}
+                    </Btn>
+                    <Btn
+                      variant="solid"
+                      onClick={() => setWaModal({ mode: "new" })}
+                    >
+                      <Plus size={14} /> {t.waNewCase}
+                    </Btn>
+                  </div>
                 }
               />
-              <SearchBar
-                value={search}
-                onChange={setSearch}
-                placeholder={t.waSearchPlaceholder}
-              />
-              <div style={{ height: 12 }} />
-              <DataTable
+              {/* ── WhatsApp Toolbar ── */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  flexWrap: "wrap",
+                  marginBottom: 8,
+                  alignItems: "center",
+                }}
+              >
+                <SearchBar
+                  value={search}
+                  onChange={setSearch}
+                  placeholder={t.waSearchPlaceholder}
+                />
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 12.5,
+                    color: T.ink2,
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={waOverdueOnly}
+                    onChange={(e) => setWaOverdueOnly(e.target.checked)}
+                    style={{ accentColor: T.cyan }}
+                  />
+                  {t.rmaOverdueOnly || "Overdue saja"}
+                </label>
+                {(Object.keys(waColFilters).length > 0 || waOverdueOnly || search) && (
+                  <Btn variant="ghost" onClick={resetAllWaFilters}>
+                    {t.resetFilter}
+                  </Btn>
+                )}
+              </div>
+              {/* Record count */}
+              <div
+                style={{
+                  fontSize: 12,
+                  color: T.ink2,
+                  marginBottom: 8,
+                  fontFamily: sans,
+                }}
+              >
+                {(t.waShowing || "Menampilkan {shown} dari {total} case")
+                  .replace("{shown}", filteredWa.length)
+                  .replace("{total}", wa.length)}
+              </div>
+              <RmaTable
+                allRows={wa}
+                rows={filteredWa}
+                colFilters={waColFilters}
+                onColFilter={onWaColFilter}
+                t={t}
+                emptyLabel={t.waEmptyList}
                 columns={[
-                  { key: "caseNo", label: t.colCase, mono: true },
+                  {
+                    key: "caseNo",
+                    label: t.colCase || "No. Case",
+                    mono: true,
+                    type: "text",
+                  },
                   {
                     key: "status",
-                    label: t.colStatus,
-                    render: (r) => <StatusLed status={r.status} />,
+                    label: t.colStatus || "Status",
+                    type: "status",
+                    render: (r) => (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <StatusLed status={r.status} t={t} />
+                        {isWaOverdue(r) && <OverdueBadge t={t} />}
+                      </div>
+                    ),
                   },
-                  { key: "engineerTag", label: t.colEngineer },
-                  { key: "deviceType", label: t.colType },
-                  { key: "customerName", label: t.colCustomer },
+                  {
+                    key: "engineerTag",
+                    label: t.colEngineer || "Engineer",
+                    type: "text",
+                  },
+                  {
+                    key: "customerName",
+                    label: t.colCustomer || "Nama Customer",
+                    type: "text",
+                  },
+                  {
+                    key: "company",
+                    label: t.colCompany || "Perusahaan",
+                    type: "text",
+                  },
+                  {
+                    key: "customerPhone",
+                    label: t.colPhone || "No. HP",
+                    mono: true,
+                    type: "text",
+                  },
+                  {
+                    key: "deviceType",
+                    label: t.colType || "Perangkat",
+                    type: "text",
+                  },
+                  {
+                    key: "sn",
+                    label: "SN",
+                    mono: true,
+                    type: "text",
+                    render: (r) => {
+                      const val = r.sn || "-";
+                      const isLong = val.length > 15;
+                      const displayVal = isLong ? val.slice(0, 15) + "..." : val;
+                      return (
+                        <span
+                          style={{
+                            fontFamily: mono,
+                            fontSize: 12,
+                            maxWidth: 110,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            display: "inline-block",
+                          }}
+                          title={val}
+                        >
+                          {displayVal}
+                        </span>
+                      );
+                    },
+                  },
+                  {
+                    key: "mac",
+                    label: "MAC",
+                    mono: true,
+                    type: "text",
+                    render: (r) => {
+                      const val = r.mac || "-";
+                      const isLong = val.length > 17;
+                      const displayVal = isLong ? val.slice(0, 17) + "..." : val;
+                      return (
+                        <span
+                          style={{
+                            fontFamily: mono,
+                            fontSize: 12,
+                            maxWidth: 120,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            display: "inline-block",
+                          }}
+                          title={val}
+                        >
+                          {displayVal}
+                        </span>
+                      );
+                    },
+                  },
+                  {
+                    key: "initialProblem",
+                    label: t.colInitialProblem || "Kendala Awal",
+                    type: "text",
+                    render: (r) => {
+                      const text = r.initialProblem || "-";
+                      const isLong = text.length > 35;
+                      const displayText = isLong ? text.slice(0, 35) + "..." : text;
+                      return (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            maxWidth: 240,
+                          }}
+                        >
+                          <span
+                            style={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                            title={text}
+                          >
+                            {displayText}
+                          </span>
+                          {isLong && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setWaDetailModal(r);
+                              }}
+                              title={t.viewDetail || "Lihat selengkapnya"}
+                              aria-label={t.viewDetail || "Lihat selengkapnya"}
+                              style={{
+                                background: T.cyanDim,
+                                border: `1px solid ${T.cyan}44`,
+                                color: T.cyan,
+                                borderRadius: 4,
+                                padding: "2px 5px",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                fontSize: 11,
+                                fontWeight: 600,
+                                flexShrink: 0,
+                              }}
+                            >
+                              <Eye size={12} style={{ marginRight: 3 }} /> {t.colDetail || "Detail"}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    },
+                  },
+                  {
+                    key: "finalAnalysis",
+                    label: t.colFinalAnalysis || "Analisa Akhir",
+                    type: "text",
+                    render: (r) => {
+                      const text = r.finalAnalysis || "-";
+                      if (text.length <= 30) return text;
+                      return text.slice(0, 30) + "...";
+                    },
+                  },
                   {
                     key: "caseDate",
-                    label: t.colDate,
+                    label: t.colDate || "Tgl Case",
+                    type: "date",
+                    filterable: false,
                     render: (r) => fmtDate(r.caseDate),
                   },
                   {
-                    key: "comm",
-                    label: t.colComm,
-                    render: (r) => (r.commHistory || []).length + "x",
+                    key: "solvedDate",
+                    label: t.colSolvedDate || "Tgl Solved",
+                    type: "date",
+                    filterable: false,
+                    render: (r) => fmtDate(r.solvedDate),
+                  },
+                  {
+                    key: "caseAge",
+                    label: t.colCaseAge || "Umur (Hari)",
+                    type: "numeric",
+                    filterable: false,
+                    render: (r) => {
+                      const days = daysBetween(r.caseDate, r.solvedDate || todayISO());
+                      return days !== "" ? `${days} ${t.rmaDays || "hari"}` : "-";
+                    },
                   },
                   {
                     key: "actions",
                     label: "",
+                    sortable: false,
+                    filterable: false,
                     render: (r) => (
                       <div style={{ display: "flex", gap: 6 }}>
                         <IconBtn
+                          icon={Eye}
+                          onClick={() => setWaDetailModal(r)}
+                          title={t.viewDetail || "Lihat selengkapnya"}
+                        />
+                        <IconBtn
                           icon={MessageSquare}
-                          onClick={() =>
-                            setWaMsgEntry({ kind: "wa", entry: r })
-                          }
+                          onClick={() => setWaMsgEntry({ kind: "wa", entry: r })}
                           title={t.waMessageAction}
                         />
                         <IconBtn
@@ -5601,15 +7902,13 @@ export default function App() {
                         <IconBtn
                           icon={Trash2}
                           danger
-                          onClick={() => deleteWa(r.id)}
+                          onClick={() => setDeleteConfirm({ kind: "wa", entry: r })}
                           title={t.deleteAction}
                         />
                       </div>
                     ),
                   },
                 ]}
-                rows={filteredWa}
-                emptyLabel={t.waEmptyList}
               />
             </>
           )}
@@ -5620,7 +7919,14 @@ export default function App() {
                 title={t.unitHistory}
                 subtitle={t.unitHistoryPageSubtitle}
               />
-              <UnitHistory rma={rma} wa={wa} t={t} />
+              <UnitHistory
+                rma={rma}
+                wa={wa}
+                t={t}
+                onSelectDetail={(channel, raw) =>
+                  channel === "RMA" ? setRmaPreview(raw) : setWaDetailModal(raw)
+                }
+              />
             </>
           )}
 
@@ -5638,13 +7944,15 @@ export default function App() {
             <>
               <SectionHeader
                 title={t.pcbaInventory}
-                subtitle="PCBA inventory management and repair tracking"
+                subtitle={t.pcbaSubtitle || "Manajemen inventaris dan perbaikan PCBA"}
               />
               <PcbaInventoryTab
                 pcba={pcba}
                 rma={rma}
                 master={master}
                 onGoodsReceipt={onGoodsReceipt}
+                onEditPcbaItem={onEditPcbaItem}
+                onDeletePcbaItem={onDeletePcbaItem}
                 onReplacement={onReplacement}
                 onRepair={onRepair}
                 onQc={onQc}
@@ -5666,7 +7974,7 @@ export default function App() {
       </div>
 
       {rmaPreview && (
-        <RmaDetailModal entry={rmaPreview} onClose={() => setRmaPreview(null)} />
+        <RmaDetailModal entry={rmaPreview} onClose={() => setRmaPreview(null)} t={t} />
       )}
       {rmaModal && (
         <Modal
@@ -5753,6 +8061,68 @@ export default function App() {
           t={t}
           currentUserDisplayName={user?.displayName || user?.email || "User"}
         />
+      )}
+      {waImportModal && (
+        <WaImportModal
+          onClose={() => setWaImportModal(false)}
+          existingWa={wa}
+          onImport={persistWa}
+          t={t}
+        />
+      )}
+      {waDetailModal && (
+        <WaDetailModal
+          entry={waDetailModal}
+          onClose={() => setWaDetailModal(null)}
+          t={t}
+        />
+      )}
+      {deleteConfirm && (
+        <DeleteConfirmModal
+          confirmState={deleteConfirm}
+          onConfirm={handleConfirmDelete}
+          onClose={() => setDeleteConfirm(null)}
+          t={t}
+        />
+      )}
+      {toastMsg && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            zIndex: 10000,
+            background: T.greenDim,
+            color: T.green,
+            border: `1px solid ${T.green}`,
+            borderRadius: 8,
+            padding: "10px 16px",
+            fontSize: 13,
+            fontWeight: 600,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <Check size={16} />
+          <span>{toastMsg}</span>
+          <button
+            onClick={() => setToastMsg("")}
+            style={{
+              background: "none",
+              border: "none",
+              color: T.green,
+              cursor: "pointer",
+              marginLeft: 8,
+              padding: 0,
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
       )}
     </div>
   );
