@@ -33,6 +33,7 @@ import {
   Moon,
   Sun,
   FileDown,
+  FileUp,
   Boxes,
   Wrench,
   ArrowLeftRight,
@@ -56,6 +57,7 @@ import { useAuth } from "./auth/AuthContext.jsx";
 import { useTheme } from "./context/ThemeContext.jsx";
 
 import hsgqLogo from "./assets/hsgq-logo.png";
+import { exportRmaToExcel, parseRmaFromExcel } from "./utils/excelRma.js";
 
 /* ============================================================
    TOKENS — "Fiber patch bay" console
@@ -262,18 +264,6 @@ const I18N = {
     reportPopupBlocked:
       "Popup browser diblokir. Izinkan popup untuk export PDF.",
     settingsPageSubtitle: "Kelola daftar Engineer, status, dan opsi lainnya",
-    settingsEngineer: "Engineer",
-    settingsStatusRma: "Status RMA (alur utama)",
-    settingsStatusWa: "Status WhatsApp",
-    settingsFinalResults: "Hasil Akhir",
-    settingsWaitingReasons: "Alasan Menunggu",
-    settingsWarrantyStatuses: "Status Warranty",
-    settingsQcResults: "Hasil QC",
-    settingsShippingMethod: "Metode Pengiriman",
-    settingsPcbaTypes: "Tipe PCBA",
-    settingsSuppliers: "Supplier",
-    settingsWarehouseLocations: "Lokasi Gudang",
-    settingsMinStockDefault: "Minimum Stok Default (unit)",
     tabOverview: "Overview",
     tabReceiving: "Receiving",
     tabDiagnosis: "Diagnosis",
@@ -365,6 +355,19 @@ const I18N = {
       "Belum ada riwayat komunikasi — berguna kalau 1 case ditangani beberapa engineer.",
     waNotes: "Keterangan",
     waSaveCase: "Simpan Case",
+    rmaExportExcel: "Export Excel",
+    rmaImportExcel: "Import Excel",
+    rmaImportModalTitle: "IMPORT RMA DARI EXCEL",
+    rmaImportSelectFile: "Pilih file .xlsx / .xls",
+    rmaImportHint: "File harus menggunakan format export dari aplikasi ini. Kolom wajib: Ticket No, Status, Engineer, Product, Customer Name, dan SN atau MAC.",
+    rmaImportValidating: "Memvalidasi...",
+    rmaImportHeaderError: "Header tidak cocok",
+    rmaImportRowErrors: "Baris bermasalah",
+    rmaImportDuplicates: "Duplikat (dilewati)",
+    rmaImportValidRows: "Baris valid siap diimport",
+    rmaImportConfirm: "Import {n} Tiket",
+    rmaImportSuccess: "Berhasil mengimport {n} tiket baru.",
+    rmaImportRowLabel: "Baris",
   },
   en: {
     home: "Home",
@@ -623,6 +626,19 @@ const I18N = {
       "No communication history yet — useful when a case is handled by multiple engineers.",
     waNotes: "Notes",
     waSaveCase: "Save Case",
+    rmaExportExcel: "Export Excel",
+    rmaImportExcel: "Import Excel",
+    rmaImportModalTitle: "IMPORT RMA FROM EXCEL",
+    rmaImportSelectFile: "Select .xlsx / .xls file",
+    rmaImportHint: "File must use the export format from this application. Required columns: Ticket No, Status, Engineer, Product, Customer Name, and SN or MAC.",
+    rmaImportValidating: "Validating...",
+    rmaImportHeaderError: "Header mismatch",
+    rmaImportRowErrors: "Invalid rows",
+    rmaImportDuplicates: "Duplicates (skipped)",
+    rmaImportValidRows: "Valid rows ready to import",
+    rmaImportConfirm: "Import {n} Tickets",
+    rmaImportSuccess: "Successfully imported {n} new tickets.",
+    rmaImportRowLabel: "Row",
   },
   zh: {
     home: "主页",
@@ -775,12 +791,6 @@ const I18N = {
     pcbaAction: "操作",
     pcbaOldSerial: "旧序列号",
     pcbaNewSerial: "新序列号",
-    // Unit History
-    unitHistorySearchPlaceholder: "按 SN、MAC、客户、案例筛选...",
-    unitHistoryHint: "搜索 SN/MAC 以查看该设备是否曾有 RMA 或 WhatsApp 案例记录 — 在为同一设备建立新工单前很有用。",
-    unitHistoryNotFound: '未找到 "{q}" 的历史记录。此设备是首次进入系统。',
-    unitHistoryPriorWarning: "⚠ 此设备此前已有 {n} 条历史记录。",
-    unitHistoryPartialMatch: "部分匹配",
     // Weekly Report
     weeklyReportFromDate: "起始日期",
     weeklyReportToDate: "结束日期",
@@ -881,6 +891,19 @@ const I18N = {
     waNoCommHistory: "暂无沟通记录 — 适用于一个案例由多位工程师处理的情况。",
     waNotes: "备注",
     waSaveCase: "保存案例",
+    rmaExportExcel: "导出 Excel",
+    rmaImportExcel: "导入 Excel",
+    rmaImportModalTitle: "从 EXCEL 导入 RMA",
+    rmaImportSelectFile: "选择 .xlsx / .xls 文件",
+    rmaImportHint: "文件必须使用本应用的导出格式。必填列：Ticket No、Status、Engineer、Product、Customer Name，以及 SN 或 MAC。",
+    rmaImportValidating: "验证中...",
+    rmaImportHeaderError: "列标题不匹配",
+    rmaImportRowErrors: "无效行",
+    rmaImportDuplicates: "重复项（已跳过）",
+    rmaImportValidRows: "有效行，准备导入",
+    rmaImportConfirm: "导入 {n} 张工单",
+    rmaImportSuccess: "成功导入 {n} 张新工单。",
+    rmaImportRowLabel: "行",
   },
 };
 
@@ -4533,6 +4556,160 @@ function PcbaInventoryTab({
 }
 
 /* ============================================================
+   RMA IMPORT MODAL
+   ============================================================ */
+function RmaImportModal({ onClose, existingRma, onImport, t, currentUserDisplayName }) {
+  const [file, setFile] = useState(null);
+  const [parsing, setParsing] = useState(false);
+  const [parseResult, setParseResult] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const existingTicketNos = useMemo(
+    () => existingRma.map((e) => e.ticketNo).filter(Boolean),
+    [existingRma]
+  );
+
+  const handleFileChange = async (e) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    setFile(selected);
+    setErrorMsg("");
+    setParseResult(null);
+    setParsing(true);
+    try {
+      const res = await parseRmaFromExcel(selected, existingTicketNos);
+      setParseResult(res);
+    } catch (err) {
+      setErrorMsg(err.message || "Gagal membaca file Excel.");
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!parseResult || !parseResult.valid || parseResult.valid.length === 0) return;
+    setImporting(true);
+
+    const now = new Date().toISOString();
+    const newEntries = parseResult.valid.map((item) => ({
+      ...item,
+      id: uid(),
+      unitPhotos: [],
+      labelPhotos: [],
+      statusHistory: [
+        {
+          from: null,
+          to: item.status || "",
+          changedBy: currentUserDisplayName || "Excel Import",
+          changedAt: now,
+          note: "Tiket diimport dari Excel",
+        },
+      ],
+    }));
+
+    const combined = [...newEntries, ...existingRma];
+    const ok = await onImport(combined);
+    setImporting(false);
+    if (ok !== false) {
+      onClose();
+    }
+  };
+
+  return (
+    <Modal title={t.rmaImportModalTitle || "IMPORT RMA DARI EXCEL"} onClose={onClose} width={640}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <InlineHint>
+          {t.rmaImportHint || "File harus menggunakan format export dari aplikasi ini."}
+        </InlineHint>
+
+        {errorMsg && <InlineHint tone="warn">{errorMsg}</InlineHint>}
+
+        <Field label={t.rmaImportSelectFile || "Pilih file .xlsx / .xls"}>
+          <input
+            type="file"
+            accept=".xlsx, .xls"
+            onChange={handleFileChange}
+            style={{
+              fontFamily: sans,
+              fontSize: 13,
+              color: T.ink,
+              background: T.panel2,
+              border: `1px solid ${T.line}`,
+              borderRadius: 6,
+              padding: "8px 12px",
+              width: "100%",
+            }}
+          />
+        </Field>
+
+        {parsing && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: T.ink2, fontSize: 13 }}>
+            <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+            {t.rmaImportValidating || "Memvalidasi..."}
+          </div>
+        )}
+
+        {parseResult && !parsing && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {parseResult.headerError && (
+              <InlineHint tone="warn">
+                <strong>{t.rmaImportHeaderError || "Header tidak cocok"}:</strong> {parseResult.headerError}
+              </InlineHint>
+            )}
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ background: T.greenDim, color: T.green, padding: "8px 12px", borderRadius: 6, fontSize: 12.5, fontWeight: 600 }}>
+                ✓ {parseResult.valid.length} {t.rmaImportValidRows || "Baris valid siap diimport"}
+              </div>
+
+              {parseResult.duplicates.length > 0 && (
+                <div style={{ background: T.amberDim, color: T.amber, padding: "8px 12px", borderRadius: 6, fontSize: 12.5, fontWeight: 600 }}>
+                  ⚠ {parseResult.duplicates.length} {t.rmaImportDuplicates || "Duplikat (dilewati)"}
+                </div>
+              )}
+
+              {parseResult.errors.length > 0 && (
+                <div style={{ background: T.redDim, color: T.red, padding: "8px 12px", borderRadius: 6, fontSize: 12.5, fontWeight: 600 }}>
+                  ✕ {parseResult.errors.length} {t.rmaImportRowErrors || "Baris bermasalah"}
+                </div>
+              )}
+            </div>
+
+            {parseResult.errors.length > 0 && (
+              <div style={{ maxHeight: 140, overflowY: "auto", background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 6, padding: 8, fontSize: 12 }}>
+                <strong style={{ color: T.red }}>{t.rmaImportRowErrors || "Detail Error Baris"}:</strong>
+                <ul style={{ margin: "4px 0 0 16px", padding: 0, color: T.ink2 }}>
+                  {parseResult.errors.map((err, i) => (
+                    <li key={i}>
+                      {(t.rmaImportRowLabel || "Baris")} {err.row}: {err.message}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 }}>
+          <Btn variant="ghost" onClick={onClose} disabled={importing}>
+            {t.cancel || "Batal"}
+          </Btn>
+          <Btn
+            variant="solid"
+            disabled={importing || !parseResult || parseResult.valid.length === 0}
+            onClick={handleConfirmImport}
+          >
+            {importing && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+            {(t.rmaImportConfirm || "Import {n} Tiket").replace("{n}", parseResult?.valid?.length || 0)}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+/* ============================================================
    MAIN APP
    ============================================================ */
 export default function App() {
@@ -4558,6 +4735,7 @@ export default function App() {
     overdueOnly: false,
   });
   const [saveErr, setSaveErr] = useState("");
+  const [rmaImportModal, setRmaImportModal] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -5190,12 +5368,28 @@ export default function App() {
                 title={t.rmaPageTitle}
                 subtitle={t.rmaPageSubtitle}
                 action={
-                  <Btn
-                    variant="solid"
-                    onClick={() => setRmaModal({ mode: "new" })}
-                  >
-                    <Plus size={14} /> {t.rmaNewTicket}
-                  </Btn>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <Btn
+                      variant="ghost"
+                      onClick={() => exportRmaToExcel(rma)}
+                      title="Export seluruh data RMA ke .xlsx"
+                    >
+                      <FileDown size={14} /> {t.rmaExportExcel || "Export Excel"}
+                    </Btn>
+                    <Btn
+                      variant="ghost"
+                      onClick={() => setRmaImportModal(true)}
+                      title="Import data RMA dari file .xlsx / .xls"
+                    >
+                      <FileUp size={14} /> {t.rmaImportExcel || "Import Excel"}
+                    </Btn>
+                    <Btn
+                      variant="solid"
+                      onClick={() => setRmaModal({ mode: "new" })}
+                    >
+                      <Plus size={14} /> {t.rmaNewTicket}
+                    </Btn>
+                  </div>
                 }
               />
               <div
@@ -5550,6 +5744,15 @@ export default function App() {
             />
           </div>
         </Modal>
+      )}
+      {rmaImportModal && (
+        <RmaImportModal
+          onClose={() => setRmaImportModal(false)}
+          existingRma={rma}
+          onImport={persistRma}
+          t={t}
+          currentUserDisplayName={user?.displayName || user?.email || "User"}
+        />
       )}
     </div>
   );
