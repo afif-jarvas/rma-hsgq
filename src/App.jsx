@@ -62,6 +62,7 @@ import { useTheme } from "./context/ThemeContext.jsx";
 import hsgqLogo from "./assets/hsgq-logo.png";
 import { exportRmaToExcel, parseRmaFromExcel } from "./utils/excelRma.js";
 import { exportWaToExcel, parseWaFromExcel } from "./utils/excelWa.js";
+import { exportPcbaToExcel } from "./utils/excelPcba.js";
 
 /* ============================================================
    TOKENS — "Fiber patch bay" console
@@ -411,7 +412,7 @@ const I18N = {
     rmaQcTesting: "QC / TESTING",
     rmaQcTester: "QC / Tester",
     rmaQcDate: "Tanggal QC",
-    rmaQcResult: "Hasil QC",
+    rmaQcResult: "Hasil Akhir",
     rmaQcNotes: "Catatan QC",
     rmaQcFailHint:
       'QC Fail — status sebaiknya dikembalikan ke "Sedang Diperbaiki" di tab Overview.',
@@ -476,6 +477,33 @@ const I18N = {
     waImportDupeImportNew: "Import duplikat sebagai case baru",
     waExportAll: "Export Semua Record ({n})",
     waExportFiltered: "Export Record Difilter ({n})",
+    fromDate: "Dari Tanggal",
+    toDate: "Sampai Tanggal",
+    applyFilter: "Terapkan",
+    resetDate: "Reset Tanggal",
+    today: "Hari Ini",
+    last7Days: "7 Hari Terakhir",
+    last30Days: "30 Hari Terakhir",
+    thisMonth: "Bulan Ini",
+    lastMonth: "Bulan Lalu",
+    thisYear: "Tahun Ini",
+    totalWaCases: "Total Case",
+    noDataForDateRange: "Tidak ada data pada rentang tanggal yang dipilih.",
+    presetSelect: "Pilih Preset",
+    customRange: "Custom (Bebas)",
+    colChannel: "Channel",
+    colProblem: "Kendala / Analisa",
+    unitHistoryShowing: "Menampilkan {shown} dari {total} riwayat unit",
+    noDataToExport: "Tidak ada data untuk diexport.",
+    colShipped: "Tgl Dikirim",
+    colDiagnosis: "Diagnosis (Kendala Awal)",
+    colFinalResult: "Hasil Akhir",
+    totalUnitHistory: "Total Riwayat Unit",
+    totalUnitHistoryHeading: "TOTAL RIWAYAT UNIT",
+    sectionRma: "RMA",
+    sectionWa: "WHATSAPP",
+    totalRmaBadge: "Total RMA",
+    totalWaBadge: "Total WhatsApp",
   },
   en: {
     home: "Home",
@@ -851,6 +879,33 @@ const I18N = {
     waImportDupeImportNew: "Import duplicates as new cases",
     waExportAll: "Export All Records ({n})",
     waExportFiltered: "Export Filtered Records ({n})",
+    fromDate: "From Date",
+    toDate: "To Date",
+    applyFilter: "Apply",
+    resetDate: "Reset Date",
+    today: "Today",
+    last7Days: "Last 7 Days",
+    last30Days: "Last 30 Days",
+    thisMonth: "This Month",
+    lastMonth: "Last Month",
+    thisYear: "This Year",
+    totalWaCases: "Total Cases",
+    noDataForDateRange: "No data found for the selected date range",
+    presetSelect: "Select Preset",
+    customRange: "Custom Range",
+    colChannel: "Channel",
+    colProblem: "Issue / Analysis",
+    unitHistoryShowing: "Showing {shown} of {total} unit history records",
+    noDataToExport: "No data to export.",
+    colShipped: "Shipped Date",
+    colDiagnosis: "Diagnosis (Initial Problem)",
+    colFinalResult: "Final Result",
+    totalUnitHistory: "Total Unit History",
+    totalUnitHistoryHeading: "TOTAL UNIT HISTORY",
+    sectionRma: "RMA",
+    sectionWa: "WHATSAPP",
+    totalRmaBadge: "Total RMA",
+    totalWaBadge: "Total WhatsApp",
   },
   zh: {
     home: "主页",
@@ -1220,6 +1275,33 @@ const I18N = {
     waImportDupeImportNew: "将重复项导入为新案例",
     waExportAll: "导出所有记录 ({n})",
     waExportFiltered: "导出已筛选记录 ({n})",
+    fromDate: "开始日期",
+    toDate: "结束日期",
+    applyFilter: "应用",
+    resetDate: "重置日期",
+    today: "今天",
+    last7Days: "最近 7 天",
+    last30Days: "最近 30 天",
+    thisMonth: "本月",
+    lastMonth: "上个月",
+    thisYear: "今年",
+    totalWaCases: "案例总数",
+    noDataForDateRange: "所选日期范围内没有数据",
+    presetSelect: "选择预设",
+    customRange: "自定义范围",
+    colChannel: "渠道",
+    colProblem: "故障 / 分析",
+    unitHistoryShowing: "显示 {shown} / {total} 条设备历史记录",
+    noDataToExport: "没有要导出的数据。",
+    colShipped: "发货日期",
+    colDiagnosis: "诊断 (初始问题)",
+    colFinalResult: "最终结果",
+    totalUnitHistory: "设备历史总数",
+    totalUnitHistoryHeading: "设备历史总数",
+    sectionRma: "RMA",
+    sectionWa: "WHATSAPP",
+    totalRmaBadge: "RMA 总数",
+    totalWaBadge: "WhatsApp 总数",
   },
 };
 
@@ -1450,11 +1532,10 @@ const DEFAULT_MASTER = {
   statusWA: ["On Progress", "Selesai", "FU Tim China", "Belum Ditag"],
   finalResults: [
     "Normal",
+    "Replace",
     "Repair",
-    "Replace PCBA",
-    "Replace Unit",
-    "Tidak Dapat Diperbaiki",
-    "Rejected",
+    "Service",
+    "Return",
   ],
   waitingReasons: [
     "Customer Information",
@@ -1511,18 +1592,48 @@ const fmtDate = (d) => {
   if (isNaN(dt)) return d;
   return `${pad2(dt.getDate())}/${pad2(dt.getMonth() + 1)}/${dt.getFullYear()}`;
 };
-const todayISO = () => new Date().toISOString().slice(0, 10);
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+};
 const dateNDaysAgoISO = (n) => {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 };
 const addDaysISO = (iso, n) => {
   if (!iso) return "";
   const d = new Date(iso);
   d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 };
+function parseToISODate(val) {
+  if (!val) return "";
+  const str = String(val).trim();
+  if (!str) return "";
+
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+    return str.slice(0, 10);
+  }
+
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
+    const parts = str.split("/");
+    const d = pad2(parts[0]);
+    const m = pad2(parts[1]);
+    const y = parts[2].slice(0, 4);
+    return `${y}-${m}-${d}`;
+  }
+
+  const dt = new Date(str);
+  if (!isNaN(dt.getTime())) {
+    const y = dt.getFullYear();
+    const m = pad2(dt.getMonth() + 1);
+    const d = pad2(dt.getDate());
+    return `${y}-${m}-${d}`;
+  }
+
+  return "";
+}
 function genTicket(prefix, existingField) {
   const now = new Date();
   const stamp = `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}`;
@@ -1946,6 +2057,320 @@ function InlineHint({ children, tone = "info" }) {
     >
       <Info size={12} style={{ marginTop: 1, flexShrink: 0 }} />{" "}
       <span>{children}</span>
+    </div>
+  );
+}
+
+/* ============================================================
+   DATE RANGE & STATS SUMMARY HELPERS
+   ============================================================ */
+function getPresetDates(presetKey) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+
+  if (presetKey === "today") {
+    const today = todayISO();
+    return { from: today, to: today };
+  }
+  if (presetKey === "last7") {
+    return { from: dateNDaysAgoISO(6), to: todayISO() };
+  }
+  if (presetKey === "last30") {
+    return { from: dateNDaysAgoISO(29), to: todayISO() };
+  }
+  if (presetKey === "thisMonth") {
+    const from = `${year}-${pad2(month + 1)}-01`;
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const to = `${year}-${pad2(month + 1)}-${pad2(lastDay)}`;
+    return { from, to };
+  }
+  if (presetKey === "lastMonth") {
+    const prevMonthDate = new Date(year, month - 1, 1);
+    const pmYear = prevMonthDate.getFullYear();
+    const pmMonth = prevMonthDate.getMonth();
+    const from = `${pmYear}-${pad2(pmMonth + 1)}-01`;
+    const lastDay = new Date(pmYear, pmMonth + 1, 0).getDate();
+    const to = `${pmYear}-${pad2(pmMonth + 1)}-${pad2(lastDay)}`;
+    return { from, to };
+  }
+  if (presetKey === "thisYear") {
+    const from = `${year}-01-01`;
+    const to = `${year}-12-31`;
+    return { from, to };
+  }
+  return { from: "", to: "" };
+}
+
+function StatusSummaryCards({
+  title,
+  totalCount,
+  statusList,
+  filteredRows,
+  baseRows,
+  selectedStatus,
+  onSelectStatus,
+  t,
+  extraBadges,
+}) {
+  const rowsForCounting = baseRows || filteredRows || [];
+  const displayTotal = baseRows ? baseRows.length : totalCount;
+
+  const countsByStatus = useMemo(() => {
+    const map = {};
+    (statusList || []).forEach((st) => {
+      const lower = st.trim().toLowerCase();
+      map[st] = rowsForCounting.filter(
+        (r) => (r.status || "").trim().toLowerCase() === lower
+      ).length;
+    });
+    return map;
+  }, [statusList, rowsForCounting]);
+
+  const isTotalActive = !selectedStatus;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 8,
+        marginBottom: 12,
+        alignItems: "center",
+      }}
+    >
+      <div
+        className="summary-card-clickable"
+        onClick={() => onSelectStatus && onSelectStatus(null)}
+        title={t.filterAll || "Klik untuk menampilkan semua data"}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "6px 12px",
+          background: isTotalActive ? T.cyanDim : T.panel,
+          border: isTotalActive ? `2px solid ${T.cyan}` : `1px solid ${T.cyan}44`,
+          boxShadow: isTotalActive ? `0 0 0 2px ${T.cyan}33` : "none",
+          borderRadius: 8,
+          fontSize: 12.5,
+          fontFamily: sans,
+          cursor: "pointer",
+        }}
+      >
+        <span style={{ color: T.cyan, fontWeight: isTotalActive ? 700 : 600 }}>
+          {title}:
+        </span>
+        <span style={{ color: T.ink, fontWeight: 700, fontSize: 14 }}>
+          {displayTotal}
+        </span>
+      </div>
+
+      {(extraBadges || []).map((badge, idx) => (
+        <div
+          key={idx}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "6px 10px",
+            background: badge.bg || T.panel,
+            border: `1px solid ${badge.borderColor || T.line}`,
+            borderRadius: 8,
+            fontSize: 12,
+            fontFamily: sans,
+          }}
+        >
+          <span style={{ color: badge.color || T.cyan, fontWeight: 600 }}>
+            {badge.label}:
+          </span>
+          <span style={{ color: T.ink, fontWeight: 700 }}>
+            {badge.count}
+          </span>
+        </div>
+      ))}
+
+      {(statusList || []).map((st) => {
+        const count = countsByStatus[st] || 0;
+        const color = ledColor(st);
+        const localizedLabel = getLocalizedStatus(st, t);
+        const isActive =
+          selectedStatus &&
+          selectedStatus.trim().toLowerCase() === st.trim().toLowerCase();
+
+        return (
+          <div
+            key={st}
+            className="summary-card-clickable"
+            onClick={() => onSelectStatus && onSelectStatus(isActive ? null : st)}
+            title={`Klik untuk memfilter status: ${localizedLabel}`}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 10px",
+              background: isActive ? `${color}18` : T.panel,
+              border: isActive ? `2px solid ${color}` : `1px solid ${T.line}`,
+              boxShadow: isActive ? `0 0 0 2px ${color}33` : "none",
+              borderRadius: 8,
+              fontSize: 12,
+              fontFamily: sans,
+              cursor: "pointer",
+            }}
+          >
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: color,
+                boxShadow: `0 0 0 2px ${color}22`,
+                flexShrink: 0,
+              }}
+            />
+            <span
+              style={{
+                color: isActive ? T.ink : T.ink2,
+                fontWeight: isActive ? 600 : 400,
+              }}
+            >
+              {localizedLabel}:
+            </span>
+            <span style={{ color: T.ink, fontWeight: 700 }}>{count}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DateRangeToolbar({
+  search,
+  setSearch,
+  searchPlaceholder,
+  overdueOnly,
+  setOverdueOnly,
+  overdueLabel,
+  fromDate,
+  setFromDate,
+  toDate,
+  setToDate,
+  preset,
+  onSelectPreset,
+  onResetDate,
+  onResetAll,
+  hasActiveFilters,
+  t,
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: 8,
+        flexWrap: "wrap",
+        marginBottom: 12,
+        alignItems: "center",
+      }}
+    >
+      <SearchBar
+        value={search}
+        onChange={setSearch}
+        placeholder={searchPlaceholder}
+      />
+
+      {setOverdueOnly && (
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 12.5,
+            color: T.ink2,
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={overdueOnly}
+            onChange={(e) => setOverdueOnly(e.target.checked)}
+            style={{ accentColor: T.cyan }}
+          />
+          {overdueLabel || t.rmaOverdueOnly || "Overdue saja"}
+        </label>
+      )}
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          flexWrap: "wrap",
+          background: T.panel,
+          padding: "4px 8px",
+          borderRadius: 8,
+          border: `1px solid ${T.line}`,
+        }}
+      >
+        <CalendarRange size={14} color={T.ink3} />
+        <span style={{ fontSize: 12, color: T.ink2 }}>{t.fromDate || "Dari"}:</span>
+        <TextInput
+          type="date"
+          value={fromDate}
+          onChange={(e) => {
+            setFromDate(e.target.value);
+            onSelectPreset("custom");
+          }}
+          style={{ padding: "4px 8px", fontSize: 12, width: 130 }}
+        />
+
+        <span style={{ fontSize: 12, color: T.ink2 }}>{t.toDate || "Sampai"}:</span>
+        <TextInput
+          type="date"
+          value={toDate}
+          onChange={(e) => {
+            setToDate(e.target.value);
+            onSelectPreset("custom");
+          }}
+          style={{ padding: "4px 8px", fontSize: 12, width: 130 }}
+        />
+
+        <select
+          value={preset}
+          onChange={(e) => onSelectPreset(e.target.value)}
+          style={{
+            ...inputBase,
+            padding: "4px 8px",
+            fontSize: 12,
+            width: "auto",
+            cursor: "pointer",
+          }}
+        >
+          <option value="">{t.presetSelect || "Pilih Preset"}</option>
+          <option value="custom">{t.customRange || "Custom (Bebas)"}</option>
+          <option value="today">{t.today || "Hari Ini"}</option>
+          <option value="last7">{t.last7Days || "7 Hari Terakhir"}</option>
+          <option value="last30">{t.last30Days || "30 Hari Terakhir"}</option>
+          <option value="thisMonth">{t.thisMonth || "Bulan Ini"}</option>
+          <option value="lastMonth">{t.lastMonth || "Bulan Lalu"}</option>
+          <option value="thisYear">{t.thisYear || "Tahun Ini"}</option>
+        </select>
+
+        {(fromDate || toDate || preset) && (
+          <Btn
+            variant="ghost"
+            onClick={onResetDate}
+            style={{ padding: "4px 8px", fontSize: 12 }}
+          >
+            {t.resetDate || "Reset Tanggal"}
+          </Btn>
+        )}
+      </div>
+
+      {hasActiveFilters && (
+        <Btn variant="ghost" onClick={onResetAll}>
+          {t.resetFilter || "Reset Filter"}
+        </Btn>
+      )}
     </div>
   );
 }
@@ -2383,6 +2808,12 @@ function RmaForm({
   });
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
 
+  const finalResultOptions = useMemo(() => {
+    const defaultList = ["Normal", "Replace", "Repair", "Service", "Return"];
+    const customList = master.finalResults || [];
+    return Array.from(new Set([...defaultList, ...customList]));
+  }, [master.finalResults]);
+
   const priorMatches = useMemo(() => {
     if (!f.sn && !f.mac) return [];
     return unitHistoryLookup(f.sn, f.mac).filter((h) => h.id !== f.id);
@@ -2413,6 +2844,10 @@ function RmaForm({
     }
     if (!f.mac || !f.mac.trim()) {
       setFormError(tt.errMacRequired || "MAC wajib diisi.");
+      return;
+    }
+    if (!f.customerPhone || !f.customerPhone.trim()) {
+      setFormError(tt.errCustomerPhoneRequired || "Nomor HP Customer wajib diisi.");
       return;
     }
 
@@ -2815,7 +3250,7 @@ function RmaForm({
           </Field>
           <Field label="Hasil Akhir">
             <Select
-              options={master.finalResults}
+              options={finalResultOptions}
               value={f.finalResult}
               onChange={set("finalResult")}
             />
@@ -2953,11 +3388,11 @@ function RmaForm({
                 onChange={set("qcDate")}
               />
             </Field>
-            <Field label="Hasil QC">
+            <Field label={t.rmaFinalResult || "Hasil Akhir"}>
               <Select
-                options={master.qcResults}
-                value={f.qcResult}
-                onChange={set("qcResult")}
+                options={finalResultOptions}
+                value={f.finalResult}
+                onChange={set("finalResult")}
               />
             </Field>
           </div>
@@ -4361,7 +4796,7 @@ ${tt.weeklyReportStatusLabel || "Status"}: ${locStatus}
           <div class="toolbar"><button onclick="window.print()">${escapeHtml(tt.reportExportPdf || "Print / Save PDF")}</button></div>
           <div class="header">
             <div class="header-text">
-              <div class="brand">HSGQ Cloud</div>
+              <div class="brand">HSGQ Indonesia</div>
               <h1>${escapeHtml(tt.weeklyReportTitle || "Weekly Technical Support Report")}</h1>
               <div class="period">${escapeHtml(fmtDate(start))} - ${escapeHtml(fmtDate(end))}</div>
             </div>
@@ -4441,216 +4876,753 @@ ${tt.weeklyReportStatusLabel || "Status"}: ${locStatus}
 }
 
 /* ============================================================
-   UNIT HISTORY / QUICK SEARCH SN-MAC
+   UNIT HISTORY SUMMARY (3-Group Layout: Total / RMA / WhatsApp)
    ============================================================ */
-function UnitHistory({ rma, wa, t, onSelectDetail }) {
-  const [query, setQuery] = useState("");
+/* ============================================================
+   UNIT HISTORY SUMMARY (3-Group Layout: Total / RMA / WhatsApp)
+   ============================================================ */
+function UnitHistorySummary({
+  baseRows,
+  filteredRows,
+  channelFilter,
+  statusFilter,
+  onSelectSummary,
+  master,
+  t,
+}) {
+  const rowsForCounting = baseRows || filteredRows || [];
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const rmaHits = rma
-      .filter(
-        (e) =>
-          !q ||
-          [
-            e.ticketNo,
-            e.sn,
-            e.mac,
-            e.customerName,
-            e.company,
-            e.status,
-            e.finalResult,
-            e.rootCause,
-            e.checkingResult,
-          ]
-            .join(" ")
-            .toLowerCase()
-            .includes(q),
-      )
-      .map((e) => ({
-        ref: e.ticketNo,
-        channel: "RMA",
-        date: e.receivedDate,
-        status: e.status,
-        sn: e.sn || "-",
-        mac: e.mac || "-",
-        customer: e.customerName || e.company || "-",
-        result: e.finalResult || "-",
-        note: e.rootCause || e.checkingResult || "-",
-        raw: e,
-      }));
-    const waHits = wa
-      .filter(
-        (e) =>
-          !q ||
-          [
-            e.caseNo,
-            e.sn,
-            e.mac,
-            e.customerName,
-            e.company,
-            e.status,
-            e.finalAnalysis,
-            e.initialProblem,
-          ]
-            .join(" ")
-            .toLowerCase()
-            .includes(q),
-      )
-      .map((e) => ({
-        ref: e.caseNo,
-        channel: "WhatsApp",
-        date: e.caseDate,
-        status: e.status,
-        sn: e.sn || "-",
-        mac: e.mac || "-",
-        customer: e.customerName || e.company || "-",
-        result: e.finalAnalysis || "-",
-        note: e.initialProblem || "-",
-        raw: e,
-      }));
-    return [...rmaHits, ...waHits].sort((a, b) => (a.date < b.date ? 1 : -1));
-  }, [query, rma, wa]);
+  const rmaRows = useMemo(
+    () => rowsForCounting.filter((r) => r.channel === "RMA"),
+    [rowsForCounting]
+  );
+  const waRows = useMemo(
+    () => rowsForCounting.filter((r) => r.channel === "WhatsApp"),
+    [rowsForCounting]
+  );
 
-  const partialResults = useMemo(() => {
-    if (!query.trim() || query.trim().length < 3) return [];
-    const q = query.trim().toLowerCase();
-    const rmaHits = rma
-      .filter(
-        (e) =>
-          ((e.sn || "").toLowerCase().includes(q) ||
-            (e.mac || "").toLowerCase().includes(q)) &&
-          !results.some((r) => r.ref === e.ticketNo),
-      )
-      .map((e) => ({
-        ref: e.ticketNo,
-        channel: "RMA",
-        date: e.receivedDate,
-        status: e.status,
-        sn: e.sn,
-        mac: e.mac,
-        raw: e,
-      }));
-    return rmaHits.slice(0, 10);
-  }, [query, rma, results]);
+  const rmaStatusList = useMemo(() => {
+    const defaultList = [
+      "Unit Diterima",
+      "Sedang Dicek",
+      "Menunggu",
+      "Sedang Diperbaiki",
+      "QC/Testing",
+      "Ready to Ship",
+      "Shipped",
+      "Customer Received",
+      "Closed",
+    ];
+    const masterList = master?.statusRMA || defaultList;
+    const set = new Set();
+    masterList.forEach((s) => s && set.add(s.trim()));
+    rmaRows.forEach((r) => r.status && set.add(r.status.trim()));
+    return Array.from(set);
+  }, [master?.statusRMA, rmaRows]);
+
+  const waStatusList = useMemo(() => {
+    const defaultList = [
+      "On Progress",
+      "Selesai",
+      "FU Tim China",
+      "Belum Ditag",
+    ];
+    const masterList = master?.statusWA || defaultList;
+    const set = new Set();
+    masterList.forEach((s) => s && set.add(s.trim()));
+    waRows.forEach((r) => r.status && set.add(r.status.trim()));
+    return Array.from(set);
+  }, [master?.statusWA, waRows]);
+
+  const rmaStatusCounts = useMemo(() => {
+    const map = {};
+    rmaStatusList.forEach((st) => {
+      const lower = st.trim().toLowerCase();
+      map[st] = rmaRows.filter(
+        (r) => (r.status || "").trim().toLowerCase() === lower
+      ).length;
+    });
+    return map;
+  }, [rmaStatusList, rmaRows]);
+
+  const waStatusCounts = useMemo(() => {
+    const map = {};
+    waStatusList.forEach((st) => {
+      const lower = st.trim().toLowerCase();
+      map[st] = waRows.filter(
+        (r) => (r.status || "").trim().toLowerCase() === lower
+      ).length;
+    });
+    return map;
+  }, [waStatusList, waRows]);
+
+  const isTotalAllActive = !channelFilter && !statusFilter;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ maxWidth: 420 }}>
-        <SearchBar
-          value={query}
-          onChange={setQuery}
-          placeholder={t.unitHistorySearchPlaceholder}
-        />
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+        marginBottom: 14,
+      }}
+    >
+      {/* ── Group A: TOTAL RIWAYAT UNIT ── */}
+      <div>
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: 0.6,
+            color: T.ink3,
+            textTransform: "uppercase",
+            marginBottom: 6,
+            fontFamily: sans,
+          }}
+        >
+          {t.totalUnitHistoryHeading || "TOTAL RIWAYAT UNIT"}
+        </div>
+        <div
+          className="summary-card-clickable"
+          onClick={() => onSelectSummary && onSelectSummary(null, null)}
+          title={t.filterAll || "Klik untuk menampilkan seluruh riwayat unit"}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "8px 14px",
+            background: isTotalAllActive ? T.cyanDim : T.panel,
+            border: isTotalAllActive ? `2px solid ${T.cyan}` : `1px solid ${T.line}`,
+            boxShadow: isTotalAllActive ? `0 0 0 2px ${T.cyan}33` : "none",
+            borderRadius: 8,
+            fontSize: 13,
+            fontFamily: sans,
+            cursor: "pointer",
+          }}
+        >
+          <span style={{ color: T.cyan, fontWeight: isTotalAllActive ? 700 : 600 }}>
+            {t.totalUnitHistoryBadge || "Total Riwayat Unit"}:
+          </span>
+          <span style={{ color: T.ink, fontWeight: 700, fontSize: 16 }}>
+            {rowsForCounting.length}
+          </span>
+        </div>
       </div>
-      {!query.trim() && (
+
+      {/* ── Group B: RMA ── */}
+      <div>
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: 0.6,
+            color: T.cyan,
+            textTransform: "uppercase",
+            marginBottom: 6,
+            fontFamily: sans,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <span>{t.sectionRma || "RMA"}</span>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 8,
+            alignItems: "center",
+          }}
+        >
+          {/* Total RMA Card */}
+          {(() => {
+            const isRmaTotalActive = channelFilter === "RMA" && !statusFilter;
+            return (
+              <div
+                className="summary-card-clickable"
+                onClick={() =>
+                  onSelectSummary &&
+                  onSelectSummary(isRmaTotalActive ? null : "RMA", null)
+                }
+                title="Klik untuk memfilter semua kasus RMA"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 12px",
+                  background: isRmaTotalActive ? T.cyanDim : T.panel,
+                  border: isRmaTotalActive
+                    ? `2px solid ${T.cyan}`
+                    : `1px solid ${T.cyan}44`,
+                  boxShadow: isRmaTotalActive ? `0 0 0 2px ${T.cyan}33` : "none",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontFamily: sans,
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{ color: T.cyan, fontWeight: 600 }}>
+                  {t.totalRmaBadge || "Total RMA"}:
+                </span>
+                <span style={{ color: T.ink, fontWeight: 700 }}>
+                  {rmaRows.length}
+                </span>
+              </div>
+            );
+          })()}
+
+          {/* RMA Status Badges */}
+          {rmaStatusList.map((st) => {
+            const count = rmaStatusCounts[st] || 0;
+            const color = ledColor(st);
+            const localizedLabel = getLocalizedStatus(st, t);
+            const isActive =
+              channelFilter === "RMA" &&
+              statusFilter &&
+              statusFilter.trim().toLowerCase() === st.trim().toLowerCase();
+
+            return (
+              <div
+                key={st}
+                className="summary-card-clickable"
+                onClick={() =>
+                  onSelectSummary &&
+                  onSelectSummary(isActive ? null : "RMA", isActive ? null : st)
+                }
+                title={`Klik untuk memfilter RMA status: ${localizedLabel}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 10px",
+                  background: isActive ? `${color}18` : T.panel,
+                  border: isActive ? `2px solid ${color}` : `1px solid ${T.line}`,
+                  boxShadow: isActive ? `0 0 0 2px ${color}33` : "none",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontFamily: sans,
+                  cursor: "pointer",
+                }}
+              >
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    background: color,
+                    boxShadow: `0 0 0 2px ${color}22`,
+                    flexShrink: 0,
+                  }}
+                />
+                <span
+                  style={{
+                    color: isActive ? T.ink : T.ink2,
+                    fontWeight: isActive ? 600 : 400,
+                  }}
+                >
+                  {localizedLabel}:
+                </span>
+                <span style={{ color: T.ink, fontWeight: 700 }}>{count}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Group C: WHATSAPP ── */}
+      <div>
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: 0.6,
+            color: T.green,
+            textTransform: "uppercase",
+            marginBottom: 6,
+            fontFamily: sans,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <span
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: T.green,
+            }}
+          />
+          <span>{t.sectionWa || "WHATSAPP"}</span>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 8,
+            alignItems: "center",
+          }}
+        >
+          {/* Total WhatsApp Card */}
+          {(() => {
+            const isWaTotalActive = channelFilter === "WhatsApp" && !statusFilter;
+            return (
+              <div
+                className="summary-card-clickable"
+                onClick={() =>
+                  onSelectSummary &&
+                  onSelectSummary(isWaTotalActive ? null : "WhatsApp", null)
+                }
+                title="Klik untuk memfilter semua kasus WhatsApp"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 12px",
+                  background: isWaTotalActive ? T.greenDim : T.panel,
+                  border: isWaTotalActive
+                    ? `2px solid ${T.green}`
+                    : `1px solid ${T.green}44`,
+                  boxShadow: isWaTotalActive ? `0 0 0 2px ${T.green}33` : "none",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontFamily: sans,
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{ color: T.green, fontWeight: 600 }}>
+                  {t.totalWaBadge || "Total WhatsApp"}:
+                </span>
+                <span style={{ color: T.ink, fontWeight: 700 }}>
+                  {waRows.length}
+                </span>
+              </div>
+            );
+          })()}
+
+          {/* WhatsApp Status Badges */}
+          {waStatusList.map((st) => {
+            const count = waStatusCounts[st] || 0;
+            const color = ledColor(st);
+            const localizedLabel = getLocalizedStatus(st, t);
+            const isActive =
+              channelFilter === "WhatsApp" &&
+              statusFilter &&
+              statusFilter.trim().toLowerCase() === st.trim().toLowerCase();
+
+            return (
+              <div
+                key={st}
+                className="summary-card-clickable"
+                onClick={() =>
+                  onSelectSummary &&
+                  onSelectSummary(isActive ? null : "WhatsApp", isActive ? null : st)
+                }
+                title={`Klik untuk memfilter WhatsApp status: ${localizedLabel}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 10px",
+                  background: isActive ? `${color}18` : T.panel,
+                  border: isActive ? `2px solid ${color}` : `1px solid ${T.line}`,
+                  boxShadow: isActive ? `0 0 0 2px ${color}33` : "none",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontFamily: sans,
+                  cursor: "pointer",
+                }}
+              >
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    background: color,
+                    boxShadow: `0 0 0 2px ${color}22`,
+                    flexShrink: 0,
+                  }}
+                />
+                <span
+                  style={{
+                    color: isActive ? T.ink : T.ink2,
+                    fontWeight: isActive ? 600 : 400,
+                  }}
+                >
+                  {localizedLabel}:
+                </span>
+                <span style={{ color: T.ink, fontWeight: 700 }}>{count}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   UNIT HISTORY / QUICK SEARCH SN-MAC
+   ============================================================ */
+function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
+  const [search, setSearch] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [preset, setPreset] = useState("");
+  const [colFilters, setColFilters] = useState({});
+  const [channelFilter, setChannelFilter] = useState(null);
+  const [statusFilter, setStatusFilter] = useState(null);
+
+  const onColFilter = useCallback((colKey, applied) => {
+    setColFilters((prev) => {
+      if (!applied.sort && applied.values === null) {
+        const next = { ...prev };
+        delete next[colKey];
+        return next;
+      }
+      return { ...prev, [colKey]: applied };
+    });
+  }, []);
+
+  const applyPreset = useCallback((presetKey) => {
+    setPreset(presetKey);
+    if (presetKey === "custom") return;
+    if (!presetKey) {
+      setFromDate("");
+      setToDate("");
+      return;
+    }
+    const { from, to } = getPresetDates(presetKey);
+    setFromDate(from);
+    setToDate(to);
+  }, []);
+
+  const resetDate = useCallback(() => {
+    setFromDate("");
+    setToDate("");
+    setPreset("");
+  }, []);
+
+  const resetAll = useCallback(() => {
+    setSearch("");
+    setFromDate("");
+    setToDate("");
+    setPreset("");
+    setColFilters({});
+    setChannelFilter(null);
+    setStatusFilter(null);
+  }, []);
+
+  // Combine RMA and WhatsApp entries into a single history array
+  const combinedRows = useMemo(() => {
+    const rmaMapped = (rma || []).map((e) => ({
+      id: `rma-${e.id || e.ticketNo}`,
+      ref: e.ticketNo || "-",
+      channel: "RMA",
+      date: e.receivedDate || "",
+      status: e.status || "-",
+      sn: e.sn || "-",
+      mac: e.mac || "-",
+      customer: e.customerName || e.company || "-",
+      product: e.product || "-",
+      issue: e.initialProblem || e.symptom || e.checkingResult || e.rootCause || e.finalResult || "-",
+      raw: e,
+    }));
+
+    const waMapped = (wa || []).map((e) => ({
+      id: `wa-${e.id || e.caseNo}`,
+      ref: e.caseNo || "-",
+      channel: "WhatsApp",
+      date: e.caseDate || "",
+      status: e.status || "-",
+      sn: e.sn || "-",
+      mac: e.mac || "-",
+      customer: e.customerName || e.company || "-",
+      product: e.deviceType || "-",
+      issue: e.initialProblem || e.finalAnalysis || e.notes || "-",
+      raw: e,
+    }));
+
+    return [...rmaMapped, ...waMapped];
+  }, [rma, wa]);
+
+  const baseFilteredUnitHistory = useMemo(() => {
+    const q = search.toLowerCase().trim();
+
+    let result = combinedRows.filter((e) => {
+      if (q) {
+        const haystack = [
+          e.ref,
+          e.channel,
+          e.status,
+          e.product,
+          e.sn,
+          e.mac,
+          e.customer,
+          e.issue,
+          getLocalizedStatus(e.status, t),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+
+    // Date range filter
+    if (fromDate || toDate) {
+      result = result.filter((e) => {
+        if (!e.date) return false;
+        const d = parseToISODate(e.date);
+        if (!d) return false;
+        if (fromDate && d < fromDate) return false;
+        if (toDate && d > toDate) return false;
+        return true;
+      });
+    }
+
+    // Per-column value filters
+    Object.entries(colFilters).forEach(([colKey, cf]) => {
+      if (!cf || cf.values === null) return;
+      const vals = new Set(cf.values);
+      if (vals.size === 0) {
+        result = [];
+        return;
+      }
+      result = result.filter((e) => vals.has(String(e[colKey] ?? "")));
+    });
+
+    return result;
+  }, [combinedRows, search, fromDate, toDate, colFilters, t]);
+
+  const filteredUnitHistory = useMemo(() => {
+    let result = baseFilteredUnitHistory;
+
+    if (channelFilter) {
+      result = result.filter((e) => e.channel === channelFilter);
+    }
+
+    if (statusFilter) {
+      const lower = statusFilter.trim().toLowerCase();
+      result = result.filter(
+        (e) => (e.status || "").trim().toLowerCase() === lower
+      );
+    }
+
+    // Sorting
+    const sortEntry = Object.entries(colFilters).find(([, cf]) => cf?.sort);
+    if (sortEntry) {
+      const [sortKey, { sort }] = sortEntry;
+      const isDateCol = sortKey === "date";
+      result = [...result].sort((a, b) => {
+        let av = a[sortKey] ?? "";
+        let bv = b[sortKey] ?? "";
+        if (isDateCol) {
+          const da = av ? new Date(av).getTime() : 0;
+          const db = bv ? new Date(bv).getTime() : 0;
+          return sort === "asc" ? da - db : db - da;
+        }
+        const cmp = String(av).localeCompare(String(bv), undefined, { sensitivity: "base" });
+        return sort === "asc" ? cmp : -cmp;
+      });
+    } else {
+      // Default: newest date first
+      result = [...result].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    }
+
+    return result;
+  }, [baseFilteredUnitHistory, channelFilter, statusFilter, colFilters]);
+
+  const columns = [
+    {
+      key: "ref",
+      label: t.colTicket || "Ticket / Case",
+      mono: true,
+      render: (r) => (
+        <span style={{ color: T.cyan, fontWeight: 600 }}>{r.ref}</span>
+      ),
+    },
+    {
+      key: "channel",
+      label: t.colChannel || "Channel",
+      render: (r) => (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            fontSize: 12,
+            fontWeight: 600,
+            color: r.channel === "RMA" ? T.cyan : T.green,
+            background: "transparent",
+          }}
+        >
+          {r.channel === "WhatsApp" ? "● WhatsApp" : r.channel}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      label: t.colStatus || "Status",
+      type: "status",
+      render: (r) => <StatusLed status={r.status} t={t} />,
+    },
+    {
+      key: "product",
+      label: t.colProduct || "Produk / Type",
+    },
+    {
+      key: "date",
+      label: t.colDate || "Tanggal",
+      type: "date",
+      filterable: false,
+      render: (r) => fmtDate(r.date),
+    },
+    {
+      key: "sn",
+      label: "SN",
+      mono: true,
+      render: (r) => {
+        const val = r.sn || "-";
+        const isLong = val.length > 15;
+        const displayVal = isLong ? val.slice(0, 15) + "..." : val;
+        return (
+          <span title={val} style={{ fontFamily: mono, fontSize: 12 }}>
+            {displayVal}
+          </span>
+        );
+      },
+    },
+    {
+      key: "mac",
+      label: "MAC",
+      mono: true,
+      render: (r) => {
+        const val = r.mac || "-";
+        const isLong = val.length > 17;
+        const displayVal = isLong ? val.slice(0, 17) + "..." : val;
+        return (
+          <span title={val} style={{ fontFamily: mono, fontSize: 12 }}>
+            {displayVal}
+          </span>
+        );
+      },
+    },
+    {
+      key: "customer",
+      label: t.colCustomer || "Customer",
+    },
+    {
+      key: "issue",
+      label: t.colProblem || "Kendala / Analisa",
+      render: (r) => {
+        const text = r.issue || "-";
+        if (text.length <= 35) return text;
+        return (
+          <span title={text}>
+            {text.slice(0, 35)}...
+          </span>
+        );
+      },
+    },
+    {
+      key: "actions",
+      label: "",
+      sortable: false,
+      filterable: false,
+      render: (r) => (
+        <IconBtn
+          icon={Eye}
+          onClick={() => onSelectDetail && onSelectDetail(r.channel, r.raw)}
+          title={t.viewDetail || "Lihat detail"}
+        />
+      ),
+    },
+  ];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* ── Unit History Toolbar ── */}
+      <DateRangeToolbar
+        search={search}
+        setSearch={setSearch}
+        searchPlaceholder={t.unitHistorySearchPlaceholder || "Cari SN, MAC, customer, case, RMA..."}
+        fromDate={fromDate}
+        setFromDate={setFromDate}
+        toDate={toDate}
+        setToDate={setToDate}
+        preset={preset}
+        onSelectPreset={applyPreset}
+        onResetDate={resetDate}
+        onResetAll={resetAll}
+        hasActiveFilters={
+          Object.keys(colFilters).length > 0 ||
+          search ||
+          fromDate ||
+          toDate ||
+          preset ||
+          Boolean(channelFilter) ||
+          Boolean(statusFilter)
+        }
+        t={t}
+      />
+
+      {/* ── 3-Group Summary (Total / RMA / WhatsApp) ── */}
+      <UnitHistorySummary
+        baseRows={baseFilteredUnitHistory}
+        filteredRows={filteredUnitHistory}
+        channelFilter={channelFilter}
+        statusFilter={statusFilter}
+        onSelectSummary={(ch, st) => {
+          setChannelFilter(ch);
+          setStatusFilter(st);
+        }}
+        master={master}
+        t={t}
+      />
+
+      {!search.trim() && !fromDate && !toDate && (
         <InlineHint>
           {t.unitHistoryHint}
         </InlineHint>
       )}
-      {query.trim() && results.length === 0 && partialResults.length === 0 && (
-        <div style={{ color: T.ink3, fontSize: 13 }}>
-          {t.unitHistoryNotFound.replace('"{q}"', `"${query}"`)}
-        </div>
+
+      {search.trim() && filteredUnitHistory.length > 1 && (
+        <InlineHint tone="warn">
+          {t.unitHistoryPriorWarning.replace("{n}", filteredUnitHistory.length)}
+        </InlineHint>
       )}
-      {results.length > 0 && (
-        <div className="unit-history-list" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {query.trim() && results.length > 1 && (
-            <InlineHint tone="warn">
-              {t.unitHistoryPriorWarning.replace("{n}", results.length)}
-            </InlineHint>
-          )}
-          {results.map((r, i) => (
-            <div className="unit-history-item"
-              key={i}
-              style={{
-                display: "flex",
-                gap: 14,
-                padding: "10px 14px",
-                background: T.panel,
-                border: `1px solid ${T.line}`,
-                borderRadius: 8,
-                alignItems: "center",
-              }}
-            >
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 99,
-                  background: ledColor(r.status),
-                  flexShrink: 0,
-                }}
-              />
-              <div
-                style={{
-                  fontFamily: mono,
-                  fontSize: 12.5,
-                  color: T.cyan,
-                  minWidth: 150,
-                }}
-              >
-                {r.ref}
-              </div>
-              <div style={{ fontSize: 11.5, color: T.ink3, minWidth: 80 }}>
-                {r.channel}
-              </div>
-              <div style={{ fontSize: 12, color: T.ink2, minWidth: 90 }}>
-                {fmtDate(r.date)}
-              </div>
-              <div style={{ fontSize: 11.5, color: T.ink3, minWidth: 180 }}>
-                <span style={{ fontFamily: mono }}>{r.sn}</span> /{" "}
-                <span style={{ fontFamily: mono }}>{r.mac}</span>
-              </div>
-              <div style={{ fontSize: 12, color: T.ink2, minWidth: 110 }}>
-                {r.customer}
-              </div>
-              <div style={{ fontSize: 12.5, color: T.ink, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {r.result}
-              </div>
-              <div style={{ fontSize: 11.5, color: T.ink3, minWidth: 80 }}>{getLocalizedStatus(r.status, t)}</div>
-              <IconBtn
-                icon={Eye}
-                onClick={() => onSelectDetail && onSelectDetail(r.channel, r.raw)}
-                title={t.viewDetail || "Lihat detail"}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-      {partialResults.length > 0 && (
-        <div style={{ marginTop: 8 }}>
-          <div
-            style={{
-              fontSize: 11,
-              color: T.ink3,
-              marginBottom: 6,
-              textTransform: "uppercase",
-              letterSpacing: 0.4,
-            }}
-          >
-            {t.unitHistoryPartialMatch}
-          </div>
-          {partialResults.map((r, i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                gap: 14,
-                padding: "8px 14px",
-                fontSize: 12,
-                color: T.ink2,
-              }}
-            >
-              <span style={{ fontFamily: mono, color: T.cyan }}>{r.ref}</span>
-              <span style={{ fontFamily: mono }}>
-                {r.sn} / {r.mac}
-              </span>
-              <span>{r.status}</span>
-            </div>
-          ))}
-        </div>
-      )}
+
+      {/* Record Count */}
+      <div
+        style={{
+          fontSize: 12,
+          color: T.ink2,
+          fontFamily: sans,
+        }}
+      >
+        {(t.unitHistoryShowing || "Menampilkan {shown} dari {total} riwayat unit")
+          .replace("{shown}", filteredUnitHistory.length)
+          .replace("{total}", combinedRows.length)}
+      </div>
+
+      {/* ── Table (reusing RmaTable) ── */}
+      <RmaTable
+        allRows={combinedRows}
+        rows={filteredUnitHistory}
+        colFilters={colFilters}
+        onColFilter={onColFilter}
+        t={t}
+        emptyLabel={
+          (fromDate || toDate) && filteredUnitHistory.length === 0
+            ? (t.noDataForDateRange || "Tidak ada data pada rentang tanggal yang dipilih.")
+            : search.trim() && filteredUnitHistory.length === 0
+            ? (t.unitHistoryNotFound ? t.unitHistoryNotFound.replace('"{q}"', `"${search}"`) : "Tidak ditemukan riwayat unit.")
+            : "Belum ada riwayat unit."
+        }
+        columns={columns}
+      />
     </div>
   );
 }
@@ -5473,10 +6445,55 @@ function PcbaInventoryTab({
   onReplacement,
   onRepair,
   onQc,
+  setToastMsg,
   t,
 }) {
   const [subTab, setSubTab] = useState("stock");
   const [modal, setModal] = useState(null);
+
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [supplierFilter, setSupplierFilter] = useState("");
+  const [locationFilter, setLocationFilter] = useState("");
+
+  const suppliers = useMemo(() => {
+    const set = new Set();
+    (pcba.items || []).forEach((i) => i.supplier && set.add(i.supplier));
+    return Array.from(set).sort();
+  }, [pcba.items]);
+
+  const locations = useMemo(() => {
+    const set = new Set();
+    (pcba.items || []).forEach((i) => i.warehouseLocation && set.add(i.warehouseLocation));
+    return Array.from(set).sort();
+  }, [pcba.items]);
+
+  const filteredItems = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return (pcba.items || []).filter((item) => {
+      if (q) {
+        const haystack = [
+          item.serialNo,
+          item.pcbaType,
+          item.status,
+          getLocalizedStatus(item.status, t),
+          item.supplier,
+          item.warehouseLocation,
+          item.notes,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      if (typeFilter && item.pcbaType !== typeFilter) return false;
+      if (statusFilter && item.status !== statusFilter) return false;
+      if (supplierFilter && item.supplier !== supplierFilter) return false;
+      if (locationFilter && item.warehouseLocation !== locationFilter) return false;
+      return true;
+    });
+  }, [pcba.items, search, typeFilter, statusFilter, supplierFilter, locationFilter, t]);
 
   const statusCounts = useMemo(() => {
     const m = {};
@@ -5515,22 +6532,27 @@ function PcbaInventoryTab({
         {PCBA_STATUSES.map((s) => (
           <div
             key={s}
+            onClick={() => setStatusFilter((prev) => (prev === s ? "" : s))}
             style={{
               background: T.panel,
-              border: `1px solid ${T.line}`,
+              border: `1px solid ${statusFilter === s ? T.cyan : T.line}`,
               borderRadius: 10,
               padding: "12px 16px",
               flex: 1,
               minWidth: 110,
+              cursor: "pointer",
+              transition: "all 0.15s ease",
             }}
+            title={`Klik untuk memfilter status: ${getLocalizedStatus(s, t)}`}
           >
             <div
               style={{
                 fontSize: 10.5,
                 letterSpacing: 0.4,
-                color: T.ink3,
+                color: statusFilter === s ? T.cyan : T.ink3,
                 textTransform: "uppercase",
                 fontFamily: sans,
+                fontWeight: statusFilter === s ? 600 : 400,
               }}
             >
               {getLocalizedStatus(s, t)}
@@ -5601,14 +6623,140 @@ function PcbaInventoryTab({
           <div
             style={{
               display: "flex",
-              justifyContent: "flex-end",
+              gap: 8,
+              flexWrap: "wrap",
               marginBottom: 12,
+              alignItems: "center",
             }}
           >
-            <Btn variant="solid" onClick={() => setModal({ type: "receipt" })}>
-              <Plus size={14} /> {t.pcbaReceiveNew}
-            </Btn>
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder={t.pcbaSearchPlaceholder || "Cari SN, Type, Supplier, Lokasi..."}
+            />
+
+            {/* Filter Type */}
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              style={{
+                ...inputBase,
+                padding: "4px 8px",
+                fontSize: 12,
+                width: "auto",
+                cursor: "pointer",
+              }}
+            >
+              <option value="">{t.filterType || "Semua Type"}</option>
+              {(master.pcbaTypes || []).map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+
+            {/* Filter Status */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{
+                ...inputBase,
+                padding: "4px 8px",
+                fontSize: 12,
+                width: "auto",
+                cursor: "pointer",
+              }}
+            >
+              <option value="">{t.filterStatus || "Semua Status"}</option>
+              {PCBA_STATUSES.map((st) => (
+                <option key={st} value={st}>
+                  {getLocalizedStatus(st, t)}
+                </option>
+              ))}
+            </select>
+
+            {/* Filter Supplier */}
+            {suppliers.length > 0 && (
+              <select
+                value={supplierFilter}
+                onChange={(e) => setSupplierFilter(e.target.value)}
+                style={{
+                  ...inputBase,
+                  padding: "4px 8px",
+                  fontSize: 12,
+                  width: "auto",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="">{t.filterSupplier || "Semua Supplier"}</option>
+                {suppliers.map((sup) => (
+                  <option key={sup} value={sup}>
+                    {sup}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Filter Lokasi */}
+            {locations.length > 0 && (
+              <select
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+                style={{
+                  ...inputBase,
+                  padding: "4px 8px",
+                  fontSize: 12,
+                  width: "auto",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="">{t.filterLocation || "Semua Lokasi"}</option>
+                {locations.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {loc}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {(search || typeFilter || statusFilter || supplierFilter || locationFilter) && (
+              <Btn
+                variant="ghost"
+                onClick={() => {
+                  setSearch("");
+                  setTypeFilter("");
+                  setStatusFilter("");
+                  setSupplierFilter("");
+                  setLocationFilter("");
+                }}
+                style={{ padding: "4px 8px", fontSize: 12 }}
+              >
+                <RotateCcw size={12} /> {t.resetFilter || "Reset Filter"}
+              </Btn>
+            )}
+
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <Btn
+                variant="ghost"
+                onClick={() => {
+                  if (filteredItems.length === 0) {
+                    if (setToastMsg) setToastMsg(t.noDataToExport || "Tidak ada data untuk diexport.");
+                    exportPcbaToExcel([], "PCBA_Inventory_Empty");
+                    return;
+                  }
+                  const isFiltered = Boolean(search || typeFilter || statusFilter || supplierFilter || locationFilter);
+                  exportPcbaToExcel(filteredItems, isFiltered ? "PCBA_Inventory_Filtered" : "PCBA_Inventory");
+                }}
+                title="Export data PCBA (sesuai filter) ke .xlsx"
+              >
+                <FileDown size={14} /> {t.rmaExportExcel || "Export Excel"}
+              </Btn>
+              <Btn variant="solid" onClick={() => setModal({ type: "receipt" })}>
+                <Plus size={14} /> {t.pcbaReceiveNew}
+              </Btn>
+            </div>
           </div>
+
           <DataTable
             columns={[
               { key: "serialNo", label: t.pcbaSerialNo, mono: true },
@@ -5626,8 +6774,12 @@ function PcbaInventoryTab({
                 render: (r) => fmtDate(r.createdAt),
               },
             ]}
-            rows={pcba.items}
-            emptyLabel={t.pcbaEmptyStock || "Belum ada PCBA di stok. Klik 'Terima PCBA Baru' untuk mulai."}
+            rows={filteredItems}
+            emptyLabel={
+              search || typeFilter || statusFilter || supplierFilter || locationFilter
+                ? (t.noDataForDateRange || "Tidak ada data yang memenuhi filter.")
+                : (t.pcbaEmptyStock || "Belum ada PCBA di stok. Klik 'Terima PCBA Baru' untuk mulai.")
+            }
           />
         </>
       )}
@@ -6546,13 +7698,64 @@ export default function App() {
   const [waColFilters, setWaColFilters] = useState({});
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [waOverdueOnly, setWaOverdueOnly] = useState(false);
+  const [rmaStatusFilter, setRmaStatusFilter] = useState(null);
+  const [waStatusFilter, setWaStatusFilter] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [waDetailModal, setWaDetailModal] = useState(null);
   const [toastMsg, setToastMsg] = useState("");
 
+  const [rmaFromDate, setRmaFromDate] = useState("");
+  const [rmaToDate, setRmaToDate] = useState("");
+  const [rmaPreset, setRmaPreset] = useState("");
+
+  const [waFromDate, setWaFromDate] = useState("");
+  const [waToDate, setWaToDate] = useState("");
+  const [waPreset, setWaPreset] = useState("");
+
+  const applyRmaPreset = useCallback((presetKey) => {
+    setRmaPreset(presetKey);
+    if (presetKey === "custom") {
+      return;
+    }
+    if (!presetKey) {
+      setRmaFromDate("");
+      setRmaToDate("");
+      return;
+    }
+    const { from, to } = getPresetDates(presetKey);
+    setRmaFromDate(from);
+    setRmaToDate(to);
+  }, []);
+
+  const applyWaPreset = useCallback((presetKey) => {
+    setWaPreset(presetKey);
+    if (presetKey === "custom") {
+      return;
+    }
+    if (!presetKey) {
+      setWaFromDate("");
+      setWaToDate("");
+      return;
+    }
+    const { from, to } = getPresetDates(presetKey);
+    setWaFromDate(from);
+    setWaToDate(to);
+  }, []);
+
+  const resetRmaDate = useCallback(() => {
+    setRmaFromDate("");
+    setRmaToDate("");
+    setRmaPreset("");
+  }, []);
+
+  const resetWaDate = useCallback(() => {
+    setWaFromDate("");
+    setWaToDate("");
+    setWaPreset("");
+  }, []);
+
   const onColFilter = useCallback((colKey, applied) => {
     setColFilters((prev) => {
-      // If sort is null and values is null, remove the key entirely (no active filter)
       if (!applied.sort && applied.values === null) {
         const next = { ...prev };
         delete next[colKey];
@@ -6577,12 +7780,20 @@ export default function App() {
     setColFilters({});
     setOverdueOnly(false);
     setSearch("");
+    setRmaFromDate("");
+    setRmaToDate("");
+    setRmaPreset("");
+    setRmaStatusFilter(null);
   }, [setSearch]);
 
   const resetAllWaFilters = useCallback(() => {
     setWaColFilters({});
     setWaOverdueOnly(false);
     setSearch("");
+    setWaFromDate("");
+    setWaToDate("");
+    setWaPreset("");
+    setWaStatusFilter(null);
   }, [setSearch]);
   const [saveErr, setSaveErr] = useState("");
   const [rmaImportModal, setRmaImportModal] = useState(false);
@@ -6917,7 +8128,35 @@ export default function App() {
     [rma, wa],
   );
 
-  const filteredRma = useMemo(() => {
+  const rmaStatusList = useMemo(() => {
+    const base = master.statusRMA || DEFAULT_MASTER.statusRMA;
+    const set = new Set((base || []).map((s) => String(s).trim()));
+    (rma || []).forEach((e) => {
+      if (e.status && e.status.trim()) {
+        const trimmed = e.status.trim();
+        if (!Array.from(set).some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+          set.add(trimmed);
+        }
+      }
+    });
+    return Array.from(set);
+  }, [master.statusRMA, rma]);
+
+  const waStatusList = useMemo(() => {
+    const base = master.statusWA || DEFAULT_MASTER.statusWA;
+    const set = new Set((base || []).map((s) => String(s).trim()));
+    (wa || []).forEach((e) => {
+      if (e.status && e.status.trim()) {
+        const trimmed = e.status.trim();
+        if (!Array.from(set).some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+          set.add(trimmed);
+        }
+      }
+    });
+    return Array.from(set);
+  }, [master.statusWA, wa]);
+
+  const baseFilteredRma = useMemo(() => {
     const q = search.toLowerCase().trim();
 
     // Step 1: text search across key fields
@@ -6933,21 +8172,45 @@ export default function App() {
       return true;
     });
 
-    // Step 2: overdue filter
+    // Step 2: Date range filter on receivedDate
+    if (rmaFromDate || rmaToDate) {
+      result = result.filter((e) => {
+        if (!e.receivedDate) return false;
+        const d = parseToISODate(e.receivedDate);
+        if (!d) return false;
+        if (rmaFromDate && d < rmaFromDate) return false;
+        if (rmaToDate && d > rmaToDate) return false;
+        return true;
+      });
+    }
+
+    // Step 3: overdue filter
     if (overdueOnly) result = result.filter(isOverdue);
 
-    // Step 3: per-column value filters
-    // colKey → valueKey mapping for columns where field != key
+    // Step 4: per-column value filters
     const keyMap = { warrantyStatus: "warrantyStatus" };
     Object.entries(colFilters).forEach(([colKey, cf]) => {
-      if (!cf || cf.values === null) return; // null = all, skip
+      if (!cf || cf.values === null) return;
       const vals = new Set(cf.values);
       if (vals.size === 0) { result = []; return; }
       const vk = keyMap[colKey] || colKey;
       result = result.filter((e) => vals.has(String(e[vk] ?? "")));
     });
 
-    // Step 4: sorting — use the FIRST column that has a sort defined
+    return result;
+  }, [rma, search, rmaFromDate, rmaToDate, overdueOnly, colFilters]);
+
+  const filteredRma = useMemo(() => {
+    let result = baseFilteredRma;
+
+    if (rmaStatusFilter) {
+      const lower = rmaStatusFilter.trim().toLowerCase();
+      result = result.filter(
+        (e) => (e.status || "").trim().toLowerCase() === lower
+      );
+    }
+
+    // Step 5: sorting — use the FIRST column that has a sort defined
     const sortEntry = Object.entries(colFilters).find(([, cf]) => cf?.sort);
     if (sortEntry) {
       const [sortKey, { sort }] = sortEntry;
@@ -6956,12 +8219,10 @@ export default function App() {
         let av = a[sortKey] ?? "";
         let bv = b[sortKey] ?? "";
         if (isDate) {
-          // Compare as actual dates for correct chronological order
           const da = av ? new Date(av).getTime() : 0;
           const db = bv ? new Date(bv).getTime() : 0;
           return sort === "asc" ? da - db : db - da;
         }
-        // Text comparison
         const cmp = String(av).localeCompare(String(bv), undefined, { sensitivity: "base" });
         return sort === "asc" ? cmp : -cmp;
       });
@@ -6973,9 +8234,9 @@ export default function App() {
     }
 
     return result;
-  }, [rma, search, overdueOnly, colFilters]);
+  }, [baseFilteredRma, rmaStatusFilter, colFilters]);
 
-  const filteredWa = useMemo(() => {
+  const baseFilteredWa = useMemo(() => {
     const q = search.toLowerCase().trim();
 
     // Step 1: Text search across WA schema fields
@@ -7003,12 +8264,24 @@ export default function App() {
       return true;
     });
 
-    // Step 2: Overdue filter
+    // Step 2: Date range filter on caseDate
+    if (waFromDate || waToDate) {
+      result = result.filter((e) => {
+        if (!e.caseDate) return false;
+        const d = parseToISODate(e.caseDate);
+        if (!d) return false;
+        if (waFromDate && d < waFromDate) return false;
+        if (waToDate && d > waToDate) return false;
+        return true;
+      });
+    }
+
+    // Step 3: Overdue filter
     if (waOverdueOnly) {
       result = result.filter(isWaOverdue);
     }
 
-    // Step 2: Per-column value filters
+    // Step 4: Per-column value filters
     Object.entries(waColFilters).forEach(([colKey, cf]) => {
       if (!cf || cf.values === null) return;
       const vals = new Set(cf.values);
@@ -7027,7 +8300,20 @@ export default function App() {
       });
     });
 
-    // Step 3: Sorting — use the FIRST column that has a sort defined
+    return result;
+  }, [wa, search, waFromDate, waToDate, waOverdueOnly, waColFilters]);
+
+  const filteredWa = useMemo(() => {
+    let result = baseFilteredWa;
+
+    if (waStatusFilter) {
+      const lower = waStatusFilter.trim().toLowerCase();
+      result = result.filter(
+        (e) => (e.status || "").trim().toLowerCase() === lower
+      );
+    }
+
+    // Step 5: Sorting — use the FIRST column that has a sort defined
     const sortEntry = Object.entries(waColFilters).find(([, cf]) => cf?.sort);
     if (sortEntry) {
       const [sortKey, { sort }] = sortEntry;
@@ -7066,7 +8352,7 @@ export default function App() {
     }
 
     return result;
-  }, [wa, search, waOverdueOnly, waColFilters]);
+  }, [baseFilteredWa, waStatusFilter, waColFilters]);
 
   // Helper for date parsing in sort
   const dbDate = (v) => (v ? new Date(v).getTime() : 0);
@@ -7422,8 +8708,16 @@ export default function App() {
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <Btn
                       variant="ghost"
-                      onClick={() => exportRmaToExcel(rma)}
-                      title="Export seluruh data RMA ke .xlsx"
+                      onClick={() => {
+                        if (filteredRma.length === 0) {
+                          setToastMsg(t.noDataToExport || "Tidak ada data untuk diexport.");
+                          exportRmaToExcel([], "RMA_Export_Empty");
+                          return;
+                        }
+                        const isFiltered = Boolean(rmaFromDate || rmaToDate || search || overdueOnly || Object.keys(colFilters).length > 0);
+                        exportRmaToExcel(filteredRma, isFiltered ? "RMA_Logbook_Filtered" : "RMA_Export");
+                      }}
+                      title="Export data RMA (sesuai filter) ke .xlsx"
                     >
                       <FileDown size={14} /> {t.rmaExportExcel || "Export Excel"}
                     </Btn>
@@ -7443,46 +8737,44 @@ export default function App() {
                   </div>
                 }
               />
-              {/* ── Toolbar: search + overdue + reset ── */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  flexWrap: "wrap",
-                  marginBottom: 8,
-                  alignItems: "center",
-                }}
-              >
-                <SearchBar
-                  value={search}
-                  onChange={setSearch}
-                  placeholder={t.rmaSearchPlaceholder}
-                />
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontSize: 12.5,
-                    color: T.ink2,
-                    cursor: "pointer",
-                    flexShrink: 0,
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={overdueOnly}
-                    onChange={(e) => setOverdueOnly(e.target.checked)}
-                    style={{ accentColor: T.cyan }}
-                  />
-                  {t.rmaOverdueOnly}
-                </label>
-                {(Object.keys(colFilters).length > 0 || overdueOnly || search) && (
-                  <Btn variant="ghost" onClick={resetAllFilters}>
-                    {t.resetFilter}
-                  </Btn>
-                )}
-              </div>
+              {/* ── Toolbar: search + overdue + date range + preset + reset ── */}
+              <DateRangeToolbar
+                search={search}
+                setSearch={setSearch}
+                searchPlaceholder={t.rmaSearchPlaceholder}
+                overdueOnly={overdueOnly}
+                setOverdueOnly={setOverdueOnly}
+                overdueLabel={t.rmaOverdueOnly}
+                fromDate={rmaFromDate}
+                setFromDate={setRmaFromDate}
+                toDate={rmaToDate}
+                setToDate={setRmaToDate}
+                preset={rmaPreset}
+                onSelectPreset={applyRmaPreset}
+                onResetDate={resetRmaDate}
+                onResetAll={resetAllFilters}
+                hasActiveFilters={
+                  Object.keys(colFilters).length > 0 ||
+                  overdueOnly ||
+                  search ||
+                  rmaFromDate ||
+                  rmaToDate ||
+                  rmaPreset ||
+                  Boolean(rmaStatusFilter)
+                }
+                t={t}
+              />
+              {/* ── Dynamic Status Summary Cards ── */}
+              <StatusSummaryCards
+                title={t.totalRma || "Total RMA"}
+                totalCount={baseFilteredRma.length}
+                statusList={rmaStatusList}
+                filteredRows={filteredRma}
+                baseRows={baseFilteredRma}
+                selectedStatus={rmaStatusFilter}
+                onSelectStatus={(st) => setRmaStatusFilter((prev) => (prev === st ? null : st))}
+                t={t}
+              />
               {/* Record count */}
               <div
                 style={{
@@ -7503,7 +8795,11 @@ export default function App() {
                 colFilters={colFilters}
                 onColFilter={onColFilter}
                 t={t}
-                emptyLabel={t.rmaEmptyList}
+                emptyLabel={
+                  (rmaFromDate || rmaToDate) && filteredRma.length === 0
+                    ? (t.noDataForDateRange || "Tidak ada data pada rentang tanggal yang dipilih.")
+                    : t.rmaEmptyList
+                }
                 columns={[
                   {
                     key: "ticketNo",
@@ -7534,9 +8830,82 @@ export default function App() {
                     type: "text",
                   },
                   {
+                    key: "sn",
+                    label: "SN",
+                    mono: true,
+                    type: "text",
+                    render: (r) => {
+                      const val = r.sn || "-";
+                      const isLong = val.length > 15;
+                      const displayVal = isLong ? val.slice(0, 15) + "..." : val;
+                      return (
+                        <span title={val} style={{ fontFamily: mono, fontSize: 12 }}>
+                          {displayVal}
+                        </span>
+                      );
+                    },
+                  },
+                  {
+                    key: "mac",
+                    label: "MAC",
+                    mono: true,
+                    type: "text",
+                    render: (r) => {
+                      const val = r.mac || "-";
+                      const isLong = val.length > 17;
+                      const displayVal = isLong ? val.slice(0, 17) + "..." : val;
+                      return (
+                        <span title={val} style={{ fontFamily: mono, fontSize: 12 }}>
+                          {displayVal}
+                        </span>
+                      );
+                    },
+                  },
+                  {
+                    key: "initialProblem",
+                    label: t.colDiagnosis || t.rmaInitialProblem || "Diagnosis (Kendala Awal)",
+                    type: "text",
+                    render: (r) => {
+                      const text = r.initialProblem || r.symptom || "-";
+                      if (text.length <= 30) return text;
+                      return <span title={text}>{text.slice(0, 30)}...</span>;
+                    },
+                  },
+                  {
+                    key: "finalResult",
+                    label: t.colFinalResult || t.rmaFinalResult || "Hasil Akhir",
+                    type: "text",
+                    render: (r) => {
+                      const val = r.finalResult || r.qcResult || "-";
+                      return (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                            background: r.finalResult || r.qcResult ? T.cyanDim : "transparent",
+                            color: r.finalResult || r.qcResult ? T.cyan : T.ink3,
+                          }}
+                        >
+                          {val}
+                        </span>
+                      );
+                    },
+                  },
+                  {
                     key: "customerName",
                     label: t.colCustomer,
                     type: "text",
+                  },
+                  {
+                    key: "customerPhone",
+                    label: t.colPhone || t.rmaCustomerPhone || "No. HP Customer",
+                    mono: true,
+                    type: "text",
+                    render: (r) => r.customerPhone || "-",
                   },
                   {
                     key: "warrantyStatus",
@@ -7556,6 +8925,13 @@ export default function App() {
                     type: "date",
                     filterable: false,
                     render: (r) => fmtDate(r.eta),
+                  },
+                  {
+                    key: "shippedDate",
+                    label: t.colShipped || t.rmaShippedDate || "Tgl Dikirim",
+                    type: "date",
+                    filterable: false,
+                    render: (r) => fmtDate(r.shippedDate),
                   },
                   {
                     key: "actions",
@@ -7598,20 +8974,19 @@ export default function App() {
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                     <Btn
                       variant="ghost"
-                      onClick={() => exportWaToExcel(wa)}
-                      title="Export seluruh data WhatsApp Log ke .xlsx"
+                      onClick={() => {
+                        if (filteredWa.length === 0) {
+                          setToastMsg(t.noDataToExport || "Tidak ada data untuk diexport.");
+                          exportWaToExcel([], "LOGBOOK_WhatsApp_Empty");
+                          return;
+                        }
+                        const isFiltered = Boolean(waFromDate || waToDate || search || waOverdueOnly || Object.keys(waColFilters).length > 0);
+                        exportWaToExcel(filteredWa, isFiltered ? "LOGBOOK_WhatsApp_Filtered" : "LOGBOOK_WhatsApp");
+                      }}
+                      title="Export data WhatsApp Log (sesuai filter) ke .xlsx"
                     >
                       <FileDown size={14} /> {t.waExportExcel || "Export Excel"}
                     </Btn>
-                    {search && (
-                      <Btn
-                        variant="ghost"
-                        onClick={() => exportWaToExcel(filteredWa, "LOGBOOK_WhatsApp_Filtered")}
-                        title="Export data WhatsApp Log yang difilter ke .xlsx"
-                      >
-                        <FileDown size={14} /> {(t.waExportFiltered || "Export Record Difilter ({n})").replace("{n}", filteredWa.length)}
-                      </Btn>
-                    )}
                     <Btn
                       variant="ghost"
                       onClick={() => setWaImportModal(true)}
@@ -7629,45 +9004,43 @@ export default function App() {
                 }
               />
               {/* ── WhatsApp Toolbar ── */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  flexWrap: "wrap",
-                  marginBottom: 8,
-                  alignItems: "center",
-                }}
-              >
-                <SearchBar
-                  value={search}
-                  onChange={setSearch}
-                  placeholder={t.waSearchPlaceholder}
-                />
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontSize: 12.5,
-                    color: T.ink2,
-                    cursor: "pointer",
-                    flexShrink: 0,
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={waOverdueOnly}
-                    onChange={(e) => setWaOverdueOnly(e.target.checked)}
-                    style={{ accentColor: T.cyan }}
-                  />
-                  {t.rmaOverdueOnly || "Overdue saja"}
-                </label>
-                {(Object.keys(waColFilters).length > 0 || waOverdueOnly || search) && (
-                  <Btn variant="ghost" onClick={resetAllWaFilters}>
-                    {t.resetFilter}
-                  </Btn>
-                )}
-              </div>
+              <DateRangeToolbar
+                search={search}
+                setSearch={setSearch}
+                searchPlaceholder={t.waSearchPlaceholder}
+                overdueOnly={waOverdueOnly}
+                setOverdueOnly={setWaOverdueOnly}
+                overdueLabel={t.rmaOverdueOnly || "Overdue saja"}
+                fromDate={waFromDate}
+                setFromDate={setWaFromDate}
+                toDate={waToDate}
+                setToDate={setWaToDate}
+                preset={waPreset}
+                onSelectPreset={applyWaPreset}
+                onResetDate={resetWaDate}
+                onResetAll={resetAllWaFilters}
+                hasActiveFilters={
+                  Object.keys(waColFilters).length > 0 ||
+                  waOverdueOnly ||
+                  search ||
+                  waFromDate ||
+                  waToDate ||
+                  waPreset ||
+                  Boolean(waStatusFilter)
+                }
+                t={t}
+              />
+              {/* ── Dynamic Status Summary Cards ── */}
+              <StatusSummaryCards
+                title={t.totalWaCases || "Total Case"}
+                totalCount={baseFilteredWa.length}
+                statusList={waStatusList}
+                filteredRows={filteredWa}
+                baseRows={baseFilteredWa}
+                selectedStatus={waStatusFilter}
+                onSelectStatus={(st) => setWaStatusFilter((prev) => (prev === st ? null : st))}
+                t={t}
+              />
               {/* Record count */}
               <div
                 style={{
@@ -7687,7 +9060,11 @@ export default function App() {
                 colFilters={waColFilters}
                 onColFilter={onWaColFilter}
                 t={t}
-                emptyLabel={t.waEmptyList}
+                emptyLabel={
+                  (waFromDate || waToDate) && filteredWa.length === 0
+                    ? (t.noDataForDateRange || "Tidak ada data pada rentang tanggal yang dipilih.")
+                    : t.waEmptyList
+                }
                 columns={[
                   {
                     key: "caseNo",
@@ -7922,6 +9299,7 @@ export default function App() {
               <UnitHistory
                 rma={rma}
                 wa={wa}
+                master={master}
                 t={t}
                 onSelectDetail={(channel, raw) =>
                   channel === "RMA" ? setRmaPreview(raw) : setWaDetailModal(raw)
@@ -7956,6 +9334,7 @@ export default function App() {
                 onReplacement={onReplacement}
                 onRepair={onRepair}
                 onQc={onQc}
+                setToastMsg={setToastMsg}
                 t={t}
               />
             </>

@@ -2,7 +2,7 @@
 
 Web app internal untuk logbook RMA, WhatsApp Case, dashboard, dan weekly report. Storage-nya pakai **Firebase Firestore**.
 
----
+----
 
 ## 1. Install Node.js (kalau belum ada)
 

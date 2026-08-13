@@ -1207,3 +1207,22 @@ option {
   }
 }
 
+/* ============================================================
+   CLICKABLE SUMMARY FILTER CARDS
+   ============================================================ */
+.summary-card-clickable {
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  user-select: none;
+}
+
+.summary-card-clickable:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.summary-card-clickable:active {
+  transform: translateY(0);
+}
+
+
