@@ -41,6 +41,8 @@ import {
   Wrench,
   ArrowLeftRight,
   ClipboardList,
+  Cpu,
+  RotateCcw,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -283,6 +285,19 @@ const I18N = {
     analysis: "Analisis",
     action: "Tindakan",
     pcbaSaveStockIn: "Simpan Stok Masuk",
+    pcbaReceivedDate: "Tanggal Penerimaan",
+    pcbaReceivedBy: "Penerima PCBA",
+    pcbaDeleteConfirmMsg: "Data PCBA akan dihapus dan tindakan ini tidak dapat dibatalkan.",
+    pcbaDeleteReferencedMsg: "PCBA ini sudah memiliki riwayat replacement atau repair dan tidak dapat dihapus untuk menjaga integritas data audit.",
+    pcbaTypeOverview: "Ringkasan Tipe PCBA",
+    pcbaNoTypesConfigured: "Belum ada Tipe PCBA terkonfigurasi.",
+    pcbaTotalStock: "Total Stok",
+    pcbaDeleteFailed: "Gagal menghapus PCBA. Silakan coba lagi.",
+    pcbaDupeSerial: "No. Serial PCBA ini sudah terdaftar di stok.",
+    pcbaErrReceivedDateRequired: "Tanggal Penerimaan wajib diisi.",
+    pcbaErrReceivedByRequired: "Penerima PCBA wajib diisi.",
+    pcbaColReceivedDate: "Tanggal Penerimaan",
+    pcbaColReceivedBy: "Penerima",
     pcbaRelatedRma: "RMA Terkait",
     pcbaNewGoodStock: "PCBA Baru (stok Good)",
     pcbaOldSerialLabel: "No. Serial PCBA Lama (yang dilepas dari unit)",
@@ -295,6 +310,15 @@ const I18N = {
     pcbaSaveRepair: "Simpan Repair",
     toastPcbaUpdated: "Data PCBA berhasil diperbarui.",
     toastPcbaDeleted: "Item PCBA berhasil dihapus.",
+    toastTransactionDeleted: "Transaksi berhasil dihapus.",
+    deleteTransactionTitle: "KONFIRMASI HAPUS TRANSAKSI",
+    deleteTransactionMsg: "Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.",
+    deleteReplacementTitle: "KONFIRMASI HAPUS REPLACEMENT",
+    deleteReplacementMsg: "Apakah Anda yakin ingin menghapus data replacement ini? Status PCBA baru akan dikembalikan menjadi Good.",
+    toastReplacementDeleted: "Data replacement berhasil dihapus.",
+    deleteRepairTitle: "KONFIRMASI HAPUS REPAIR",
+    deleteRepairMsg: "Apakah Anda yakin ingin menghapus data repair ini? Status PCBA terkait akan dikembalikan menjadi Bad.",
+    toastRepairDeleted: "Data repair berhasil dihapus.",
     toastWaDeleted: "Case WhatsApp {no} berhasil dihapus.",
     toastWaSaved: "Case WhatsApp berhasil disimpan.",
     waSaveFailed: "Gagal menyimpan case. Coba lagi.",
@@ -630,6 +654,16 @@ const I18N = {
     analysis: "Analysis",
     action: "Action",
     pcbaSaveStockIn: "Save Stock In",
+    pcbaReceivedDate: "Received Date",
+    pcbaReceivedBy: "Received By",
+    pcbaDeleteConfirmMsg: "This PCBA record will be permanently deleted.",
+    pcbaDeleteReferencedMsg: "This PCBA has replacement or repair history and cannot be deleted to preserve audit integrity.",
+    pcbaDeleteFailed: "Failed to delete PCBA. Please try again.",
+    pcbaDupeSerial: "This PCBA serial number already exists in stock.",
+    pcbaErrReceivedDateRequired: "Received Date is required.",
+    pcbaErrReceivedByRequired: "Received By is required.",
+    pcbaColReceivedDate: "Received Date",
+    pcbaColReceivedBy: "Received By",
     pcbaRelatedRma: "Related RMA",
     pcbaNewGoodStock: "New PCBA (Good stock)",
     pcbaOldSerialLabel: "Old PCBA Serial No. (removed from unit)",
@@ -642,6 +676,18 @@ const I18N = {
     pcbaSaveRepair: "Save Repair",
     toastPcbaUpdated: "PCBA data updated successfully.",
     toastPcbaDeleted: "PCBA item deleted successfully.",
+    pcbaTypeOverview: "PCBA Type Overview",
+    pcbaNoTypesConfigured: "No PCBA types configured.",
+    pcbaTotalStock: "Total Stock",
+    toastTransactionDeleted: "Transaction deleted successfully.",
+    deleteTransactionTitle: "CONFIRM DELETE TRANSACTION",
+    deleteTransactionMsg: "Are you sure you want to delete this transaction? This action cannot be undone.",
+    deleteReplacementTitle: "CONFIRM DELETE REPLACEMENT",
+    deleteReplacementMsg: "Are you sure you want to delete this replacement record? The new PCBA status will be restored to Good.",
+    toastReplacementDeleted: "Replacement record deleted successfully.",
+    deleteRepairTitle: "CONFIRM DELETE REPAIR",
+    deleteRepairMsg: "Are you sure you want to delete this repair record? The related PCBA status will be restored to Bad.",
+    toastRepairDeleted: "Repair record deleted successfully.",
     toastWaDeleted: "WhatsApp case {no} deleted successfully.",
     toastWaSaved: "WhatsApp case saved successfully.",
     waSaveFailed: "Failed to save case. Try again.",
@@ -1032,6 +1078,16 @@ const I18N = {
     analysis: "分析",
     action: "处理措施",
     pcbaSaveStockIn: "保存入库",
+    pcbaReceivedDate: "接收日期",
+    pcbaReceivedBy: "接收人",
+    pcbaDeleteConfirmMsg: "此 PCBA 记录将被永久删除。",
+    pcbaDeleteReferencedMsg: "此 PCBA 已有交易/维修记录，无法永久删除。",
+    pcbaDeleteFailed: "删除 PCBA 失败，请重试。",
+    pcbaDupeSerial: "此 PCBA 序列号在库存中已存在。",
+    pcbaErrReceivedDateRequired: "接收日期为必填项。",
+    pcbaErrReceivedByRequired: "接收人为必填项。",
+    pcbaColReceivedDate: "接收日期",
+    pcbaColReceivedBy: "接收人",
     pcbaRelatedRma: "相关 RMA",
     pcbaNewGoodStock: "新 PCBA (良品库存)",
     pcbaOldSerialLabel: "旧 PCBA 序列号 (拆卸于设备)",
@@ -1044,6 +1100,18 @@ const I18N = {
     pcbaSaveRepair: "保存维修",
     toastPcbaUpdated: "PCBA 数据更新成功。",
     toastPcbaDeleted: "PCBA 项目删除成功。",
+    pcbaTypeOverview: "PCBA 类型概览",
+    pcbaNoTypesConfigured: "尚未配置 PCBA 类型。",
+    pcbaTotalStock: "库存总数",
+    toastTransactionDeleted: "交易成功删除。",
+    deleteTransactionTitle: "确认删除交易",
+    deleteTransactionMsg: "您确定要删除此交易吗？此操作无法撤销。",
+    deleteReplacementTitle: "确认删除替换",
+    deleteReplacementMsg: "您确定要删除此替换记录吗？新 PCBA 状态将恢复为良品。",
+    toastReplacementDeleted: "替换记录成功删除。",
+    deleteRepairTitle: "确认删除维修",
+    deleteRepairMsg: "您确定要删除此维修记录吗？相关 PCBA 状态将恢复为不良品。",
+    toastRepairDeleted: "维修记录成功删除。",
     toastWaDeleted: "WhatsApp 案例 {no} 删除成功。",
     toastWaSaved: "案例保存成功。",
     waSaveFailed: "案例保存失败。请重试。",
@@ -1984,7 +2052,12 @@ function CopyButton({ text, t }) {
 function IconBtn({ icon: Icon, onClick, title, danger }) {
   return (
     <button
-      onClick={onClick}
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClick && onClick(e);
+      }}
       title={title}
       style={{
         background: "transparent",
@@ -4890,14 +4963,18 @@ function UnitHistorySummary({
   master,
   t,
 }) {
-  const rowsForCounting = baseRows || filteredRows || [];
+  const rowsForCounting = Array.isArray(baseRows)
+    ? baseRows
+    : Array.isArray(filteredRows)
+    ? filteredRows
+    : [];
 
   const rmaRows = useMemo(
-    () => rowsForCounting.filter((r) => r.channel === "RMA"),
+    () => rowsForCounting.filter((r) => r && r.channel === "RMA"),
     [rowsForCounting]
   );
   const waRows = useMemo(
-    () => rowsForCounting.filter((r) => r.channel === "WhatsApp"),
+    () => rowsForCounting.filter((r) => r && r.channel === "WhatsApp"),
     [rowsForCounting]
   );
 
@@ -4913,10 +4990,13 @@ function UnitHistorySummary({
       "Customer Received",
       "Closed",
     ];
-    const masterList = master?.statusRMA || defaultList;
+    const masterList = Array.isArray(master?.statusRMA) ? master.statusRMA : defaultList;
     const set = new Set();
-    masterList.forEach((s) => s && set.add(s.trim()));
-    rmaRows.forEach((r) => r.status && set.add(r.status.trim()));
+    masterList.forEach((s) => s && typeof s === "string" && set.add(s.trim()));
+    rmaRows.forEach((r) => {
+      const st = String(r?.status || "").trim();
+      if (st && st !== "-") set.add(st);
+    });
     return Array.from(set);
   }, [master?.statusRMA, rmaRows]);
 
@@ -4927,19 +5007,22 @@ function UnitHistorySummary({
       "FU Tim China",
       "Belum Ditag",
     ];
-    const masterList = master?.statusWA || defaultList;
+    const masterList = Array.isArray(master?.statusWA) ? master.statusWA : defaultList;
     const set = new Set();
-    masterList.forEach((s) => s && set.add(s.trim()));
-    waRows.forEach((r) => r.status && set.add(r.status.trim()));
+    masterList.forEach((s) => s && typeof s === "string" && set.add(s.trim()));
+    waRows.forEach((r) => {
+      const st = String(r?.status || "").trim();
+      if (st && st !== "-") set.add(st);
+    });
     return Array.from(set);
   }, [master?.statusWA, waRows]);
 
   const rmaStatusCounts = useMemo(() => {
     const map = {};
     rmaStatusList.forEach((st) => {
-      const lower = st.trim().toLowerCase();
+      const lower = String(st || "").trim().toLowerCase();
       map[st] = rmaRows.filter(
-        (r) => (r.status || "").trim().toLowerCase() === lower
+        (r) => String(r?.status || "").trim().toLowerCase() === lower
       ).length;
     });
     return map;
@@ -4948,9 +5031,9 @@ function UnitHistorySummary({
   const waStatusCounts = useMemo(() => {
     const map = {};
     waStatusList.forEach((st) => {
-      const lower = st.trim().toLowerCase();
+      const lower = String(st || "").trim().toLowerCase();
       map[st] = waRows.filter(
-        (r) => (r.status || "").trim().toLowerCase() === lower
+        (r) => String(r?.status || "").trim().toLowerCase() === lower
       ).length;
     });
     return map;
@@ -4980,33 +5063,39 @@ function UnitHistorySummary({
             fontFamily: sans,
           }}
         >
-          {t.totalUnitHistoryHeading || "TOTAL RIWAYAT UNIT"}
+          {t?.totalUnitHistoryHeading || "TOTAL RIWAYAT UNIT"}
         </div>
-        <div
+        <button
+          type="button"
           className="summary-card-clickable"
-          onClick={() => onSelectSummary && onSelectSummary(null, null)}
-          title={t.filterAll || "Klik untuk menampilkan seluruh riwayat unit"}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onSelectSummary && onSelectSummary(null, null);
+          }}
+          title={t?.filterAll || "Klik untuk menampilkan seluruh riwayat unit"}
           style={{
             display: "inline-flex",
             alignItems: "center",
             gap: 10,
             padding: "8px 14px",
-            background: isTotalAllActive ? T.cyanDim : T.panel,
+            background: isTotalAllActive ? T.panel2 : T.panel,
             border: isTotalAllActive ? `2px solid ${T.cyan}` : `1px solid ${T.line}`,
-            boxShadow: isTotalAllActive ? `0 0 0 2px ${T.cyan}33` : "none",
+            boxShadow: isTotalAllActive ? `0 0 0 1px ${T.cyan}` : "none",
             borderRadius: 8,
             fontSize: 13,
             fontFamily: sans,
             cursor: "pointer",
+            textAlign: "left",
           }}
         >
           <span style={{ color: T.cyan, fontWeight: isTotalAllActive ? 700 : 600 }}>
-            {t.totalUnitHistoryBadge || "Total Riwayat Unit"}:
+            {t?.totalUnitHistoryBadge || "Total Riwayat Unit"}:
           </span>
           <span style={{ color: T.ink, fontWeight: 700, fontSize: 16 }}>
             {rowsForCounting.length}
           </span>
-        </div>
+        </button>
       </div>
 
       {/* ── Group B: RMA ── */}
@@ -5025,7 +5114,7 @@ function UnitHistorySummary({
             gap: 6,
           }}
         >
-          <span>{t.sectionRma || "RMA"}</span>
+          <span>{t?.sectionRma || "RMA"}</span>
         </div>
         <div
           style={{
@@ -5039,36 +5128,40 @@ function UnitHistorySummary({
           {(() => {
             const isRmaTotalActive = channelFilter === "RMA" && !statusFilter;
             return (
-              <div
+              <button
+                type="button"
                 className="summary-card-clickable"
-                onClick={() =>
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   onSelectSummary &&
-                  onSelectSummary(isRmaTotalActive ? null : "RMA", null)
-                }
+                    onSelectSummary(isRmaTotalActive ? null : "RMA", null);
+                }}
                 title="Klik untuk memfilter semua kasus RMA"
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
                   padding: "6px 12px",
-                  background: isRmaTotalActive ? T.cyanDim : T.panel,
+                  background: isRmaTotalActive ? T.panel2 : T.panel,
                   border: isRmaTotalActive
                     ? `2px solid ${T.cyan}`
-                    : `1px solid ${T.cyan}44`,
-                  boxShadow: isRmaTotalActive ? `0 0 0 2px ${T.cyan}33` : "none",
+                    : `1px solid ${T.line}`,
+                  boxShadow: isRmaTotalActive ? `0 0 0 1px ${T.cyan}` : "none",
                   borderRadius: 8,
                   fontSize: 12,
                   fontFamily: sans,
                   cursor: "pointer",
+                  textAlign: "left",
                 }}
               >
                 <span style={{ color: T.cyan, fontWeight: 600 }}>
-                  {t.totalRmaBadge || "Total RMA"}:
+                  {t?.totalRmaBadge || "Total RMA"}:
                 </span>
                 <span style={{ color: T.ink, fontWeight: 700 }}>
                   {rmaRows.length}
                 </span>
-              </div>
+              </button>
             );
           })()}
 
@@ -5080,29 +5173,33 @@ function UnitHistorySummary({
             const isActive =
               channelFilter === "RMA" &&
               statusFilter &&
-              statusFilter.trim().toLowerCase() === st.trim().toLowerCase();
+              String(statusFilter).trim().toLowerCase() === String(st).trim().toLowerCase();
 
             return (
-              <div
+              <button
                 key={st}
+                type="button"
                 className="summary-card-clickable"
-                onClick={() =>
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   onSelectSummary &&
-                  onSelectSummary(isActive ? null : "RMA", isActive ? null : st)
-                }
+                    onSelectSummary(isActive ? null : "RMA", isActive ? null : st);
+                }}
                 title={`Klik untuk memfilter RMA status: ${localizedLabel}`}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
                   padding: "6px 10px",
-                  background: isActive ? `${color}18` : T.panel,
+                  background: isActive ? T.panel2 : T.panel,
                   border: isActive ? `2px solid ${color}` : `1px solid ${T.line}`,
-                  boxShadow: isActive ? `0 0 0 2px ${color}33` : "none",
+                  boxShadow: isActive ? `0 0 0 1px ${color}` : "none",
                   borderRadius: 8,
                   fontSize: 12,
                   fontFamily: sans,
                   cursor: "pointer",
+                  textAlign: "left",
                 }}
               >
                 <span
@@ -5111,7 +5208,6 @@ function UnitHistorySummary({
                     height: 7,
                     borderRadius: "50%",
                     background: color,
-                    boxShadow: `0 0 0 2px ${color}22`,
                     flexShrink: 0,
                   }}
                 />
@@ -5124,7 +5220,7 @@ function UnitHistorySummary({
                   {localizedLabel}:
                 </span>
                 <span style={{ color: T.ink, fontWeight: 700 }}>{count}</span>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -5154,7 +5250,7 @@ function UnitHistorySummary({
               background: T.green,
             }}
           />
-          <span>{t.sectionWa || "WHATSAPP"}</span>
+          <span>{t?.sectionWa || "WHATSAPP"}</span>
         </div>
         <div
           style={{
@@ -5168,36 +5264,40 @@ function UnitHistorySummary({
           {(() => {
             const isWaTotalActive = channelFilter === "WhatsApp" && !statusFilter;
             return (
-              <div
+              <button
+                type="button"
                 className="summary-card-clickable"
-                onClick={() =>
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   onSelectSummary &&
-                  onSelectSummary(isWaTotalActive ? null : "WhatsApp", null)
-                }
+                    onSelectSummary(isWaTotalActive ? null : "WhatsApp", null);
+                }}
                 title="Klik untuk memfilter semua kasus WhatsApp"
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
                   padding: "6px 12px",
-                  background: isWaTotalActive ? T.greenDim : T.panel,
+                  background: isWaTotalActive ? T.panel2 : T.panel,
                   border: isWaTotalActive
                     ? `2px solid ${T.green}`
-                    : `1px solid ${T.green}44`,
-                  boxShadow: isWaTotalActive ? `0 0 0 2px ${T.green}33` : "none",
+                    : `1px solid ${T.line}`,
+                  boxShadow: isWaTotalActive ? `0 0 0 1px ${T.green}` : "none",
                   borderRadius: 8,
                   fontSize: 12,
                   fontFamily: sans,
                   cursor: "pointer",
+                  textAlign: "left",
                 }}
               >
                 <span style={{ color: T.green, fontWeight: 600 }}>
-                  {t.totalWaBadge || "Total WhatsApp"}:
+                  {t?.totalWaBadge || "Total WhatsApp"}:
                 </span>
                 <span style={{ color: T.ink, fontWeight: 700 }}>
                   {waRows.length}
                 </span>
-              </div>
+              </button>
             );
           })()}
 
@@ -5209,29 +5309,33 @@ function UnitHistorySummary({
             const isActive =
               channelFilter === "WhatsApp" &&
               statusFilter &&
-              statusFilter.trim().toLowerCase() === st.trim().toLowerCase();
+              String(statusFilter).trim().toLowerCase() === String(st).trim().toLowerCase();
 
             return (
-              <div
+              <button
                 key={st}
+                type="button"
                 className="summary-card-clickable"
-                onClick={() =>
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   onSelectSummary &&
-                  onSelectSummary(isActive ? null : "WhatsApp", isActive ? null : st)
-                }
+                    onSelectSummary(isActive ? null : "WhatsApp", isActive ? null : st);
+                }}
                 title={`Klik untuk memfilter WhatsApp status: ${localizedLabel}`}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
                   padding: "6px 10px",
-                  background: isActive ? `${color}18` : T.panel,
+                  background: isActive ? T.panel2 : T.panel,
                   border: isActive ? `2px solid ${color}` : `1px solid ${T.line}`,
-                  boxShadow: isActive ? `0 0 0 2px ${color}33` : "none",
+                  boxShadow: isActive ? `0 0 0 1px ${color}` : "none",
                   borderRadius: 8,
                   fontSize: 12,
                   fontFamily: sans,
                   cursor: "pointer",
+                  textAlign: "left",
                 }}
               >
                 <span
@@ -5240,7 +5344,6 @@ function UnitHistorySummary({
                     height: 7,
                     borderRadius: "50%",
                     background: color,
-                    boxShadow: `0 0 0 2px ${color}22`,
                     flexShrink: 0,
                   }}
                 />
@@ -5253,7 +5356,7 @@ function UnitHistorySummary({
                   {localizedLabel}:
                 </span>
                 <span style={{ color: T.ink, fontWeight: 700 }}>{count}</span>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -5265,7 +5368,7 @@ function UnitHistorySummary({
 /* ============================================================
    UNIT HISTORY / QUICK SEARCH SN-MAC
    ============================================================ */
-function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
+function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -5276,7 +5379,7 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
 
   const onColFilter = useCallback((colKey, applied) => {
     setColFilters((prev) => {
-      if (!applied.sort && applied.values === null) {
+      if (!applied || (!applied.sort && (applied.values === null || applied.values === undefined))) {
         const next = { ...prev };
         delete next[colKey];
         return next;
@@ -5294,8 +5397,8 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
       return;
     }
     const { from, to } = getPresetDates(presetKey);
-    setFromDate(from);
-    setToDate(to);
+    setFromDate(from || "");
+    setToDate(to || "");
   }, []);
 
   const resetDate = useCallback(() => {
@@ -5316,31 +5419,36 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
 
   // Combine RMA and WhatsApp entries into a single history array
   const combinedRows = useMemo(() => {
-    const rmaMapped = (rma || []).map((e) => ({
-      id: `rma-${e.id || e.ticketNo}`,
-      ref: e.ticketNo || "-",
+    const safeRma = Array.isArray(rma) ? rma : [];
+    const safeWa = Array.isArray(wa) ? wa : [];
+
+    const rmaMapped = safeRma.map((e) => ({
+      id: `rma-${e?.id || e?.ticketNo || uid()}`,
+      ref: String(e?.ticketNo || "-"),
       channel: "RMA",
-      date: e.receivedDate || "",
-      status: e.status || "-",
-      sn: e.sn || "-",
-      mac: e.mac || "-",
-      customer: e.customerName || e.company || "-",
-      product: e.product || "-",
-      issue: e.initialProblem || e.symptom || e.checkingResult || e.rootCause || e.finalResult || "-",
+      date: String(e?.receivedDate || ""),
+      status: String(e?.status || "-"),
+      sn: String(e?.sn || "-"),
+      mac: String(e?.mac || "-"),
+      customer: String(e?.customerName || e?.company || "-"),
+      product: String(e?.product || "-"),
+      issue: String(e?.initialProblem || e?.symptom || e?.checkingResult || e?.rootCause || e?.finalResult || "-"),
+      engineer: String(e?.engineer || "-"),
       raw: e,
     }));
 
-    const waMapped = (wa || []).map((e) => ({
-      id: `wa-${e.id || e.caseNo}`,
-      ref: e.caseNo || "-",
+    const waMapped = safeWa.map((e) => ({
+      id: `wa-${e?.id || e?.caseNo || uid()}`,
+      ref: String(e?.caseNo || "-"),
       channel: "WhatsApp",
-      date: e.caseDate || "",
-      status: e.status || "-",
-      sn: e.sn || "-",
-      mac: e.mac || "-",
-      customer: e.customerName || e.company || "-",
-      product: e.deviceType || "-",
-      issue: e.initialProblem || e.finalAnalysis || e.notes || "-",
+      date: String(e?.caseDate || ""),
+      status: String(e?.status || "-"),
+      sn: String(e?.sn || "-"),
+      mac: String(e?.mac || "-"),
+      customer: String(e?.customerName || e?.company || "-"),
+      product: String(e?.deviceType || "-"),
+      issue: String(e?.initialProblem || e?.finalAnalysis || e?.notes || "-"),
+      engineer: String(e?.engineerTag || "-"),
       raw: e,
     }));
 
@@ -5348,7 +5456,7 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
   }, [rma, wa]);
 
   const baseFilteredUnitHistory = useMemo(() => {
-    const q = search.toLowerCase().trim();
+    const q = (search || "").toLowerCase().trim();
 
     let result = combinedRows.filter((e) => {
       if (q) {
@@ -5384,52 +5492,56 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
     }
 
     // Per-column value filters
-    Object.entries(colFilters).forEach(([colKey, cf]) => {
-      if (!cf || cf.values === null) return;
-      const vals = new Set(cf.values);
-      if (vals.size === 0) {
-        result = [];
-        return;
-      }
-      result = result.filter((e) => vals.has(String(e[colKey] ?? "")));
-    });
+    if (colFilters && typeof colFilters === "object") {
+      Object.entries(colFilters).forEach(([colKey, cf]) => {
+        if (!cf || cf.values === null || cf.values === undefined) return;
+        const vals = new Set(cf.values);
+        if (vals.size === 0) {
+          result = [];
+          return;
+        }
+        result = result.filter((e) => vals.has(String(e?.[colKey] ?? "")));
+      });
+    }
 
     return result;
   }, [combinedRows, search, fromDate, toDate, colFilters, t]);
 
   const filteredUnitHistory = useMemo(() => {
-    let result = baseFilteredUnitHistory;
+    let result = Array.isArray(baseFilteredUnitHistory) ? baseFilteredUnitHistory : [];
 
     if (channelFilter) {
-      result = result.filter((e) => e.channel === channelFilter);
+      result = result.filter((e) => e && e.channel === channelFilter);
     }
 
     if (statusFilter) {
-      const lower = statusFilter.trim().toLowerCase();
+      const lower = String(statusFilter).trim().toLowerCase();
       result = result.filter(
-        (e) => (e.status || "").trim().toLowerCase() === lower
+        (e) => String(e?.status || "").trim().toLowerCase() === lower
       );
     }
 
     // Sorting
-    const sortEntry = Object.entries(colFilters).find(([, cf]) => cf?.sort);
+    const sortEntry = Object.entries(colFilters || {}).find(([, cf]) => cf?.sort);
     if (sortEntry) {
       const [sortKey, { sort }] = sortEntry;
       const isDateCol = sortKey === "date";
       result = [...result].sort((a, b) => {
-        let av = a[sortKey] ?? "";
-        let bv = b[sortKey] ?? "";
+        let av = a?.[sortKey] ?? "";
+        let bv = b?.[sortKey] ?? "";
         if (isDateCol) {
           const da = av ? new Date(av).getTime() : 0;
           const db = bv ? new Date(bv).getTime() : 0;
-          return sort === "asc" ? da - db : db - da;
+          const validDa = isNaN(da) ? 0 : da;
+          const validDb = isNaN(db) ? 0 : db;
+          return sort === "asc" ? validDa - validDb : validDb - validDa;
         }
         const cmp = String(av).localeCompare(String(bv), undefined, { sensitivity: "base" });
         return sort === "asc" ? cmp : -cmp;
       });
     } else {
       // Default: newest date first
-      result = [...result].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      result = [...result].sort((a, b) => String(b?.date || "").localeCompare(String(a?.date || "")));
     }
 
     return result;
@@ -5438,7 +5550,7 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
   const columns = [
     {
       key: "ref",
-      label: t.colTicket || "Ticket / Case",
+      label: t?.colTicket || "Ticket / Case",
       mono: true,
       render: (r) => (
         <span style={{ color: T.cyan, fontWeight: 600 }}>{r.ref}</span>
@@ -5446,7 +5558,7 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
     },
     {
       key: "channel",
-      label: t.colChannel || "Channel",
+      label: t?.colChannel || "Channel",
       render: (r) => (
         <span
           style={{
@@ -5464,17 +5576,21 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
     },
     {
       key: "status",
-      label: t.colStatus || "Status",
+      label: t?.colStatus || "Status",
       type: "status",
       render: (r) => <StatusLed status={r.status} t={t} />,
     },
     {
       key: "product",
-      label: t.colProduct || "Produk / Type",
+      label: t?.colProduct || "Produk / Type",
+    },
+    {
+      key: "engineer",
+      label: t?.colEngineer || "Engineer",
     },
     {
       key: "date",
-      label: t.colDate || "Tanggal",
+      label: t?.colDate || "Tanggal",
       type: "date",
       filterable: false,
       render: (r) => fmtDate(r.date),
@@ -5484,7 +5600,7 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
       label: "SN",
       mono: true,
       render: (r) => {
-        const val = r.sn || "-";
+        const val = String(r.sn || "-");
         const isLong = val.length > 15;
         const displayVal = isLong ? val.slice(0, 15) + "..." : val;
         return (
@@ -5499,7 +5615,7 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
       label: "MAC",
       mono: true,
       render: (r) => {
-        const val = r.mac || "-";
+        const val = String(r.mac || "-");
         const isLong = val.length > 17;
         const displayVal = isLong ? val.slice(0, 17) + "..." : val;
         return (
@@ -5511,13 +5627,13 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
     },
     {
       key: "customer",
-      label: t.colCustomer || "Customer",
+      label: t?.colCustomer || "Customer",
     },
     {
       key: "issue",
-      label: t.colProblem || "Kendala / Analisa",
+      label: t?.colProblem || "Kendala / Analisa",
       render: (r) => {
-        const text = r.issue || "-";
+        const text = String(r.issue || "-");
         if (text.length <= 35) return text;
         return (
           <span title={text}>
@@ -5535,7 +5651,7 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
         <IconBtn
           icon={Eye}
           onClick={() => onSelectDetail && onSelectDetail(r.channel, r.raw)}
-          title={t.viewDetail || "Lihat detail"}
+          title={t?.viewDetail || "Lihat detail"}
         />
       ),
     },
@@ -5547,7 +5663,7 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
       <DateRangeToolbar
         search={search}
         setSearch={setSearch}
-        searchPlaceholder={t.unitHistorySearchPlaceholder || "Cari SN, MAC, customer, case, RMA..."}
+        searchPlaceholder={t?.unitHistorySearchPlaceholder || "Cari SN, MAC, customer, case, RMA..."}
         fromDate={fromDate}
         setFromDate={setFromDate}
         toDate={toDate}
@@ -5557,7 +5673,7 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
         onResetDate={resetDate}
         onResetAll={resetAll}
         hasActiveFilters={
-          Object.keys(colFilters).length > 0 ||
+          Object.keys(colFilters || {}).length > 0 ||
           search ||
           fromDate ||
           toDate ||
@@ -5582,15 +5698,9 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
         t={t}
       />
 
-      {!search.trim() && !fromDate && !toDate && (
-        <InlineHint>
-          {t.unitHistoryHint}
-        </InlineHint>
-      )}
-
       {search.trim() && filteredUnitHistory.length > 1 && (
         <InlineHint tone="warn">
-          {t.unitHistoryPriorWarning.replace("{n}", filteredUnitHistory.length)}
+          {t?.unitHistoryPriorWarning ? t.unitHistoryPriorWarning.replace("{n}", filteredUnitHistory.length) : `Ditemukan ${filteredUnitHistory.length} riwayat unit.`}
         </InlineHint>
       )}
 
@@ -5602,7 +5712,7 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
           fontFamily: sans,
         }}
       >
-        {(t.unitHistoryShowing || "Menampilkan {shown} dari {total} riwayat unit")
+        {(t?.unitHistoryShowing || "Menampilkan {shown} dari {total} riwayat unit")
           .replace("{shown}", filteredUnitHistory.length)
           .replace("{total}", combinedRows.length)}
       </div>
@@ -5616,9 +5726,9 @@ function UnitHistory({ rma, wa, master, t, onSelectDetail }) {
         t={t}
         emptyLabel={
           (fromDate || toDate) && filteredUnitHistory.length === 0
-            ? (t.noDataForDateRange || "Tidak ada data pada rentang tanggal yang dipilih.")
+            ? (t?.noDataForDateRange || "Tidak ada data pada rentang tanggal yang dipilih.")
             : search.trim() && filteredUnitHistory.length === 0
-            ? (t.unitHistoryNotFound ? t.unitHistoryNotFound.replace('"{q}"', `"${search}"`) : "Tidak ditemukan riwayat unit.")
+            ? (t?.unitHistoryNotFound ? t.unitHistoryNotFound.replace('"{q}"', `"${search}"`) : "Tidak ditemukan riwayat unit.")
             : "Belum ada riwayat unit."
         }
         columns={columns}
@@ -5811,6 +5921,8 @@ function GoodsReceiptForm({ master, pcbaItems = [], onSave, onClose, t }) {
     product: "",
     supplier: master.suppliers[0] || "",
     warehouseLocation: master.warehouseLocations[0] || "",
+    receivedDate: todayISO(),
+    receivedBy: master.engineers?.[0] || "",
     notes: "",
   });
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
@@ -5863,6 +5975,21 @@ function GoodsReceiptForm({ master, pcbaItems = [], onSave, onClose, t }) {
             onChange={set("warehouseLocation")}
           />
         </Field>
+
+        <Field label={t.pcbaReceivedDate || "Tanggal Penerimaan"}>
+          <TextInput
+            type="date"
+            value={f.receivedDate}
+            onChange={set("receivedDate")}
+          />
+        </Field>
+        <Field label={t.pcbaReceivedBy || "Penerima PCBA"}>
+          <Select
+            options={master.engineers}
+            value={f.receivedBy}
+            onChange={set("receivedBy")}
+          />
+        </Field>
       </div>
       <Field label={t.pcbaNotes || "Catatan"}>
         <TextArea value={f.notes} onChange={set("notes")} />
@@ -5874,7 +6001,7 @@ function GoodsReceiptForm({ master, pcbaItems = [], onSave, onClose, t }) {
         <Btn
           variant="solid"
           disabled={saving}
-          onClick={() => {
+          onClick={async () => {
             const sn = f.serialNo.trim();
             if (!sn) {
               setErr(t.errSnRequired || "No. Serial PCBA wajib diisi.");
@@ -5884,12 +6011,23 @@ function GoodsReceiptForm({ master, pcbaItems = [], onSave, onClose, t }) {
               (i) => (i.serialNo || "").trim().toLowerCase() === sn.toLowerCase()
             );
             if (isDupe) {
-              setErr(`No. Serial PCBA "${sn}" sudah terdaftar di stok.`);
+              setErr(t.pcbaDupeSerial || `No. Serial PCBA "${sn}" sudah terdaftar di stok.`);
+              return;
+            }
+            if (!f.receivedDate) {
+              setErr(t.pcbaErrReceivedDateRequired || "Tanggal Penerimaan wajib diisi.");
+              return;
+            }
+            if (!f.receivedBy || !f.receivedBy.trim()) {
+              setErr(t.pcbaErrReceivedByRequired || "Penerima PCBA wajib diisi.");
               return;
             }
             setSaving(true);
-            onSave(f);
+            const ok = await onSave(f);
             setSaving(false);
+            if (ok === false) {
+              setErr(t.waSaveFailed || "Gagal menyimpan data.");
+            }
           }}
         >
           {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
@@ -5941,10 +6079,10 @@ function PcbaDetailModal({ item, pcba, rma, onClose, t }) {
           </div>
           <div>
             <div style={{ fontSize: 11, color: T.ink3, textTransform: "uppercase", fontWeight: 600 }}>
-              {t.colReceived || "Tanggal Diterima"}
+              {t.pcbaReceivedDate || "Tanggal Penerimaan"}
             </div>
             <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginTop: 2 }}>
-              {fmtDate(item.createdAt)}
+              {fmtDate(item.receivedDate || item.createdAt)}
             </div>
           </div>
         </div>
@@ -5976,6 +6114,14 @@ function PcbaDetailModal({ item, pcba, rma, onClose, t }) {
           <div>
             <div style={{ fontSize: 11, color: T.ink3 }}>{t.pcbaWarehouseLocation || "Lokasi Gudang"}</div>
             <div style={{ fontSize: 13, color: T.ink }}>{item.warehouseLocation || "—"}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>{t.pcbaReceivedDate || "Tanggal Penerimaan"}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{fmtDate(item.receivedDate || item.createdAt)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>{t.pcbaReceivedBy || "Penerima PCBA"}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{item.receivedBy || "—"}</div>
           </div>
         </div>
 
@@ -6064,6 +6210,8 @@ function EditPcbaModal({ item, pcbaItems = [], master, onSave, onClose, t }) {
     supplier: item.supplier || master.suppliers[0] || "",
     warehouseLocation: item.warehouseLocation || master.warehouseLocations[0] || "",
     status: item.status || "Good",
+    receivedDate: item.receivedDate || parseToISODate(item.createdAt) || todayISO(),
+    receivedBy: item.receivedBy || master.engineers?.[0] || "",
     notes: item.notes || "",
   });
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
@@ -6117,6 +6265,20 @@ function EditPcbaModal({ item, pcbaItems = [], master, onSave, onClose, t }) {
               onChange={set("status")}
             />
           </Field>
+          <Field label={t.pcbaReceivedDate || "Tanggal Penerimaan"}>
+            <TextInput
+              type="date"
+              value={f.receivedDate}
+              onChange={set("receivedDate")}
+            />
+          </Field>
+          <Field label={t.pcbaReceivedBy || "Penerima PCBA"}>
+            <Select
+              options={master.engineers}
+              value={f.receivedBy}
+              onChange={set("receivedBy")}
+            />
+          </Field>
         </div>
         <Field label={t.pcbaNotes || "Catatan"}>
           <TextArea value={f.notes} onChange={set("notes")} />
@@ -6138,7 +6300,15 @@ function EditPcbaModal({ item, pcbaItems = [], master, onSave, onClose, t }) {
                 (i) => i.id !== item.id && (i.serialNo || "").trim().toLowerCase() === sn.toLowerCase()
               );
               if (isDupe) {
-                setErr(`No. Serial PCBA "${sn}" sudah terdaftar pada item lain.`);
+                setErr(t.pcbaDupeSerial || `No. Serial PCBA "${sn}" sudah terdaftar pada item lain.`);
+                return;
+              }
+              if (!f.receivedDate) {
+                setErr(t.pcbaErrReceivedDateRequired || "Tanggal Penerimaan wajib diisi.");
+                return;
+              }
+              if (!f.receivedBy || !f.receivedBy.trim()) {
+                setErr(t.pcbaErrReceivedByRequired || "Penerima PCBA wajib diisi.");
                 return;
               }
               setSaving(true);
@@ -6150,11 +6320,13 @@ function EditPcbaModal({ item, pcbaItems = [], master, onSave, onClose, t }) {
                 supplier: f.supplier,
                 warehouseLocation: f.warehouseLocation,
                 status: f.status,
+                receivedDate: f.receivedDate,
+                receivedBy: f.receivedBy,
                 notes: f.notes.trim(),
               });
               setSaving(false);
               if (ok) onClose();
-              else setErr("Gagal menyimpan perubahan.");
+              else setErr(t.waSaveFailed || "Gagal menyimpan perubahan.");
             }}
           >
             {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
@@ -6172,37 +6344,22 @@ function DeletePcbaModal({ item, pcba, onDelete, onClose, t }) {
 
   if (!item) return null;
 
-  const hasReplacements = (pcba.replacements || []).some(
-    (r) => r.oldPcbaItemId === item.id || r.newPcbaItemId === item.id
-  );
-  const hasRepairs = (pcba.repairs || []).some((r) => r.pcbaItemId === item.id);
-  const isReferenced = hasReplacements || hasRepairs;
-
   const handleConfirm = async () => {
-    if (isReferenced) {
-      setErrorMsg("PCBA ini masih terhubung dengan riwayat replacement/repair dan tidak dapat dihapus.");
-      return;
-    }
     setDeleting(true);
     const ok = await onDelete(item.id);
     setDeleting(false);
     if (ok) {
       onClose();
     } else {
-      setErrorMsg("Gagal menghapus PCBA dari database.");
+      setErrorMsg(t.pcbaDeleteFailed || "Gagal menghapus PCBA. Silakan coba lagi.");
     }
   };
 
   return (
     <Modal title={t.pcbaDeleteConfirmTitle || "KONFIRMASI HAPUS PCBA"} onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {isReferenced && (
-          <InlineHint tone="warn">
-            PCBA ini memiliki riwayat aktif pada tab Replacement atau Repair & QC. Demi integritas data, PCBA ini tidak dapat dihapus.
-          </InlineHint>
-        )}
         <div style={{ fontSize: 13, color: T.ink }}>
-          Apakah Anda yakin ingin menghapus PCBA ini? Tindakan ini tidak dapat dibatalkan.
+          {t.pcbaDeleteConfirmMsg || "Data PCBA akan dihapus dan tindakan ini tidak dapat dibatalkan."}
         </div>
         <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12.5 }}>
           <div>
@@ -6218,8 +6375,20 @@ function DeletePcbaModal({ item, pcba, onDelete, onClose, t }) {
             <div style={{ marginTop: 2 }}><PcbaBadge status={item.status} t={t} /></div>
           </div>
           <div>
-            <div style={{ color: T.ink3 }}>{t.pcbaSupplier || "Supplier"} / {t.pcbaWarehouseLocation || "Lokasi"}:</div>
-            <div style={{ color: T.ink }}>{item.supplier} / {item.warehouseLocation}</div>
+            <div style={{ color: T.ink3 }}>{t.pcbaSupplier || "Supplier"}:</div>
+            <div style={{ color: T.ink }}>{item.supplier || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaWarehouseLocation || "Lokasi Gudang"}:</div>
+            <div style={{ color: T.ink }}>{item.warehouseLocation || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaReceivedDate || "Tanggal Penerimaan"}:</div>
+            <div style={{ color: T.ink, fontWeight: 600 }}>{fmtDate(item.receivedDate || item.createdAt)}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaReceivedBy || "Penerima PCBA"}:</div>
+            <div style={{ color: T.ink, fontWeight: 600 }}>{item.receivedBy || "-"}</div>
           </div>
         </div>
 
@@ -6233,7 +6402,383 @@ function DeletePcbaModal({ item, pcba, onDelete, onClose, t }) {
             variant="solid"
             style={{ background: T.red, borderColor: T.red }}
             onClick={handleConfirm}
-            disabled={deleting || isReferenced}
+            disabled={deleting}
+          >
+            {deleting && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+            {t.deleteAction || "Hapus"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function TransactionDetailModal({ transaction, pcba, rma, onClose, t }) {
+  if (!transaction) return null;
+
+  const item = (pcba.items || []).find((i) => i.id === transaction.pcbaItemId);
+  const rmaTicket = (rma || []).find((x) => x.id === transaction.rmaId);
+
+  return (
+    <Modal title={`DETAIL TRANSAKSI — ${transaction.transactionNo || "-"}`} onClose={onClose} width={560}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 12.5 }}>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaNoTransaction || "No. Transaksi"}:</div>
+            <div style={{ fontWeight: 700, fontFamily: mono, color: T.cyan }}>{transaction.transactionNo}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colType || "Tipe Transaksi"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{transaction.type}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaSerialNo || "No. Serial PCBA"}:</div>
+            <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{item?.serialNo || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaType || "Tipe PCBA"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{item?.pcbaType || "-"}</div>
+          </div>
+          {rmaTicket && (
+            <div>
+              <div style={{ color: T.ink3 }}>RMA:</div>
+              <div style={{ fontWeight: 600, color: T.cyan }}>{rmaTicket.ticketNo}</div>
+            </div>
+          )}
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaColReceivedBy || t.pcbaReceivedBy || "Penerima / Oleh"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{transaction.receivedBy || transaction.performedBy || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colDate || "Tanggal Transaksi"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{fmtDate(transaction.createdAt)}</div>
+          </div>
+        </div>
+
+        {transaction.reason && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 4 }}>{t.pcbaNotes || "Catatan / Alasan"}</div>
+            <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: T.ink, whiteSpace: "pre-wrap" }}>
+              {transaction.reason}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+          <Btn variant="solid" onClick={onClose}>
+            {t.close || "Tutup"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function DeleteTransactionModal({ transaction, pcba, onDelete, onClose, t }) {
+  const [deleting, setDeleting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  if (!transaction) return null;
+  const item = (pcba.items || []).find((i) => i.id === transaction.pcbaItemId);
+
+  const handleConfirm = async () => {
+    setDeleting(true);
+    const ok = await onDelete(transaction.id);
+    setDeleting(false);
+    if (ok) {
+      onClose();
+    } else {
+      setErrorMsg(t.pcbaDeleteFailed || "Gagal menghapus transaksi. Silakan coba lagi.");
+    }
+  };
+
+  return (
+    <Modal title={t.deleteTransactionTitle || "KONFIRMASI HAPUS TRANSAKSI"} onClose={onClose}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ fontSize: 13, color: T.ink }}>
+          {t.deleteTransactionMsg || "Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan."}
+        </div>
+
+        <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12.5 }}>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaNoTransaction || "No. Transaksi"}:</div>
+            <div style={{ fontWeight: 700, fontFamily: mono, color: T.cyan }}>{transaction.transactionNo}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colType || "Tipe Transaksi"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{transaction.type}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaSerialNo || "No. Serial PCBA"}:</div>
+            <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{item?.serialNo || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colDate || "Tanggal"}:</div>
+            <div style={{ color: T.ink, fontWeight: 600 }}>{fmtDate(transaction.createdAt)}</div>
+          </div>
+        </div>
+
+        {errorMsg && <InlineHint tone="warn">{errorMsg}</InlineHint>}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 4 }}>
+          <Btn variant="ghost" onClick={onClose} disabled={deleting}>
+            {t.cancel || "Batal"}
+          </Btn>
+          <Btn
+            variant="solid"
+            style={{ background: T.red, borderColor: T.red }}
+            onClick={handleConfirm}
+            disabled={deleting}
+          >
+            {deleting && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+            {t.deleteAction || "Hapus"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function ReplacementDetailModal({ replacement, pcba, rma, onClose, t }) {
+  if (!replacement) return null;
+
+  const rmaTicket = (rma || []).find((x) => x.id === replacement.rmaId);
+  const oldItem = (pcba.items || []).find((i) => i.id === replacement.oldPcbaItemId);
+  const newItem = (pcba.items || []).find((i) => i.id === replacement.newPcbaItemId);
+
+  return (
+    <Modal title={`DETAIL REPLACEMENT — ${replacement.replacementNo || "-"}`} onClose={onClose} width={560}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 12.5 }}>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaNoReplacement || "No. Replacement"}:</div>
+            <div style={{ fontWeight: 700, fontFamily: mono, color: T.cyan }}>{replacement.replacementNo}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaRelatedRma || "Tiket RMA Terkait"}:</div>
+            <div style={{ fontWeight: 600, color: T.cyan }}>{rmaTicket?.ticketNo || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaReplaceOld || "PCBA Lama (Dilepas)"}:</div>
+            <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{oldItem?.serialNo || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaReplaceNew || "PCBA Baru (Dipasang)"}:</div>
+            <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{newItem?.serialNo || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colEngineer || "Diproses Oleh"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{replacement.replacedBy || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colDate || "Tanggal Replacement"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{fmtDate(replacement.replacedAt)}</div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+          <Btn variant="solid" onClick={onClose}>
+            {t.close || "Tutup"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function DeleteReplacementModal({ replacement, pcba, rma, onDelete, onClose, t }) {
+  const [deleting, setDeleting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  if (!replacement) return null;
+  const rmaTicket = (rma || []).find((x) => x.id === replacement.rmaId);
+
+  const handleConfirm = async () => {
+    setDeleting(true);
+    const ok = await onDelete(replacement.id);
+    setDeleting(false);
+    if (ok) {
+      onClose();
+    } else {
+      setErrorMsg(t.pcbaDeleteFailed || "Gagal menghapus replacement. Silakan coba lagi.");
+    }
+  };
+
+  return (
+    <Modal title={t.deleteReplacementTitle || "KONFIRMASI HAPUS REPLACEMENT"} onClose={onClose}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ fontSize: 13, color: T.ink }}>
+          {t.deleteReplacementMsg || "Apakah Anda yakin ingin menghapus data replacement ini? Status PCBA baru akan dikembalikan menjadi Good."}
+        </div>
+
+        <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12.5 }}>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaNoReplacement || "No. Replacement"}:</div>
+            <div style={{ fontWeight: 700, fontFamily: mono, color: T.cyan }}>{replacement.replacementNo}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>RMA:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{rmaTicket?.ticketNo || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colEngineer || "Engineer"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{replacement.replacedBy || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colDate || "Tanggal"}:</div>
+            <div style={{ color: T.ink, fontWeight: 600 }}>{fmtDate(replacement.replacedAt)}</div>
+          </div>
+        </div>
+
+        {errorMsg && <InlineHint tone="warn">{errorMsg}</InlineHint>}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 4 }}>
+          <Btn variant="ghost" onClick={onClose} disabled={deleting}>
+            {t.cancel || "Batal"}
+          </Btn>
+          <Btn
+            variant="solid"
+            style={{ background: T.red, borderColor: T.red }}
+            onClick={handleConfirm}
+            disabled={deleting}
+          >
+            {deleting && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+            {t.deleteAction || "Hapus"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function RepairDetailModal({ repair, pcba, onClose, t }) {
+  if (!repair) return null;
+
+  const item = (pcba.items || []).find((i) => i.id === repair.pcbaItemId);
+
+  return (
+    <Modal title={`DETAIL REPAIR & QC — ${repair.repairNo || "-"}`} onClose={onClose} width={580}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 12.5 }}>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaNoRepair || "No. Repair"}:</div>
+            <div style={{ fontWeight: 700, fontFamily: mono, color: T.cyan }}>{repair.repairNo || repair.id}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaSerialNo || "Serial PCBA"}:</div>
+            <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{item?.serialNo || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colEngineer || "Engineer"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{repair.engineer || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaRepairResult || "Hasil Repair"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{repair.repairResult || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>QC Status:</div>
+            <div>
+              {repair.qcStatus ? (
+                <PcbaBadge
+                  status={repair.qcStatus === "Passed" ? "Good" : repair.qcStatus === "Failed" ? "Bad" : "Under Repair"}
+                  t={t}
+                />
+              ) : (
+                "-"
+              )}
+            </div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colDate || "Tanggal Repair"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{fmtDate(repair.createdAt)}</div>
+          </div>
+        </div>
+
+        {repair.analysis && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 4 }}>{t.pcbaDamageAnalysis || "Analisis Kerusakan"}</div>
+            <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: T.ink }}>{repair.analysis}</div>
+          </div>
+        )}
+        {repair.actionTaken && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 4 }}>{t.action || "Tindakan"}</div>
+            <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: T.ink }}>{repair.actionTaken}</div>
+          </div>
+        )}
+        {repair.componentsReplaced && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 4 }}>{t.pcbaComponentsReplaced || "Komponen Diganti"}</div>
+            <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: T.ink }}>{repair.componentsReplaced}</div>
+          </div>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+          <Btn variant="solid" onClick={onClose}>
+            {t.close || "Tutup"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function DeleteRepairModal({ repair, pcba, onDelete, onClose, t }) {
+  const [deleting, setDeleting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  if (!repair) return null;
+  const item = (pcba.items || []).find((i) => i.id === repair.pcbaItemId);
+
+  const handleConfirm = async () => {
+    setDeleting(true);
+    const ok = await onDelete(repair.id);
+    setDeleting(false);
+    if (ok) {
+      onClose();
+    } else {
+      setErrorMsg(t.pcbaDeleteFailed || "Gagal menghapus repair. Silakan coba lagi.");
+    }
+  };
+
+  return (
+    <Modal title={t.deleteRepairTitle || "KONFIRMASI HAPUS REPAIR"} onClose={onClose}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ fontSize: 13, color: T.ink }}>
+          {t.deleteRepairMsg || "Apakah Anda yakin ingin menghapus data repair ini? Status PCBA terkait akan dikembalikan menjadi Bad."}
+        </div>
+
+        <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12.5 }}>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaNoRepair || "No. Repair"}:</div>
+            <div style={{ fontWeight: 700, fontFamily: mono, color: T.cyan }}>{repair.repairNo || repair.id}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaSerialNo || "Serial PCBA"}:</div>
+            <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{item?.serialNo || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colEngineer || "Engineer"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{repair.engineer || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colDate || "Tanggal"}:</div>
+            <div style={{ color: T.ink, fontWeight: 600 }}>{fmtDate(repair.createdAt)}</div>
+          </div>
+        </div>
+
+        {errorMsg && <InlineHint tone="warn">{errorMsg}</InlineHint>}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 4 }}>
+          <Btn variant="ghost" onClick={onClose} disabled={deleting}>
+            {t.cancel || "Batal"}
+          </Btn>
+          <Btn
+            variant="solid"
+            style={{ background: T.red, borderColor: T.red }}
+            onClick={handleConfirm}
+            disabled={deleting}
           >
             {deleting && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
             {t.deleteAction || "Hapus"}
@@ -6249,6 +6794,7 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose, t })
     rmaId: "",
     newPcbaItemId: "",
     oldSerialNo: "",
+    replacedBy: master.engineers?.[0] || "",
     notes: "",
   });
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
@@ -6302,6 +6848,13 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose, t })
           style={{ fontFamily: mono }}
         />
       </Field>
+      <Field label={t.colEngineer || "Engineer"}>
+        <Select
+          options={master.engineers}
+          value={f.replacedBy}
+          onChange={set("replacedBy")}
+        />
+      </Field>
       <Field label={t.pcbaNotes || "Catatan"}>
         <TextArea value={f.notes} onChange={set("notes")} />
       </Field>
@@ -6318,6 +6871,8 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose, t })
               return setErr("Pilih PCBA baru (stok Good) dulu.");
             if (!f.oldSerialNo.trim())
               return setErr("No. Serial PCBA lama wajib diisi.");
+            if (!f.replacedBy)
+              return setErr("Pilih engineer yang melakukan replacement.");
             setSaving(true);
             const res = await onSave(f);
             setSaving(false);
@@ -6332,19 +6887,7 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose, t })
   );
 }
 
-function RepairForm({ master, badItems, onSave, onClose, t }) {
-  const [f, setF] = useState({
-    pcbaItemId: "",
-    engineer: "",
-    analysis: "",
-    actionTaken: "",
-    componentsReplaced: "",
-    testingResult: "",
-    repairResult: "",
-  });
-  const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
-  const [err, setErr] = useState("");
-  const [saving, setSaving] = useState(false);
+function RepairForm({ master, badItems = [], onSave, onClose, t }) {
   const repairResultOptions = [
     "Berhasil Diperbaiki",
     "Tidak Dapat Diperbaiki",
@@ -6352,11 +6895,23 @@ function RepairForm({ master, badItems, onSave, onClose, t }) {
     "Return to Principal",
     "Scrap",
   ];
+  const [f, setF] = useState({
+    pcbaItemId: badItems[0]?.id || "",
+    engineer: master.engineers?.[0] || "",
+    analysis: "",
+    actionTaken: "",
+    componentsReplaced: "",
+    testingResult: "",
+    repairResult: repairResultOptions[0],
+  });
+  const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+  const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {err && <InlineHint tone="warn">{err}</InlineHint>}
-      <Field label={t.pcbaRepairTarget || "PCBA (status Bad / Under Repair)"}>
+      <Field label={t?.pcbaRepairTarget || "PCBA (status Bad / Under Repair)"}>
         <Select
           options={badItems.map((i) => `${i.serialNo} (${i.pcbaType})`)}
           value={(() => {
@@ -6376,30 +6931,30 @@ function RepairForm({ master, badItems, onSave, onClose, t }) {
           Tidak ada PCBA berstatus Bad/Under Repair untuk direpair saat ini.
         </InlineHint>
       )}
-      <Field label={t.colEngineer || "Engineer"}>
+      <Field label={t?.colEngineer || "Engineer"}>
         <Select
           options={master.engineers}
           value={f.engineer}
           onChange={set("engineer")}
         />
       </Field>
-      <Field label={t.pcbaDamageAnalysis || "Analisis Kerusakan"}>
+      <Field label={t?.pcbaDamageAnalysis || "Analisis Kerusakan"}>
         <TextArea value={f.analysis} onChange={set("analysis")} />
       </Field>
-      <Field label={t.action || "Tindakan"}>
+      <Field label={t?.action || "Tindakan"}>
         <TextArea value={f.actionTaken} onChange={set("actionTaken")} />
       </Field>
-      <Field label={t.pcbaComponentsReplaced || "Komponen Diganti"}>
+      <Field label={t?.pcbaComponentsReplaced || "Komponen Diganti"}>
         <TextArea
           value={f.componentsReplaced}
           onChange={set("componentsReplaced")}
           placeholder="cth. IC optical module x1, capacitor 10uF x2"
         />
       </Field>
-      <Field label={t.pcbaTestingResult || "Hasil Testing"}>
+      <Field label={t?.pcbaTestingResult || "Hasil Testing"}>
         <TextArea value={f.testingResult} onChange={set("testingResult")} />
       </Field>
-      <Field label={t.pcbaRepairResult || "Hasil Repair"}>
+      <Field label={t?.pcbaRepairResult || "Hasil Repair"}>
         <Select
           options={repairResultOptions}
           value={f.repairResult}
@@ -6414,21 +6969,22 @@ function RepairForm({ master, badItems, onSave, onClose, t }) {
       )}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
         <Btn variant="ghost" onClick={onClose} disabled={saving}>
-          {t.cancel || "Batal"}
+          {t?.cancel || "Batal"}
         </Btn>
         <Btn
           variant="solid"
           disabled={saving}
-          onClick={() => {
+          onClick={async () => {
             if (!f.pcbaItemId) return setErr("Pilih PCBA dulu.");
             if (!f.repairResult) return setErr("Pilih hasil repair dulu.");
             setSaving(true);
-            onSave(f);
+            const res = await onSave(f);
             setSaving(false);
+            if (res && res.ok === false) setErr(res.error);
           }}
         >
           {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
-          {t.pcbaSaveRepair || "Simpan Repair"}
+          {t?.pcbaSaveRepair || "Simpan Repair"}
         </Btn>
       </div>
     </div>
@@ -6442,6 +6998,9 @@ function PcbaInventoryTab({
   onGoodsReceipt,
   onEditPcbaItem,
   onDeletePcbaItem,
+  onDeletePcbaTransaction,
+  onDeleteReplacement,
+  onDeleteRepair,
   onReplacement,
   onRepair,
   onQc,
@@ -6450,6 +7009,23 @@ function PcbaInventoryTab({
 }) {
   const [subTab, setSubTab] = useState("stock");
   const [modal, setModal] = useState(null);
+
+  const rmaOpenList = useMemo(() => {
+    return (rma || []).filter((r) => {
+      const st = (r.status || "").toLowerCase();
+      return st !== "dibatalkan";
+    });
+  }, [rma]);
+
+  const goodItems = useMemo(() => {
+    return (pcba.items || []).filter((i) => i.status === "Good");
+  }, [pcba.items]);
+
+  const badItems = useMemo(() => {
+    return (pcba.items || []).filter(
+      (i) => i.status === "Bad" || i.status === "Under Repair"
+    );
+  }, [pcba.items]);
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -6469,7 +7045,7 @@ function PcbaInventoryTab({
     return Array.from(set).sort();
   }, [pcba.items]);
 
-  const filteredItems = useMemo(() => {
+  const filteredStockItems = useMemo(() => {
     const q = search.toLowerCase().trim();
     return (pcba.items || []).filter((item) => {
       if (q) {
@@ -6480,6 +7056,7 @@ function PcbaInventoryTab({
           getLocalizedStatus(item.status, t),
           item.supplier,
           item.warehouseLocation,
+          item.receivedBy,
           item.notes,
         ]
           .filter(Boolean)
@@ -6495,27 +7072,188 @@ function PcbaInventoryTab({
     });
   }, [pcba.items, search, typeFilter, statusFilter, supplierFilter, locationFilter, t]);
 
+  const filteredReplacements = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return (pcba.replacements || []).filter((r) => {
+      const newItem = (pcba.items || []).find((i) => i.id === r.newPcbaItemId);
+      const oldItem = (pcba.items || []).find((i) => i.id === r.oldPcbaItemId);
+      const rmaTicket = (rma || []).find((x) => x.id === r.rmaId);
+
+      if (typeFilter) {
+        const matchNew = newItem?.pcbaType === typeFilter;
+        const matchOld = oldItem?.pcbaType === typeFilter;
+        if (!matchNew && !matchOld) return false;
+      }
+
+      if (statusFilter) {
+        const matchNewStatus = newItem?.status === statusFilter;
+        const matchOldStatus = oldItem?.status === statusFilter;
+        if (!matchNewStatus && !matchOldStatus) return false;
+      }
+
+      if (supplierFilter) {
+        const matchSupplier = newItem?.supplier === supplierFilter || oldItem?.supplier === supplierFilter;
+        if (!matchSupplier) return false;
+      }
+
+      if (locationFilter) {
+        const matchLocation = newItem?.warehouseLocation === locationFilter || oldItem?.warehouseLocation === locationFilter;
+        if (!matchLocation) return false;
+      }
+
+      if (q) {
+        const haystack = [
+          r.replacementNo,
+          rmaTicket?.ticketNo,
+          newItem?.serialNo,
+          newItem?.pcbaType,
+          oldItem?.serialNo,
+          oldItem?.pcbaType,
+          r.replacedBy,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+
+      return true;
+    });
+  }, [pcba.replacements, pcba.items, rma, search, typeFilter, statusFilter, supplierFilter, locationFilter]);
+
+  const filteredRepairs = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return (pcba.repairs || []).filter((r) => {
+      const item = (pcba.items || []).find((i) => i.id === r.pcbaItemId);
+
+      if (typeFilter) {
+        if (item?.pcbaType !== typeFilter) return false;
+      }
+
+      if (statusFilter) {
+        const itemStatusMatch = item?.status === statusFilter;
+        const resultMatch = r.repairResult === statusFilter;
+        const qcMatch = (r.qcStatus === "Passed" && statusFilter === "Good") || (r.qcStatus === "Failed" && statusFilter === "Bad") || (r.qcStatus === "Pending" && statusFilter === "Under Repair");
+        if (!itemStatusMatch && !resultMatch && !qcMatch) return false;
+      }
+
+      if (supplierFilter) {
+        if (item?.supplier !== supplierFilter) return false;
+      }
+
+      if (locationFilter) {
+        if (item?.warehouseLocation !== locationFilter) return false;
+      }
+
+      if (q) {
+        const haystack = [
+          r.repairNo,
+          r.id,
+          item?.serialNo,
+          item?.pcbaType,
+          r.engineer,
+          r.analysis,
+          r.actionTaken,
+          r.repairResult,
+          r.qcStatus,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+
+      return true;
+    });
+  }, [pcba.repairs, pcba.items, search, typeFilter, statusFilter, supplierFilter, locationFilter]);
+
+  const filteredTransactions = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return (pcba.transactions || []).filter((t) => {
+      const item = (pcba.items || []).find((i) => i.id === t.pcbaItemId);
+      const rmaTicket = (rma || []).find((x) => x.id === t.rmaId);
+
+      if (typeFilter) {
+        if (item?.pcbaType !== typeFilter) return false;
+      }
+
+      if (statusFilter) {
+        if (item?.status !== statusFilter) return false;
+      }
+
+      if (supplierFilter) {
+        if (item?.supplier !== supplierFilter) return false;
+      }
+
+      if (locationFilter) {
+        if (item?.warehouseLocation !== locationFilter) return false;
+      }
+
+      if (q) {
+        const haystack = [
+          t.transactionNo,
+          item?.serialNo,
+          item?.pcbaType,
+          t.type,
+          rmaTicket?.ticketNo,
+          t.reason,
+          t.receivedBy,
+          t.performedBy,
+          item?.receivedBy,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+
+      return true;
+    });
+  }, [pcba.transactions, pcba.items, rma, search, typeFilter, statusFilter, supplierFilter, locationFilter]);
+
   const statusCounts = useMemo(() => {
     const m = {};
     PCBA_STATUSES.forEach((s) => (m[s] = 0));
-    pcba.items.forEach((i) => {
-      m[i.status] = (m[i.status] || 0) + 1;
+    (pcba.items || []).forEach((i) => {
+      if (!typeFilter || i.pcbaType === typeFilter) {
+        m[i.status] = (m[i.status] || 0) + 1;
+      }
     });
     return m;
-  }, [pcba.items]);
+  }, [pcba.items, typeFilter]);
 
-  const lowStockTypes = useMemo(() => {
-    const byType = {};
-    pcba.items
-      .filter((i) => i.status === "Good")
-      .forEach((i) => {
-        byType[i.pcbaType] = (byType[i.pcbaType] || 0) + 1;
-      });
-    const minStock = master.minStockDefault || 5;
-    return master.pcbaTypes
-      .map((type) => ({ type, stock: byType[type] || 0 }))
-      .filter((x) => x.stock < minStock);
-  }, [pcba.items, master.pcbaTypes, master.minStockDefault]);
+  const pcbaTypeStats = useMemo(() => {
+    const defaultTypes = ["G02ID", "G04ID", "G08ID", "E04ID", "XE08ID"];
+    const configuredTypes = Array.isArray(master?.pcbaTypes) && master.pcbaTypes.length > 0 ? master.pcbaTypes : defaultTypes;
+    const itemTypes = (pcba?.items || []).map((i) => i.pcbaType).filter(Boolean);
+    const types = Array.from(new Set([...configuredTypes, ...itemTypes]));
+
+    const statsMap = {};
+    types.forEach((type) => {
+      statsMap[type] = {
+        type,
+        total: 0,
+        Good: 0,
+        Bad: 0,
+        "Under Repair": 0,
+        Repaired: 0,
+        "Used for Replacement": 0,
+        Scrapped: 0,
+      };
+    });
+
+    (pcba?.items || []).forEach((item) => {
+      const type = item.pcbaType;
+      if (type && statsMap[type]) {
+        statsMap[type].total += 1;
+        if (statsMap[type][item.status] !== undefined) {
+          statsMap[type][item.status] += 1;
+        }
+      }
+    });
+
+    return types.map((type) => statsMap[type]);
+  }, [master?.pcbaTypes, pcba?.items]);
 
   const SUB_TABS = [
     { id: "stock", label: t.pcbaStock, icon: Boxes },
@@ -6526,6 +7264,142 @@ function PcbaInventoryTab({
 
   return (
     <div>
+      {/* PCBA TYPE OVERVIEW MINI DASHBOARD */}
+      <div style={{ marginBottom: 18 }}>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: T.ink,
+            letterSpacing: 0.5,
+            textTransform: "uppercase",
+            marginBottom: 10,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <Cpu size={15} style={{ color: T.cyan }} />
+          {t.pcbaTypeOverview || "Ringkasan Tipe PCBA"}
+        </div>
+
+        {pcbaTypeStats.length === 0 ? (
+          <InlineHint tone="warn">
+            {t.pcbaNoTypesConfigured || "Belum ada Tipe PCBA terkonfigurasi di Settings."}
+          </InlineHint>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))",
+              gap: 10,
+            }}
+          >
+            {pcbaTypeStats.map((st) => {
+              const isActive = typeFilter === st.type;
+              return (
+                <div
+                  key={st.type}
+                  onClick={() => {
+                    setTypeFilter((prev) => (prev === st.type ? "" : st.type));
+                  }}
+                  style={{
+                    background: isActive ? T.panel2 : T.panel,
+                    border: `1px solid ${isActive ? T.cyan : T.line}`,
+                    boxShadow: isActive ? `0 0 0 1px ${T.cyan}` : "none",
+                    borderRadius: 8,
+                    padding: "10px 12px",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease-in-out",
+                  }}
+                  title={`Klik header untuk memfilter tipe: ${st.type}`}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                      borderBottom: `1px solid ${T.line}`,
+                      paddingBottom: 6,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: mono,
+                        fontWeight: 700,
+                        fontSize: 13,
+                        color: isActive ? T.cyan : T.ink,
+                      }}
+                    >
+                      {st.type}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontFamily: mono,
+                        fontWeight: 700,
+                        color: T.cyan,
+                        background: T.panel2,
+                        padding: "2px 6px",
+                        borderRadius: 4,
+                        border: `1px solid ${T.line}`,
+                      }}
+                    >
+                      {t.pcbaTotalStock || "Total"}: {st.total}
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "3px 6px",
+                      fontSize: 11,
+                    }}
+                  >
+                    {PCBA_STATUSES.map((statusKey) => {
+                      const isStatusActive = typeFilter === st.type && statusFilter === statusKey;
+                      const count = st[statusKey] || 0;
+                      return (
+                        <div
+                          key={statusKey}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTypeFilter(st.type);
+                            setStatusFilter((prev) => (typeFilter === st.type && prev === statusKey ? "" : statusKey));
+                          }}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "2px 5px",
+                            borderRadius: 4,
+                            background: isStatusActive ? T.panel2 : "transparent",
+                            border: `1px solid ${isStatusActive ? T.cyan : "transparent"}`,
+                            cursor: "pointer",
+                            gridColumn: statusKey === "Used for Replacement" || statusKey === "Scrapped" ? "span 2" : "span 1",
+                            transition: "all 0.15s ease",
+                          }}
+                          title={`Klik untuk filter: ${st.type} + ${getLocalizedStatus(statusKey, t)}`}
+                        >
+                          <span style={{ color: isStatusActive ? T.cyan : T.ink3, fontWeight: isStatusActive ? 600 : 400 }}>
+                            {getLocalizedStatus(statusKey, t)}:
+                          </span>
+                          <span style={{ fontFamily: mono, fontWeight: 700, color: pcbaLed(statusKey) }}>
+                            {count}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <div
         style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}
       >
@@ -6534,8 +7408,9 @@ function PcbaInventoryTab({
             key={s}
             onClick={() => setStatusFilter((prev) => (prev === s ? "" : s))}
             style={{
-              background: T.panel,
+              background: statusFilter === s ? T.panel2 : T.panel,
               border: `1px solid ${statusFilter === s ? T.cyan : T.line}`,
+              boxShadow: statusFilter === s ? `0 0 0 1px ${T.cyan}` : "none",
               borderRadius: 10,
               padding: "12px 16px",
               flex: 1,
@@ -6571,13 +7446,169 @@ function PcbaInventoryTab({
         ))}
       </div>
 
-      {lowStockTypes.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <InlineHint tone="warn">
-            {t.pcbaLowStock.replace("{min}", master.minStockDefault || 5).replace("{types}", lowStockTypes.map((x) => `${x.type} (${x.stock})`).join(", "))}
-          </InlineHint>
+      {/* GLOBAL SEARCH & FILTER TOOLBAR */}
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          flexWrap: "wrap",
+          marginBottom: 16,
+          alignItems: "center",
+        }}
+      >
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder={t.pcbaSearchPlaceholder || "Cari SN, Type, Supplier, Lokasi..."}
+        />
+
+        {/* Filter Type Dropdown */}
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          style={{
+            ...inputBase,
+            padding: "4px 8px",
+            fontSize: 12,
+            width: "auto",
+            cursor: "pointer",
+          }}
+        >
+          <option value="">{t.filterType || "Semua Type"}</option>
+          {pcbaTypeStats.map((st) => (
+            <option key={st.type} value={st.type}>
+              {st.type}
+            </option>
+          ))}
+        </select>
+
+        {/* Filter Status Dropdown */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          style={{
+            ...inputBase,
+            padding: "4px 8px",
+            fontSize: 12,
+            width: "auto",
+            cursor: "pointer",
+          }}
+        >
+          <option value="">{t.filterStatus || "Semua Status"}</option>
+          {PCBA_STATUSES.map((st) => (
+            <option key={st} value={st}>
+              {getLocalizedStatus(st, t)}
+            </option>
+          ))}
+        </select>
+
+        {/* Filter Supplier Dropdown */}
+        {suppliers.length > 0 && (
+          <select
+            value={supplierFilter}
+            onChange={(e) => setSupplierFilter(e.target.value)}
+            style={{
+              ...inputBase,
+              padding: "4px 8px",
+              fontSize: 12,
+              width: "auto",
+              cursor: "pointer",
+            }}
+          >
+            <option value="">{t.filterSupplier || "Semua Supplier"}</option>
+            {suppliers.map((sup) => (
+              <option key={sup} value={sup}>
+                {sup}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {/* Filter Location Dropdown */}
+        {locations.length > 0 && (
+          <select
+            value={locationFilter}
+            onChange={(e) => setLocationFilter(e.target.value)}
+            style={{
+              ...inputBase,
+              padding: "4px 8px",
+              fontSize: 12,
+              width: "auto",
+              cursor: "pointer",
+            }}
+          >
+            <option value="">{t.filterLocation || "Semua Lokasi"}</option>
+            {locations.map((loc) => (
+              <option key={loc} value={loc}>
+                {loc}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {(search || typeFilter || statusFilter || supplierFilter || locationFilter) && (
+          <Btn
+            variant="ghost"
+            onClick={() => {
+              setSearch("");
+              setTypeFilter("");
+              setStatusFilter("");
+              setSupplierFilter("");
+              setLocationFilter("");
+            }}
+            style={{ padding: "4px 8px", fontSize: 12 }}
+          >
+            <RotateCcw size={12} /> {t.resetFilter || "Reset Filter"}
+          </Btn>
+        )}
+
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <Btn
+            variant="ghost"
+            onClick={() => {
+              let exportItems = filteredStockItems;
+              let namePrefix = "PCBA_Inventory_Stock";
+              if (subTab === "replacement") {
+                exportItems = filteredReplacements;
+                namePrefix = "PCBA_Inventory_Replacement";
+              } else if (subTab === "repair") {
+                exportItems = filteredRepairs;
+                namePrefix = "PCBA_Inventory_Repair";
+              } else if (subTab === "transactions") {
+                exportItems = filteredTransactions;
+                namePrefix = "PCBA_Inventory_Transactions";
+              }
+
+              if (exportItems.length === 0) {
+                if (setToastMsg) setToastMsg(t.noDataToExport || "Tidak ada data untuk diexport.");
+                exportPcbaToExcel([], `${namePrefix}_Empty`);
+                return;
+              }
+              const isFiltered = Boolean(search || typeFilter || statusFilter || supplierFilter || locationFilter);
+              exportPcbaToExcel(exportItems, isFiltered ? `${namePrefix}_Filtered` : namePrefix);
+            }}
+            title="Export data (sesuai filter) ke .xlsx"
+          >
+            <FileDown size={14} /> {t.rmaExportExcel || "Export Excel"}
+          </Btn>
+
+          {subTab === "stock" && (
+            <Btn variant="solid" onClick={() => setModal({ type: "receipt" })}>
+              <Plus size={14} /> {t.pcbaReceiveNew}
+            </Btn>
+          )}
+          {subTab === "replacement" && (
+            <Btn variant="solid" onClick={() => setModal({ type: "replacement" })}>
+              <Plus size={14} /> {t.pcbaNewReplacement || "Replacement Baru"}
+            </Btn>
+          )}
+          {subTab === "repair" && (
+            <Btn variant="solid" onClick={() => setModal({ type: "repair" })}>
+              <Plus size={14} /> {t.pcbaNewRepair || "Repair Baru"}
+            </Btn>
+          )}
         </div>
-      )}
+      </div>
 
       <div
         style={{
@@ -6619,290 +7650,189 @@ function PcbaInventoryTab({
       </div>
 
       {subTab === "stock" && (
-        <>
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              flexWrap: "wrap",
-              marginBottom: 12,
-              alignItems: "center",
-            }}
-          >
-            <SearchBar
-              value={search}
-              onChange={setSearch}
-              placeholder={t.pcbaSearchPlaceholder || "Cari SN, Type, Supplier, Lokasi..."}
-            />
-
-            {/* Filter Type */}
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              style={{
-                ...inputBase,
-                padding: "4px 8px",
-                fontSize: 12,
-                width: "auto",
-                cursor: "pointer",
-              }}
-            >
-              <option value="">{t.filterType || "Semua Type"}</option>
-              {(master.pcbaTypes || []).map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-
-            {/* Filter Status */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              style={{
-                ...inputBase,
-                padding: "4px 8px",
-                fontSize: 12,
-                width: "auto",
-                cursor: "pointer",
-              }}
-            >
-              <option value="">{t.filterStatus || "Semua Status"}</option>
-              {PCBA_STATUSES.map((st) => (
-                <option key={st} value={st}>
-                  {getLocalizedStatus(st, t)}
-                </option>
-              ))}
-            </select>
-
-            {/* Filter Supplier */}
-            {suppliers.length > 0 && (
-              <select
-                value={supplierFilter}
-                onChange={(e) => setSupplierFilter(e.target.value)}
-                style={{
-                  ...inputBase,
-                  padding: "4px 8px",
-                  fontSize: 12,
-                  width: "auto",
-                  cursor: "pointer",
-                }}
-              >
-                <option value="">{t.filterSupplier || "Semua Supplier"}</option>
-                {suppliers.map((sup) => (
-                  <option key={sup} value={sup}>
-                    {sup}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            {/* Filter Lokasi */}
-            {locations.length > 0 && (
-              <select
-                value={locationFilter}
-                onChange={(e) => setLocationFilter(e.target.value)}
-                style={{
-                  ...inputBase,
-                  padding: "4px 8px",
-                  fontSize: 12,
-                  width: "auto",
-                  cursor: "pointer",
-                }}
-              >
-                <option value="">{t.filterLocation || "Semua Lokasi"}</option>
-                {locations.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            {(search || typeFilter || statusFilter || supplierFilter || locationFilter) && (
-              <Btn
-                variant="ghost"
-                onClick={() => {
-                  setSearch("");
-                  setTypeFilter("");
-                  setStatusFilter("");
-                  setSupplierFilter("");
-                  setLocationFilter("");
-                }}
-                style={{ padding: "4px 8px", fontSize: 12 }}
-              >
-                <RotateCcw size={12} /> {t.resetFilter || "Reset Filter"}
-              </Btn>
-            )}
-
-            <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <Btn
-                variant="ghost"
-                onClick={() => {
-                  if (filteredItems.length === 0) {
-                    if (setToastMsg) setToastMsg(t.noDataToExport || "Tidak ada data untuk diexport.");
-                    exportPcbaToExcel([], "PCBA_Inventory_Empty");
-                    return;
-                  }
-                  const isFiltered = Boolean(search || typeFilter || statusFilter || supplierFilter || locationFilter);
-                  exportPcbaToExcel(filteredItems, isFiltered ? "PCBA_Inventory_Filtered" : "PCBA_Inventory");
-                }}
-                title="Export data PCBA (sesuai filter) ke .xlsx"
-              >
-                <FileDown size={14} /> {t.rmaExportExcel || "Export Excel"}
-              </Btn>
-              <Btn variant="solid" onClick={() => setModal({ type: "receipt" })}>
-                <Plus size={14} /> {t.pcbaReceiveNew}
-              </Btn>
-            </div>
-          </div>
-
-          <DataTable
-            columns={[
-              { key: "serialNo", label: t.pcbaSerialNo, mono: true },
-              { key: "pcbaType", label: t.pcbaType },
-              {
-                key: "status",
-                label: t.colStatus || "Status",
-                render: (r) => <PcbaBadge status={r.status} t={t} />,
-              },
-              { key: "supplier", label: t.pcbaSupplier },
-              { key: "warehouseLocation", label: t.pcbaWarehouseLocation },
-              {
-                key: "createdAt",
-                label: t.colDate || "Tanggal",
-                render: (r) => fmtDate(r.createdAt),
-              },
-            ]}
-            rows={filteredItems}
-            emptyLabel={
-              search || typeFilter || statusFilter || supplierFilter || locationFilter
-                ? (t.noDataForDateRange || "Tidak ada data yang memenuhi filter.")
-                : (t.pcbaEmptyStock || "Belum ada PCBA di stok. Klik 'Terima PCBA Baru' untuk mulai.")
-            }
-          />
-        </>
+        <DataTable
+          columns={[
+            { key: "serialNo", label: t.pcbaSerialNo || "No. Serial PCBA", mono: true },
+            { key: "pcbaType", label: t.pcbaType || "Tipe PCBA" },
+            {
+              key: "status",
+              label: t.colStatus || "Status",
+              render: (r) => <PcbaBadge status={r.status} t={t} />,
+            },
+            { key: "supplier", label: t.pcbaSupplier || "Supplier" },
+            { key: "warehouseLocation", label: t.pcbaWarehouseLocation || "Lokasi Gudang" },
+            {
+              key: "receivedDate",
+              label: t.pcbaColReceivedDate || t.pcbaReceivedDate || "Tanggal Penerimaan",
+              render: (r) => fmtDate(r.receivedDate || r.createdAt),
+            },
+            {
+              key: "receivedBy",
+              label: t.pcbaColReceivedBy || t.pcbaReceivedBy || "Penerima",
+              render: (r) => r.receivedBy || "-",
+            },
+            {
+              key: "actions",
+              label: "",
+              render: (r) => (
+                <div style={{ display: "flex", gap: 6 }}>
+                  <IconBtn
+                    icon={Eye}
+                    onClick={() => setModal({ type: "view", item: r })}
+                    title={t.viewDetail || "Detail"}
+                  />
+                  <IconBtn
+                    icon={Pencil}
+                    onClick={() => setModal({ type: "edit", item: r })}
+                    title={t.editAction || "Edit"}
+                  />
+                  <IconBtn
+                    icon={Trash2}
+                    danger
+                    onClick={() => setModal({ type: "delete", item: r })}
+                    title={t.deleteAction || "Hapus"}
+                  />
+                </div>
+              ),
+            },
+          ]}
+          rows={filteredStockItems}
+          emptyLabel={
+            search || typeFilter || statusFilter || supplierFilter || locationFilter
+              ? (t.noDataForDateRange || "Tidak ada data yang memenuhi filter.")
+              : (t.pcbaEmptyStock || "Belum ada PCBA di stok. Klik 'Terima PCBA Baru' untuk mulai.")
+          }
+        />
       )}
 
       {subTab === "replacement" && (
-        <>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginBottom: 12,
-            }}
-          >
-            <Btn
-              variant="solid"
-              onClick={() => setModal({ type: "replacement" })}
-            >
-              <Plus size={14} /> {t.pcbaNewReplacement || "Replacement Baru"}
-            </Btn>
-          </div>
-          <DataTable
-            columns={[
-              { key: "replacementNo", label: t.pcbaNoReplacement || "No. Replacement", mono: true },
-              {
-                key: "rmaId",
-                label: "RMA",
-                render: (r) =>
-                  rma.find((x) => x.id === r.rmaId)?.ticketNo || "-",
-              },
-              {
-                key: "oldPcbaItemId",
-                label: t.pcbaReplaceOld,
-                render: (r) =>
-                  pcba.items.find((i) => i.id === r.oldPcbaItemId)?.serialNo ||
-                  "-",
-              },
-              {
-                key: "newPcbaItemId",
-                label: t.pcbaReplaceNew,
-                render: (r) =>
-                  pcba.items.find((i) => i.id === r.newPcbaItemId)?.serialNo ||
-                  "-",
-              },
-              { key: "replacedBy", label: t.colEngineer || "Oleh" },
-              {
-                key: "replacedAt",
-                label: t.colDate || "Tanggal",
-                render: (r) => fmtDate(r.replacedAt),
-              },
-            ]}
-            rows={pcba.replacements}
-            emptyLabel={t.pcbaEmptyReplacement || "Belum ada replacement PCBA."}
-          />
-        </>
+        <DataTable
+          columns={[
+            { key: "replacementNo", label: t.pcbaNoReplacement || "No. Replacement", mono: true },
+            {
+              key: "rmaId",
+              label: "RMA",
+              render: (r) =>
+                rma.find((x) => x.id === r.rmaId)?.ticketNo || "-",
+            },
+            {
+              key: "oldPcbaItemId",
+              label: t.pcbaReplaceOld,
+              render: (r) =>
+                pcba.items.find((i) => i.id === r.oldPcbaItemId)?.serialNo ||
+                "-",
+            },
+            {
+              key: "newPcbaItemId",
+              label: t.pcbaReplaceNew,
+              render: (r) =>
+                pcba.items.find((i) => i.id === r.newPcbaItemId)?.serialNo ||
+                "-",
+            },
+            { key: "replacedBy", label: t.colEngineer || "Oleh" },
+            {
+              key: "replacedAt",
+              label: t.colDate || "Tanggal",
+              render: (r) => fmtDate(r.replacedAt),
+            },
+            {
+              key: "actions",
+              label: "",
+              render: (r) => (
+                <div style={{ display: "flex", gap: 6 }}>
+                  <IconBtn
+                    icon={Eye}
+                    onClick={() => setModal({ type: "viewReplacement", item: r })}
+                    title={t.viewDetail || "Detail"}
+                  />
+                  <IconBtn
+                    icon={Trash2}
+                    danger
+                    onClick={() => setModal({ type: "deleteReplacement", item: r })}
+                    title={t.deleteAction || "Hapus"}
+                  />
+                </div>
+              ),
+            },
+          ]}
+          rows={filteredReplacements}
+          emptyLabel={
+            search || typeFilter || statusFilter || supplierFilter || locationFilter
+              ? (t.noDataForDateRange || "Tidak ada data yang memenuhi filter.")
+              : (t.pcbaEmptyReplacement || "Belum ada replacement PCBA.")
+          }
+        />
       )}
 
       {subTab === "repair" && (
-        <>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginBottom: 12,
-            }}
-          >
-            <Btn variant="solid" onClick={() => setModal({ type: "repair" })}>
-              <Plus size={14} /> {t.pcbaNewRepair || "Repair Baru"}
-            </Btn>
-          </div>
-          <DataTable
-            columns={[
-              { key: "repairNo", label: t.pcbaNoRepair || "No. Repair", mono: true },
-              {
-                key: "pcbaItemId",
-                label: t.pcbaRepairItem,
-                render: (r) =>
-                  pcba.items.find((i) => i.id === r.pcbaItemId)?.serialNo ||
-                  "-",
-              },
-              { key: "engineer", label: t.colEngineer || "Engineer" },
-              { key: "repairResult", label: t.pcbaRepairResult || t.pcbaQcResult },
-              {
-                key: "qcStatus",
-                label: "QC",
-                render: (r) =>
-                  r.qcStatus ? (
-                    <PcbaBadge
-                      status={
-                        r.qcStatus === "Passed"
-                          ? "Good"
-                          : r.qcStatus === "Failed"
-                          ? "Bad"
-                          : "Under Repair"
-                      }
-                      t={t}
-                    />
-                  ) : (
-                    "-"
-                  ),
-              },
-              {
-                key: "actions",
-                label: "",
-                render: (r) =>
-                  r.qcStatus === "Pending" ? (
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <Btn variant="solid" onClick={() => onQc(r.id, "Passed")}>
+        <DataTable
+          columns={[
+            { key: "repairNo", label: t.pcbaNoRepair || "No. Repair", mono: true },
+            {
+              key: "pcbaItemId",
+              label: t.pcbaRepairItem,
+              render: (r) =>
+                pcba.items.find((i) => i.id === r.pcbaItemId)?.serialNo ||
+                "-",
+            },
+            { key: "engineer", label: t.colEngineer || "Engineer" },
+            { key: "repairResult", label: t.pcbaRepairResult || t.pcbaQcResult },
+            {
+              key: "qcStatus",
+              label: "QC",
+              render: (r) =>
+                r.qcStatus ? (
+                  <PcbaBadge
+                    status={
+                      r.qcStatus === "Passed"
+                        ? "Good"
+                        : r.qcStatus === "Failed"
+                        ? "Bad"
+                        : "Under Repair"
+                    }
+                    t={t}
+                  />
+                ) : (
+                  "-"
+                ),
+            },
+            {
+              key: "actions",
+              label: "",
+              render: (r) => (
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  {r.qcStatus === "Pending" && (
+                    <>
+                      <Btn variant="solid" style={{ padding: "3px 8px", fontSize: 11 }} onClick={() => onQc(r.id, "Passed")}>
                         Pass
                       </Btn>
-                      <Btn
-                        variant="danger"
-                        onClick={() => onQc(r.id, "Failed")}
-                      >
+                      <Btn variant="danger" style={{ padding: "3px 8px", fontSize: 11 }} onClick={() => onQc(r.id, "Failed")}>
                         Fail
                       </Btn>
-                    </div>
-                  ) : null,
-              },
-            ]}
-            rows={pcba.repairs}
-            emptyLabel={t.pcbaEmptyRepair || "Belum ada repair PCBA."}
-          />
-        </>
+                    </>
+                  )}
+                  <IconBtn
+                    icon={Eye}
+                    onClick={() => setModal({ type: "viewRepair", item: r })}
+                    title={t.viewDetail || "Detail"}
+                  />
+                  <IconBtn
+                    icon={Trash2}
+                    danger
+                    onClick={() => setModal({ type: "deleteRepair", item: r })}
+                    title={t.deleteAction || "Hapus"}
+                  />
+                </div>
+              ),
+            },
+          ]}
+          rows={filteredRepairs}
+          emptyLabel={
+            search || typeFilter || statusFilter || supplierFilter || locationFilter
+              ? (t.noDataForDateRange || "Tidak ada data yang memenuhi filter.")
+              : (t.pcbaEmptyRepair || "Belum ada repair PCBA.")
+          }
+        />
       )}
 
       {subTab === "transactions" && (
@@ -6911,7 +7841,7 @@ function PcbaInventoryTab({
             { key: "transactionNo", label: t.pcbaNoTransaction || "No. Transaksi", mono: true },
             {
               key: "pcbaItemId",
-              label: t.pcbaSelectItem,
+              label: t.pcbaSerialNo || "Serial PCBA",
               render: (r) =>
                 pcba.items.find((i) => i.id === r.pcbaItemId)?.serialNo || "-",
             },
@@ -6921,15 +7851,46 @@ function PcbaInventoryTab({
               label: "RMA",
               render: (r) => rma.find((x) => x.id === r.rmaId)?.ticketNo || "-",
             },
-            { key: "reason", label: t.pcbaNotes },
+            { key: "reason", label: t.pcbaNotes || "Catatan" },
+            {
+              key: "receivedBy",
+              label: t.pcbaColReceivedBy || t.pcbaReceivedBy || "Penerima / Oleh",
+              render: (r) => {
+                const item = pcba.items.find((i) => i.id === r.pcbaItemId);
+                return (item && item.receivedBy) || r.receivedBy || r.performedBy || "-";
+              },
+            },
             {
               key: "createdAt",
               label: t.colDate || "Tanggal",
               render: (r) => fmtDate(r.createdAt),
             },
+            {
+              key: "actions",
+              label: "",
+              render: (r) => (
+                <div style={{ display: "flex", gap: 6 }}>
+                  <IconBtn
+                    icon={Eye}
+                    onClick={() => setModal({ type: "viewTrx", item: r })}
+                    title={t.viewDetail || "Detail"}
+                  />
+                  <IconBtn
+                    icon={Trash2}
+                    danger
+                    onClick={() => setModal({ type: "deleteTrx", item: r })}
+                    title={t.deleteAction || "Hapus"}
+                  />
+                </div>
+              ),
+            },
           ]}
-          rows={pcba.transactions}
-          emptyLabel={t.pcbaEmptyTransactions || "Belum ada transaksi stok. Transaksi tercatat otomatis (append-only, tidak bisa diedit/dihapus)."}
+          rows={filteredTransactions}
+          emptyLabel={
+            search || typeFilter || statusFilter || supplierFilter || locationFilter
+              ? (t.noDataForDateRange || "Tidak ada data yang memenuhi filter.")
+              : (t.pcbaEmptyTransactions || "Belum ada transaksi stok.")
+          }
         />
       )}
 
@@ -6959,6 +7920,32 @@ function PcbaInventoryTab({
           t={t}
         />
       )}
+      {modal?.type === "viewTrx" && (
+        <TransactionDetailModal
+          transaction={modal.item}
+          pcba={pcba}
+          rma={rma}
+          onClose={() => setModal(null)}
+          t={t}
+        />
+      )}
+      {modal?.type === "viewReplacement" && (
+        <ReplacementDetailModal
+          replacement={modal.item}
+          pcba={pcba}
+          rma={rma}
+          onClose={() => setModal(null)}
+          t={t}
+        />
+      )}
+      {modal?.type === "viewRepair" && (
+        <RepairDetailModal
+          repair={modal.item}
+          pcba={pcba}
+          onClose={() => setModal(null)}
+          t={t}
+        />
+      )}
       {modal?.type === "edit" && (
         <EditPcbaModal
           item={modal.item}
@@ -6984,6 +7971,43 @@ function PcbaInventoryTab({
           t={t}
         />
       )}
+      {modal?.type === "deleteTrx" && (
+        <DeleteTransactionModal
+          transaction={modal.item}
+          pcba={pcba}
+          onDelete={async (trxId) => {
+            const ok = await onDeletePcbaTransaction(trxId);
+            return ok;
+          }}
+          onClose={() => setModal(null)}
+          t={t}
+        />
+      )}
+      {modal?.type === "deleteReplacement" && (
+        <DeleteReplacementModal
+          replacement={modal.item}
+          pcba={pcba}
+          rma={rma}
+          onDelete={async (repId) => {
+            const ok = await onDeleteReplacement(repId);
+            return ok;
+          }}
+          onClose={() => setModal(null)}
+          t={t}
+        />
+      )}
+      {modal?.type === "deleteRepair" && (
+        <DeleteRepairModal
+          repair={modal.item}
+          pcba={pcba}
+          onDelete={async (repairId) => {
+            const ok = await onDeleteRepair(repairId);
+            return ok;
+          }}
+          onClose={() => setModal(null)}
+          t={t}
+        />
+      )}
       {modal?.type === "replacement" && (
         <Modal title={t.pcbaReplacementTitle || "REPLACEMENT PCBA"} onClose={() => setModal(null)}>
           <ReplacementForm
@@ -7001,15 +8025,17 @@ function PcbaInventoryTab({
         </Modal>
       )}
       {modal?.type === "repair" && (
-        <Modal title="MULAI REPAIR PCBA" onClose={() => setModal(null)}>
+        <Modal title={t?.pcbaNewRepairTitle || "MULAI REPAIR PCBA"} onClose={() => setModal(null)}>
           <RepairForm
             master={master}
             badItems={badItems}
-            onSave={(data) => {
-              onRepair(data);
-              setModal(null);
+            onSave={async (data) => {
+              const res = await onRepair(data);
+              if (!res || res.ok !== false) setModal(null);
+              return res;
             }}
             onClose={() => setModal(null)}
+            t={t}
           />
         </Modal>
       )}
@@ -7909,6 +8935,8 @@ export default function App() {
 
   const onGoodsReceipt = useCallback(
     async (formData) => {
+      const receivedDate = formData.receivedDate || todayISO();
+      const receivedBy = formData.receivedBy ? formData.receivedBy.trim() : "-";
       const newItem = {
         id: uid(),
         serialNo: formData.serialNo.trim(),
@@ -7917,6 +8945,8 @@ export default function App() {
         supplier: formData.supplier,
         warehouseLocation: formData.warehouseLocation,
         status: "Good",
+        receivedDate,
+        receivedBy,
         notes: formData.notes.trim(),
         createdAt: new Date().toISOString(),
       };
@@ -7926,7 +8956,10 @@ export default function App() {
         pcbaItemId: newItem.id,
         type: "Goods Receipt",
         rmaId: null,
-        reason: formData.notes.trim() || "Penerimaan stok baru",
+        receivedDate,
+        receivedBy,
+        performedBy: receivedBy,
+        reason: formData.notes.trim() || `Penerimaan stok baru (${receivedBy})`,
         createdAt: newItem.createdAt,
       };
       const newPcba = {
@@ -7958,13 +8991,14 @@ export default function App() {
         createdAt: new Date().toISOString(),
       };
 
+      const engineerName = formData.replacedBy ? formData.replacedBy.trim() : "Engineer";
       const replacement = {
         id: uid(),
         replacementNo: `REP-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-4)}`,
         rmaId: formData.rmaId,
         oldPcbaItemId: oldItem.id,
         newPcbaItemId: newPcbaItem.id,
-        replacedBy: "Engineer",
+        replacedBy: engineerName,
         replacedAt: new Date().toISOString(),
       };
 
@@ -7974,7 +9008,9 @@ export default function App() {
         pcbaItemId: newPcbaItem.id,
         type: "Replacement Out",
         rmaId: formData.rmaId,
-        reason: `Replacement untuk RMA ${rma.find((x) => x.id === formData.rmaId)?.ticketNo || "-"}`,
+        receivedBy: engineerName,
+        performedBy: engineerName,
+        reason: `Replacement untuk RMA ${rma.find((x) => x.id === formData.rmaId)?.ticketNo || "-"} (${engineerName})`,
         createdAt: new Date().toISOString(),
       };
 
@@ -7984,7 +9020,9 @@ export default function App() {
         pcbaItemId: oldItem.id,
         type: "Replacement In (Bad)",
         rmaId: formData.rmaId,
-        reason: `PCBA lama dari RMA ${rma.find((x) => x.id === formData.rmaId)?.ticketNo || "-"}`,
+        receivedBy: engineerName,
+        performedBy: engineerName,
+        reason: `PCBA lama dari RMA ${rma.find((x) => x.id === formData.rmaId)?.ticketNo || "-"} (${engineerName})`,
         createdAt: new Date().toISOString(),
       };
 
@@ -8087,7 +9125,17 @@ export default function App() {
   const onEditPcbaItem = useCallback(
     async (itemId, updatedItemData) => {
       const updatedItems = pcba.items.map((i) => (i.id === itemId ? updatedItemData : i));
-      const newPcba = { ...pcba, items: updatedItems };
+      const updatedTrx = (pcba.transactions || []).map((t) => {
+        if (t.pcbaItemId === itemId) {
+          return {
+            ...t,
+            receivedBy: updatedItemData.receivedBy || t.receivedBy,
+            receivedDate: updatedItemData.receivedDate || t.receivedDate,
+          };
+        }
+        return t;
+      });
+      const newPcba = { ...pcba, items: updatedItems, transactions: updatedTrx };
       const ok = await persistPcba(newPcba);
       if (ok) {
         const curT = I18N[language] || I18N.id;
@@ -8101,11 +9149,74 @@ export default function App() {
   const onDeletePcbaItem = useCallback(
     async (itemId) => {
       const updatedItems = pcba.items.filter((i) => i.id !== itemId);
-      const newPcba = { ...pcba, items: updatedItems };
+      const updatedTrx = (pcba.transactions || []).filter((t) => t.pcbaItemId !== itemId);
+      const newPcba = { ...pcba, items: updatedItems, transactions: updatedTrx };
       const ok = await persistPcba(newPcba);
       if (ok) {
         const curT = I18N[language] || I18N.id;
         setToastMsg(curT.toastPcbaDeleted || "Item PCBA berhasil dihapus.");
+      }
+      return ok;
+    },
+    [pcba, persistPcba, language]
+  );
+
+  const onDeletePcbaTransaction = useCallback(
+    async (trxId) => {
+      const updatedTrx = (pcba.transactions || []).filter((t) => t.id !== trxId);
+      const newPcba = { ...pcba, transactions: updatedTrx };
+      const ok = await persistPcba(newPcba);
+      if (ok) {
+        const curT = I18N[language] || I18N.id;
+        setToastMsg(curT.toastTransactionDeleted || "Transaksi berhasil dihapus.");
+      }
+      return ok;
+    },
+    [pcba, persistPcba, language]
+  );
+
+  const onDeleteReplacement = useCallback(
+    async (repId) => {
+      const rep = (pcba.replacements || []).find((r) => r.id === repId);
+      if (!rep) return false;
+
+      const updatedItems = (pcba.items || []).map((item) => {
+        if (item.id === rep.newPcbaItemId && item.status === "Used for Replacement") {
+          return { ...item, status: "Good" };
+        }
+        return item;
+      });
+
+      const updatedReplacements = (pcba.replacements || []).filter((r) => r.id !== repId);
+      const newPcba = { ...pcba, items: updatedItems, replacements: updatedReplacements };
+      const ok = await persistPcba(newPcba);
+      if (ok) {
+        const curT = I18N[language] || I18N.id;
+        setToastMsg(curT.toastReplacementDeleted || "Data replacement berhasil dihapus.");
+      }
+      return ok;
+    },
+    [pcba, persistPcba, language]
+  );
+
+  const onDeleteRepair = useCallback(
+    async (repairId) => {
+      const repairItem = (pcba.repairs || []).find((r) => r.id === repairId);
+      if (!repairItem) return false;
+
+      const updatedItems = (pcba.items || []).map((item) => {
+        if (item.id === repairItem.pcbaItemId && (item.status === "Under Repair" || item.status === "Repaired")) {
+          return { ...item, status: "Bad" };
+        }
+        return item;
+      });
+
+      const updatedRepairs = (pcba.repairs || []).filter((r) => r.id !== repairId);
+      const newPcba = { ...pcba, items: updatedItems, repairs: updatedRepairs };
+      const ok = await persistPcba(newPcba);
+      if (ok) {
+        const curT = I18N[language] || I18N.id;
+        setToastMsg(curT.toastRepairDeleted || "Data repair berhasil dihapus.");
       }
       return ok;
     },
@@ -9331,6 +10442,9 @@ export default function App() {
                 onGoodsReceipt={onGoodsReceipt}
                 onEditPcbaItem={onEditPcbaItem}
                 onDeletePcbaItem={onDeletePcbaItem}
+                onDeletePcbaTransaction={onDeletePcbaTransaction}
+                onDeleteReplacement={onDeleteReplacement}
+                onDeleteRepair={onDeleteRepair}
                 onReplacement={onReplacement}
                 onRepair={onRepair}
                 onQc={onQc}
