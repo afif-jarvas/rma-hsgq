@@ -7,7 +7,8 @@ import {
   updateProfile,
 } from "firebase/auth";
 
-import { auth, saveUserProfile, isUsingFirebase } from "../firebase.js";
+import { auth, saveUserProfile, getUserProfile, getUsersList, isUsingFirebase } from "../firebase.js";
+import { useAuth } from "./AuthContext.jsx";
 
 import {
   Eye,
@@ -19,6 +20,7 @@ import {
   Lock,
   User,
   ArrowLeft,
+  ShieldCheck,
 } from "lucide-react";
 
 import hsgqLogo from "../assets/hsgq-logo.png";
@@ -37,19 +39,19 @@ const COLORS = {
 
 function getFirebaseErrorMessage(error) {
   if (!error?.code) {
-    return "Terjadi kesalahan. Silakan coba lagi.";
+    return error?.message || "Terjadi kesalahan. Silakan coba lagi.";
   }
 
   switch (error.code) {
     case "auth/invalid-email":
-      return "Format email tidak valid.";
+      return "Format email/username tidak valid.";
 
     case "auth/user-not-found":
-      return "Akun dengan email tersebut tidak ditemukan.";
+      return "Akun dengan email/username tersebut tidak ditemukan.";
 
     case "auth/wrong-password":
     case "auth/invalid-credential":
-      return "Email atau password salah.";
+      return "Email/Username atau password salah.";
 
     case "auth/email-already-in-use":
       return "Email tersebut sudah terdaftar.";
@@ -69,20 +71,14 @@ function getFirebaseErrorMessage(error) {
 }
 
 export default function Login() {
+  const { inactiveError } = useAuth();
   const [mode, setMode] = useState("login");
-
   const [name, setName] = useState("");
-
   const [email, setEmail] = useState("");
-
   const [password, setPassword] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
-
   const [loading, setLoading] = useState(false);
-
   const [message, setMessage] = useState("");
-
   const [error, setError] = useState("");
 
   function resetMessages() {
@@ -92,30 +88,55 @@ export default function Login() {
 
   async function handleLogin(event) {
     event.preventDefault();
-
     resetMessages();
 
-    if (!email.trim() || !password) {
-      setError("Email dan password wajib diisi.");
-
+    const inputVal = email.trim();
+    if (!inputVal || !password) {
+      setError("Email/Username dan password wajib diisi.");
       return;
     }
 
     if (!auth || !isUsingFirebase) {
-      setError(
-        "Firebase belum dikonfigurasi. Isi firebaseConfig terlebih dahulu.",
-      );
-
+      setError("Firebase belum dikonfigurasi. Isi firebaseConfig terlebih dahulu.");
       return;
     }
 
     try {
       setLoading(true);
 
-      await signInWithEmailAndPassword(auth, email.trim(), password);
-    } catch (err) {
-      console.error(err);
+      // Resolve username to email if input doesn't contain '@'
+      let loginEmail = inputVal;
+      if (!inputVal.includes("@")) {
+        const users = await getUsersList();
+        const matched = users.find(
+          (u) => (u.username || "").toLowerCase() === inputVal.toLowerCase()
+        );
+        if (matched && matched.email) {
+          loginEmail = matched.email;
+        } else {
+          loginEmail = `${inputVal.toLowerCase()}@hsgq.local`;
+        }
+      }
 
+      const cred = await signInWithEmailAndPassword(auth, loginEmail, password);
+
+      // Check account status in Firestore
+      const userProfile = await getUserProfile(cred.user.uid);
+      if (userProfile?.status === "inactive" || userProfile?.status === "Inactive") {
+        await auth.signOut();
+        setError("Akun Anda telah dinonaktifkan oleh Administrator. Hubungi Administrator untuk mengaktifkan kembali.");
+        return;
+      }
+
+      // Record last login time
+      if (userProfile) {
+        saveUserProfile(cred.user.uid, {
+          ...userProfile,
+          lastLoginAt: new Date().toISOString(),
+        });
+      }
+    } catch (err) {
+      console.error("Login error:", err);
       setError(getFirebaseErrorMessage(err));
     } finally {
       setLoading(false);
@@ -311,7 +332,9 @@ export default function Login() {
                 </div>
               </label>
 
-              {error && <div style={styles.error}>{error}</div>}
+              {(error || inactiveError) && (
+                <div style={styles.error}>{error || inactiveError}</div>
+              )}
 
               {message && <div style={styles.success}>{message}</div>}
 

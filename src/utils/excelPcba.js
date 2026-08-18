@@ -16,6 +16,24 @@ export const PCBA_COLUMNS = [
   { key: "notes", header: "Notes" },
 ];
 
+export const REPLACEMENT_COLUMNS = [
+  { key: "replacementNo", header: "No. Replacement" },
+  { key: "rmaTicketNo", header: "Tiket RMA" },
+  { key: "oldSerialNo", header: "PCBA Lama" },
+  { key: "chinaStatus", header: "Status Kirim China" },
+  { key: "newSerialNo", header: "PCBA Baru" },
+  { key: "replacedBy", header: "Diproses Oleh" },
+  { key: "replacedAt", header: "Tanggal Replacement" },
+  { key: "notes", header: "Catatan" },
+];
+
+export const CHINA_SHIPMENT_COLUMNS = [
+  { key: "serialNumber", header: "Serial Number (SN)" },
+  { key: "macAddress", header: "MAC Address" },
+  { key: "date", header: "Tanggal Kirim" },
+  { key: "notes", header: "Catatan" },
+];
+
 function fmtExcelDate(isoStr) {
   if (!isoStr) return "-";
   const d = new Date(isoStr);
@@ -28,15 +46,29 @@ function fmtExcelDate(isoStr) {
 
 /**
  * Export array PCBA items ke file .xlsx dan trigger download browser.
- * @param {Array} items - Array objek PCBA item
+ * @param {Array} items - Array objek PCBA item atau record pengiriman
  * @param {string} filename - Nama file tanpa ekstensi
+ * @param {Array} customColumns - Opsional array kolom custom
+ * @param {string} sheetName - Nama sheet Excel
  */
-export function exportPcbaToExcel(items, filename = "PCBA_Inventory_Export") {
+export function exportPcbaToExcel(
+  items,
+  filename = "PCBA_Inventory_Export",
+  customColumns = null,
+  sheetName = "PCBA_Data"
+) {
+  const columns = customColumns || PCBA_COLUMNS;
   const rows = (items || []).map((entry) => {
     const row = {};
-    for (const col of PCBA_COLUMNS) {
+    for (const col of columns) {
       let val = entry[col.key];
-      if (col.key === "receivedDate") {
+      if (col.key === "serialNumber" && (val === undefined || val === null)) {
+        val = entry.serialNo || "";
+      }
+      if (col.key === "macAddress" && (val === undefined || val === null)) {
+        val = entry.mac || "";
+      }
+      if (col.key === "receivedDate" || col.key === "date" || col.key === "replacedAt") {
         val = val ? fmtExcelDate(val) : (entry.createdAt ? fmtExcelDate(entry.createdAt) : "-");
       }
       if (val === null || val === undefined) {
@@ -49,16 +81,16 @@ export function exportPcbaToExcel(items, filename = "PCBA_Inventory_Export") {
   });
 
   const ws = XLSX.utils.json_to_sheet(rows, {
-    header: PCBA_COLUMNS.map((c) => c.header),
+    header: columns.map((c) => c.header),
   });
 
   ws["!views"] = [{ state: "frozen", ySplit: 1 }];
 
-  ws["!cols"] = PCBA_COLUMNS.map((c) => ({
+  ws["!cols"] = columns.map((c) => ({
     wch: Math.max(c.header.length + 4, 15),
   }));
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "PCBA_Stock");
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
   XLSX.writeFile(wb, `${filename}.xlsx`);
 }

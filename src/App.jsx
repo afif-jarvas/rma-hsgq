@@ -43,6 +43,8 @@ import {
   ClipboardList,
   Cpu,
   RotateCcw,
+  Users,
+  ShieldAlert,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -58,13 +60,15 @@ import {
 } from "recharts";
 import { storeGet, storeSet, isUsingFirebase, uploadRmaPhoto, storage } from "./firebase.js";
 import UserCenter from "./components/UserCenter.jsx";
+import UserManagementTab from "./components/UserManagementTab.jsx";
 import { useAuth } from "./auth/AuthContext.jsx";
 import { useTheme } from "./context/ThemeContext.jsx";
+import { PERMISSIONS, ROLES } from "./auth/rbac.js";
 
 import hsgqLogo from "./assets/hsgq-logo.png";
 import { exportRmaToExcel, parseRmaFromExcel } from "./utils/excelRma.js";
 import { exportWaToExcel, parseWaFromExcel } from "./utils/excelWa.js";
-import { exportPcbaToExcel } from "./utils/excelPcba.js";
+import { exportPcbaToExcel, CHINA_SHIPMENT_COLUMNS, REPLACEMENT_COLUMNS } from "./utils/excelPcba.js";
 
 /* ============================================================
    TOKENS — "Fiber patch bay" console
@@ -173,11 +177,12 @@ const I18N = {
     settingsPcbaTypes: "Tipe PCBA",
     settingsSuppliers: "Supplier",
     settingsWarehouseLocations: "Lokasi Gudang",
+    settingsPcbaReceivedBy: "PCBA Received By",
     settingsMinStockDefault: "Minimum Stok Default (unit)",
     // PCBA Inventory
     pcbaStock: "Stok",
     pcbaReplacement: "Replacement",
-    pcbaRepair: "Repair & QC",
+    pcbaSendToChina: "Kirim PCBA Bad ke China",
     pcbaTransactions: "Transaksi",
     pcbaReceiveNew: "Terima PCBA Baru",
     pcbaLowStock: "Stok Good di bawah minimum ({min} unit) untuk tipe: {types}",
@@ -196,10 +201,7 @@ const I18N = {
     pcbaReplaceNew: "PCBA Baru",
     pcbaSelectOld: "Pilih PCBA lama",
     pcbaSelectNew: "Pilih PCBA baru (Good)",
-    pcbaRepairItem: "PCBA untuk Repair",
-    pcbaRepairNotes: "Catatan Repair",
-    pcbaQcResult: "Hasil QC",
-    pcbaQcNotes: "Catatan QC",
+    pcbaSendToChinaItem: "PCBA Bad untuk Dikirim ke China",
     pcbaSelectItem: "Pilih PCBA",
     pcbaAction: "Aksi",
     pcbaOldSerial: "Serial Lama",
@@ -269,18 +271,17 @@ const I18N = {
     viewDetail: "Lihat Detail",
     pcbaEmptyStock: "Belum ada PCBA di stok. Klik 'Terima PCBA Baru' untuk mulai.",
     pcbaEmptyReplacement: "Belum ada replacement PCBA.",
-    pcbaEmptyRepair: "Belum ada repair PCBA.",
+    pcbaEmptySendToChina: "Belum ada data pengiriman PCBA Bad ke China. Klik 'Kirim PCBA Bad ke China' untuk mencatat.",
     pcbaEmptyTransactions: "Belum ada transaksi stok. Transaksi tercatat otomatis (append-only, tidak bisa diedit/dihapus).",
     pcbaNewReplacement: "Replacement Baru",
     pcbaNoReplacement: "No. Replacement",
-    pcbaNewRepair: "Repair Baru",
-    pcbaNoRepair: "No. Repair",
+    pcbaSendToChinaTitle: "KIRIM PCBA BAD KE CHINA",
     pcbaNoTransaction: "No. Transaksi",
     pcbaReceiveNewTitle: "TERIMA PCBA BARU (GOODS RECEIPT)",
     pcbaReplacementTitle: "REPLACEMENT PCBA",
     pcbaDeleteConfirmTitle: "KONFIRMASI HAPUS PCBA",
     pcbaStockHistory: "Riwayat Transaksi Stok ({n})",
-    pcbaRepairHistory: "Riwayat Repair ({n})",
+    pcbaChinaShipmentHistory: "Riwayat Kirim ke China ({n})",
     close: "Tutup",
     analysis: "Analisis",
     action: "Tindakan",
@@ -288,7 +289,7 @@ const I18N = {
     pcbaReceivedDate: "Tanggal Penerimaan",
     pcbaReceivedBy: "Penerima PCBA",
     pcbaDeleteConfirmMsg: "Data PCBA akan dihapus dan tindakan ini tidak dapat dibatalkan.",
-    pcbaDeleteReferencedMsg: "PCBA ini sudah memiliki riwayat replacement atau repair dan tidak dapat dihapus untuk menjaga integritas data audit.",
+    pcbaDeleteReferencedMsg: "PCBA ini sudah memiliki riwayat replacement atau pengiriman dan tidak dapat dihapus untuk menjaga integritas data audit.",
     pcbaTypeOverview: "Ringkasan Tipe PCBA",
     pcbaNoTypesConfigured: "Belum ada Tipe PCBA terkonfigurasi.",
     pcbaTotalStock: "Total Stok",
@@ -302,23 +303,32 @@ const I18N = {
     pcbaNewGoodStock: "PCBA Baru (stok Good)",
     pcbaOldSerialLabel: "No. Serial PCBA Lama (yang dilepas dari unit)",
     pcbaProcessReplacement: "Proses Replacement",
-    pcbaRepairTarget: "PCBA (status Bad / Under Repair)",
-    pcbaDamageAnalysis: "Analisis Kerusakan",
-    pcbaComponentsReplaced: "Komponen Diganti",
-    pcbaTestingResult: "Hasil Testing",
-    pcbaRepairResult: "Hasil Repair",
-    pcbaSaveRepair: "Simpan Repair",
+    pcbaSelectBadItem: "Pilih dari Daftar PCBA Bad",
+    pcbaNoBadItemsAvailable: "Tidak ada PCBA dengan status Bad di stok saat ini.",
+    editReplacementTitle: "EDIT REPLACEMENT PCBA",
+    editChinaShipmentTitle: "EDIT PENGIRIMAN KE CHINA",
+    colChinaStatus: "Status Kirim China",
+    statusSent: "Sent",
+    statusNotSent: "Belum Dikirim",
+    toastPcbaSentToChina: "PCBA Bad berhasil dicatat untuk dikirim ke China.",
+    toastShipmentDeleted: "Data pengiriman ke China dibatalkan dan status PCBA kembali ke Bad.",
     toastPcbaUpdated: "Data PCBA berhasil diperbarui.",
     toastPcbaDeleted: "Item PCBA berhasil dihapus.",
+    toastReplacementUpdated: "Data replacement berhasil diperbarui.",
+    toastChinaShipmentUpdated: "Data pengiriman ke China berhasil diperbarui.",
     toastTransactionDeleted: "Transaksi berhasil dihapus.",
     deleteTransactionTitle: "KONFIRMASI HAPUS TRANSAKSI",
     deleteTransactionMsg: "Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.",
     deleteReplacementTitle: "KONFIRMASI HAPUS REPLACEMENT",
     deleteReplacementMsg: "Apakah Anda yakin ingin menghapus data replacement ini? Status PCBA baru akan dikembalikan menjadi Good.",
     toastReplacementDeleted: "Data replacement berhasil dihapus.",
-    deleteRepairTitle: "KONFIRMASI HAPUS REPAIR",
-    deleteRepairMsg: "Apakah Anda yakin ingin menghapus data repair ini? Status PCBA terkait akan dikembalikan menjadi Bad.",
-    toastRepairDeleted: "Data repair berhasil dihapus.",
+    deleteChinaShipmentTitle: "KONFIRMASI BATALKAN PENGIRIMAN",
+    deleteChinaShipmentMsg: "Apakah Anda yakin ingin membatalkan/menghapus data pengiriman ini? Status PCBA terkait akan dikembalikan menjadi Bad.",
+    userManagement: "User Management",
+    userManagementSubtitle: "Kelola akun pengguna, role hak akses, dan status akun",
+    accessDeniedTitle: "403 AKSES DITOLAK",
+    accessDeniedMsg: "Anda tidak memiliki izin (Permission Denied) untuk mengakses halaman ini.",
+    forbiddenAction: "Tindakan ditolak: Anda tidak memiliki izin untuk operasi ini.",
     toastWaDeleted: "Case WhatsApp {no} berhasil dihapus.",
     toastWaSaved: "Case WhatsApp berhasil disimpan.",
     waSaveFailed: "Gagal menyimpan case. Coba lagi.",
@@ -638,18 +648,17 @@ const I18N = {
     viewDetail: "View Detail",
     pcbaEmptyStock: "No PCBA in stock. Click 'Receive New PCBA' to begin.",
     pcbaEmptyReplacement: "No PCBA replacements.",
-    pcbaEmptyRepair: "No PCBA repairs.",
+    pcbaEmptySendToChina: "No Bad PCBA shipments to China. Click 'Send Bad PCBA to China' to record.",
     pcbaEmptyTransactions: "No stock transactions. Transactions are logged automatically (append-only, cannot be edited/deleted).",
     pcbaNewReplacement: "New Replacement",
     pcbaNoReplacement: "Replacement No.",
-    pcbaNewRepair: "New Repair",
-    pcbaNoRepair: "Repair No.",
+    pcbaSendToChinaTitle: "SEND BAD PCBA TO CHINA",
     pcbaNoTransaction: "Transaction No.",
     pcbaReceiveNewTitle: "RECEIVE NEW PCBA (GOODS RECEIPT)",
     pcbaReplacementTitle: "REPLACEMENT PCBA",
     pcbaDeleteConfirmTitle: "CONFIRM DELETE PCBA",
     pcbaStockHistory: "Stock Transaction History ({n})",
-    pcbaRepairHistory: "Repair History ({n})",
+    pcbaChinaShipmentHistory: "Shipment to China History ({n})",
     close: "Close",
     analysis: "Analysis",
     action: "Action",
@@ -657,7 +666,7 @@ const I18N = {
     pcbaReceivedDate: "Received Date",
     pcbaReceivedBy: "Received By",
     pcbaDeleteConfirmMsg: "This PCBA record will be permanently deleted.",
-    pcbaDeleteReferencedMsg: "This PCBA has replacement or repair history and cannot be deleted to preserve audit integrity.",
+    pcbaDeleteReferencedMsg: "This PCBA has replacement or shipment history and cannot be deleted to preserve audit integrity.",
     pcbaDeleteFailed: "Failed to delete PCBA. Please try again.",
     pcbaDupeSerial: "This PCBA serial number already exists in stock.",
     pcbaErrReceivedDateRequired: "Received Date is required.",
@@ -668,14 +677,19 @@ const I18N = {
     pcbaNewGoodStock: "New PCBA (Good stock)",
     pcbaOldSerialLabel: "Old PCBA Serial No. (removed from unit)",
     pcbaProcessReplacement: "Process Replacement",
-    pcbaRepairTarget: "PCBA (Bad / Under Repair status)",
-    pcbaDamageAnalysis: "Damage Analysis",
-    pcbaComponentsReplaced: "Components Replaced",
-    pcbaTestingResult: "Testing Result",
-    pcbaRepairResult: "Repair Result",
-    pcbaSaveRepair: "Save Repair",
+    pcbaSelectBadItem: "Select from Bad PCBA List",
+    pcbaNoBadItemsAvailable: "No PCBA with Bad status available in stock.",
+    editReplacementTitle: "EDIT PCBA REPLACEMENT",
+    editChinaShipmentTitle: "EDIT SHIPMENT TO CHINA",
+    colChinaStatus: "China Status",
+    statusSent: "Sent",
+    statusNotSent: "Not Sent",
+    toastPcbaSentToChina: "Bad PCBA successfully recorded as sent to China.",
+    toastShipmentDeleted: "Shipment to China cancelled and PCBA status restored to Bad.",
     toastPcbaUpdated: "PCBA data updated successfully.",
     toastPcbaDeleted: "PCBA item deleted successfully.",
+    toastReplacementUpdated: "Replacement record updated successfully.",
+    toastChinaShipmentUpdated: "China shipment data updated successfully.",
     pcbaTypeOverview: "PCBA Type Overview",
     pcbaNoTypesConfigured: "No PCBA types configured.",
     pcbaTotalStock: "Total Stock",
@@ -685,9 +699,13 @@ const I18N = {
     deleteReplacementTitle: "CONFIRM DELETE REPLACEMENT",
     deleteReplacementMsg: "Are you sure you want to delete this replacement record? The new PCBA status will be restored to Good.",
     toastReplacementDeleted: "Replacement record deleted successfully.",
-    deleteRepairTitle: "CONFIRM DELETE REPAIR",
-    deleteRepairMsg: "Are you sure you want to delete this repair record? The related PCBA status will be restored to Bad.",
-    toastRepairDeleted: "Repair record deleted successfully.",
+    deleteChinaShipmentTitle: "CONFIRM CANCEL SHIPMENT",
+    deleteChinaShipmentMsg: "Are you sure you want to cancel this shipment? The PCBA status will revert to Bad.",
+    userManagement: "User Management",
+    userManagementSubtitle: "Manage user accounts, RBAC roles, and account statuses",
+    accessDeniedTitle: "403 ACCESS DENIED",
+    accessDeniedMsg: "You do not have permission to access this page.",
+    forbiddenAction: "Forbidden: You do not have permission for this operation.",
     toastWaDeleted: "WhatsApp case {no} deleted successfully.",
     toastWaSaved: "WhatsApp case saved successfully.",
     waSaveFailed: "Failed to save case. Try again.",
@@ -767,11 +785,12 @@ const I18N = {
     settingsPcbaTypes: "PCBA Type",
     settingsSuppliers: "Supplier",
     settingsWarehouseLocations: "Warehouse Location",
+    settingsPcbaReceivedBy: "PCBA Received By",
     settingsMinStockDefault: "Default Minimum Stock (unit)",
     // PCBA Inventory
     pcbaStock: "Stock",
     pcbaReplacement: "Replacement",
-    pcbaRepair: "Repair & QC",
+    pcbaSendToChina: "Send Bad PCBA to China",
     pcbaTransactions: "Transactions",
     pcbaReceiveNew: "Receive New PCBA",
     pcbaLowStock: "Good stock below minimum ({min} units) for types: {types}",
@@ -790,10 +809,7 @@ const I18N = {
     pcbaReplaceNew: "New PCBA",
     pcbaSelectOld: "Select old PCBA",
     pcbaSelectNew: "Select new PCBA (Good)",
-    pcbaRepairItem: "PCBA for Repair",
-    pcbaRepairNotes: "Repair Notes",
-    pcbaQcResult: "QC Result",
-    pcbaQcNotes: "QC Notes",
+    pcbaSendToChinaItem: "Bad PCBA for Shipment to China",
     pcbaSelectItem: "Select PCBA",
     pcbaAction: "Action",
     pcbaOldSerial: "Old Serial",
@@ -1062,18 +1078,17 @@ const I18N = {
     viewDetail: "查看详情",
     pcbaEmptyStock: "库存中暂无 PCBA。点击「接收新 PCBA」开始。",
     pcbaEmptyReplacement: "暂无 PCBA 替换记录。",
-    pcbaEmptyRepair: "暂无 PCBA 维修记录。",
+    pcbaEmptySendToChina: "暂无寄送至中国的不良 PCBA 记录。点击「寄送不良 PCBA 至中国」开始记录。",
     pcbaEmptyTransactions: "暂无库存交易记录。交易将自动记录（仅追加，不可编辑/删除）。",
     pcbaNewReplacement: "新替换",
     pcbaNoReplacement: "替换编号",
-    pcbaNewRepair: "新维修",
-    pcbaNoRepair: "维修编号",
+    pcbaSendToChinaTitle: "寄送不良 PCBA 至中国",
     pcbaNoTransaction: "交易编号",
     pcbaReceiveNewTitle: "接收新 PCBA (入库)",
     pcbaReplacementTitle: "PCBA 替换",
     pcbaDeleteConfirmTitle: "确认删除 PCBA",
     pcbaStockHistory: "库存交易历史 ({n})",
-    pcbaRepairHistory: "维修历史 ({n})",
+    pcbaChinaShipmentHistory: "寄送中国历史 ({n})",
     close: "关闭",
     analysis: "分析",
     action: "处理措施",
@@ -1081,7 +1096,7 @@ const I18N = {
     pcbaReceivedDate: "接收日期",
     pcbaReceivedBy: "接收人",
     pcbaDeleteConfirmMsg: "此 PCBA 记录将被永久删除。",
-    pcbaDeleteReferencedMsg: "此 PCBA 已有交易/维修记录，无法永久删除。",
+    pcbaDeleteReferencedMsg: "此 PCBA 已有交易/寄送记录，无法永久删除。",
     pcbaDeleteFailed: "删除 PCBA 失败，请重试。",
     pcbaDupeSerial: "此 PCBA 序列号在库存中已存在。",
     pcbaErrReceivedDateRequired: "接收日期为必填项。",
@@ -1092,14 +1107,19 @@ const I18N = {
     pcbaNewGoodStock: "新 PCBA (良品库存)",
     pcbaOldSerialLabel: "旧 PCBA 序列号 (拆卸于设备)",
     pcbaProcessReplacement: "处理替换",
-    pcbaRepairTarget: "PCBA (不良品 / 维修中状态)",
-    pcbaDamageAnalysis: "故障分析",
-    pcbaComponentsReplaced: "更换组件",
-    pcbaTestingResult: "测试结果",
-    pcbaRepairResult: "维修结果",
-    pcbaSaveRepair: "保存维修",
+    pcbaSelectBadItem: "从不良品列表中选择",
+    pcbaNoBadItemsAvailable: "库存中暂无不良品状态的 PCBA。",
+    editReplacementTitle: "编辑 PCBA 替换",
+    editChinaShipmentTitle: "编辑寄送中国记录",
+    colChinaStatus: "寄送中国状态",
+    statusSent: "已寄送",
+    statusNotSent: "未寄送",
+    toastPcbaSentToChina: "不良 PCBA 已成功记录寄送至中国。",
+    toastShipmentDeleted: "寄送中国记录已取消，PCBA 状态已恢复为不良品。",
     toastPcbaUpdated: "PCBA 数据更新成功。",
     toastPcbaDeleted: "PCBA 项目删除成功。",
+    toastReplacementUpdated: "替换记录更新成功。",
+    toastChinaShipmentUpdated: "寄送中国记录更新成功。",
     pcbaTypeOverview: "PCBA 类型概览",
     pcbaNoTypesConfigured: "尚未配置 PCBA 类型。",
     pcbaTotalStock: "库存总数",
@@ -1109,9 +1129,13 @@ const I18N = {
     deleteReplacementTitle: "确认删除替换",
     deleteReplacementMsg: "您确定要删除此替换记录吗？新 PCBA 状态将恢复为良品。",
     toastReplacementDeleted: "替换记录成功删除。",
-    deleteRepairTitle: "确认删除维修",
-    deleteRepairMsg: "您确定要删除此维修记录吗？相关 PCBA 状态将恢复为不良品。",
-    toastRepairDeleted: "维修记录成功删除。",
+    deleteChinaShipmentTitle: "确认取消寄送",
+    deleteChinaShipmentMsg: "您确定要取消此寄送记录吗？相关 PCBA 状态将恢复为不良品。",
+    userManagement: "用户管理",
+    userManagementSubtitle: "管理用户账户、权限角色及账户状态",
+    accessDeniedTitle: "403 访问被拒绝",
+    accessDeniedMsg: "您没有权限访问此页面。",
+    forbiddenAction: "禁止操作：您没有执行此操作的权限。",
     toastWaDeleted: "WhatsApp 案例 {no} 删除成功。",
     toastWaSaved: "案例保存成功。",
     waSaveFailed: "案例保存失败。请重试。",
@@ -1187,11 +1211,12 @@ const I18N = {
     settingsPcbaTypes: "PCBA 类型",
     settingsSuppliers: "供应商",
     settingsWarehouseLocations: "仓库位置",
+    settingsPcbaReceivedBy: "PCBA 接收人",
     settingsMinStockDefault: "默认最低库存（件）",
     // PCBA Inventory
     pcbaStock: "库存",
     pcbaReplacement: "替换",
-    pcbaRepair: "维修与 QC",
+    pcbaSendToChina: "寄送不良 PCBA 至中国",
     pcbaTransactions: "交易",
     pcbaReceiveNew: "接收新 PCBA",
     pcbaLowStock: "良品库存低于最小值 ({min} 件) 的类型: {types}",
@@ -1210,10 +1235,7 @@ const I18N = {
     pcbaReplaceNew: "新 PCBA",
     pcbaSelectOld: "选择旧 PCBA",
     pcbaSelectNew: "选择新 PCBA (良品)",
-    pcbaRepairItem: "维修 PCBA",
-    pcbaRepairNotes: "维修备注",
-    pcbaQcResult: "QC 结果",
-    pcbaQcNotes: "QC 备注",
+    pcbaSendToChinaItem: "寄送至中国的不良 PCBA",
     pcbaSelectItem: "选择 PCBA",
     pcbaAction: "操作",
     pcbaOldSerial: "旧序列号",
@@ -1474,6 +1496,9 @@ const OPTION_DICT = {
   "used for replacement": { id: "Used for Replacement", en: "Used for Replacement", zh: "用于替换" },
   "scrap": { id: "Scrap", en: "Scrap", zh: "报废" },
   "scrapped": { id: "Scrap", en: "Scrapped", zh: "已报废" },
+  "sent": { id: "Sent", en: "Sent", zh: "已寄送" },
+  "sent to china": { id: "Sent to China", en: "Sent to China", zh: "已寄送中国" },
+  "kirim ke china": { id: "Sent to China", en: "Sent to China", zh: "已寄送中国" },
   "passed": { id: "Passed", en: "Passed", zh: "通过" },
   "pass": { id: "Pass", en: "Pass", zh: "通过" },
   "failed": { id: "Failed", en: "Failed", zh: "未通过" },
@@ -1618,6 +1643,7 @@ const DEFAULT_MASTER = {
   pcbaTypes: ["G02ID", "G04ID", "G08ID", "E04ID", "XE08ID"],
   suppliers: ["HSGQ HQ (China)", "Supplier Lokal"],
   warehouseLocations: ["Gudang Jakarta", "Gudang Surabaya"],
+  pcbaReceivedBy: ["Yusuf", "Danang", "Aris", "Yusuf(Afif)", "Aris(Abdiel)"],
   minStockDefault: 5,
 };
 
@@ -1626,6 +1652,7 @@ const PCBA_DEFAULT = {
   transactions: [],
   replacements: [],
   repairs: [],
+  chinaShipments: [],
 };
 const PCBA_STATUSES = [
   "Good",
@@ -1634,12 +1661,15 @@ const PCBA_STATUSES = [
   "Repaired",
   "Used for Replacement",
   "Scrapped",
+  "Sent to China",
+  "Sent",
 ];
 function pcbaLed(status) {
   if (status === "Good") return T.green;
   if (status === "Bad" || status === "Scrapped") return T.red;
   if (status === "Under Repair" || status === "Repaired") return T.amber;
   if (status === "Used for Replacement") return T.grey;
+  if (status === "Sent to China" || status === "Sent") return T.cyan;
   return T.cyan;
 }
 // storeGet & storeSet sekarang diimpor dari ./firebase.js (Firestore / localStorage fallback)
@@ -3904,6 +3934,11 @@ function DataTable({ columns, rows, onRowClick, emptyLabel }) {
                   fontFamily: sans,
                   borderBottom: `1px solid ${T.line}`,
                   whiteSpace: "nowrap",
+                  width: c.width,
+                  minWidth: c.minWidth || c.width,
+                  maxWidth: c.maxWidth || c.width,
+                  boxSizing: "border-box",
+                  ...(c.headerStyle || {}),
                 }}
               >
                 {c.label}
@@ -3945,6 +3980,11 @@ function DataTable({ columns, rows, onRowClick, emptyLabel }) {
                     color: T.ink,
                     fontFamily: c.mono ? mono : sans,
                     whiteSpace: "nowrap",
+                    width: c.width,
+                    minWidth: c.minWidth || c.width,
+                    maxWidth: c.maxWidth || c.width,
+                    boxSizing: "border-box",
+                    ...(c.cellStyle || {}),
                   }}
                 >
                   {c.render ? c.render(row) : row[c.key]}
@@ -5740,7 +5780,7 @@ function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
 /* ============================================================
    SETTINGS / MASTER DATA
    ============================================================ */
-function TagList({ label, items, onChange, t }) {
+function TagList({ label, items = [], onChange, t, isViewer = false }) {
   const [val, setVal] = useState("");
   const currentLang = localStorage.getItem("hsgq_language") || "id";
   const curT = t || I18N[currentLang] || I18N.id;
@@ -5774,44 +5814,55 @@ function TagList({ label, items, onChange, t }) {
             }}
           >
             {getLocalizedOption(it, curT, currentLang)}
-            <X
-              size={12}
-              style={{ cursor: "pointer", color: T.ink3 }}
-              onClick={() => onChange(items.filter((x) => x !== it))}
-            />
+            {!isViewer && (
+              <X
+                size={12}
+                style={{ cursor: "pointer", color: T.ink3 }}
+                onClick={() => onChange(items.filter((x) => x !== it))}
+              />
+            )}
           </span>
         ))}
       </div>
-      <div style={{ display: "flex", gap: 6 }}>
-        <TextInput
-          value={val}
-          onChange={(e) => setVal(e.target.value)}
-          placeholder="Tambah item..."
-          style={{ flex: 1 }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && val.trim()) {
-              onChange([...items, val.trim()]);
-              setVal("");
-            }
-          }}
-        />
-        <Btn
-          variant="ghost"
-          onClick={() => {
-            if (val.trim()) {
-              onChange([...items, val.trim()]);
-              setVal("");
-            }
-          }}
-        >
-          <Plus size={14} />
-        </Btn>
-      </div>
+      {!isViewer && (
+        <div style={{ display: "flex", gap: 6 }}>
+          <TextInput
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+            placeholder="Tambah item..."
+            style={{ flex: 1 }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && val.trim()) {
+                onChange([...items, val.trim()]);
+                setVal("");
+              }
+            }}
+          />
+          <Btn
+            variant="ghost"
+            onClick={() => {
+              if (val.trim()) {
+                onChange([...items, val.trim()]);
+                setVal("");
+              }
+            }}
+          >
+            <Plus size={14} />
+          </Btn>
+        </div>
+      )}
     </div>
   );
 }
-function SettingsTab({ master, setMaster, t }) {
-  const update = (k) => (arr) => setMaster((m) => ({ ...m, [k]: arr }));
+function SettingsTab({ master, setMaster, t, isViewer = false }) {
+  const update = (k) => (arr) => {
+    if (isViewer) return;
+    setMaster((m) => {
+      const next = { ...m, [k]: arr };
+      storeSet(KEYS.master, next);
+      return next;
+    });
+  };
   return (
     <div
       className="form-grid-2"
@@ -5819,70 +5870,105 @@ function SettingsTab({ master, setMaster, t }) {
     >
       <TagList
         label={t.settingsEngineer}
-        items={master.engineers}
+        items={master.engineers || []}
         onChange={update("engineers")}
+        t={t}
+        isViewer={isViewer}
       />
       <TagList
         label={t.settingsStatusRma}
-        items={master.statusRMA}
+        items={master.statusRMA || []}
         onChange={update("statusRMA")}
+        t={t}
+        isViewer={isViewer}
       />
       <TagList
         label={t.settingsStatusWa}
-        items={master.statusWA}
+        items={master.statusWA || []}
         onChange={update("statusWA")}
+        t={t}
+        isViewer={isViewer}
       />
       <TagList
         label={t.settingsFinalResults}
-        items={master.finalResults}
+        items={master.finalResults || []}
         onChange={update("finalResults")}
+        t={t}
+        isViewer={isViewer}
       />
       <TagList
         label={t.settingsWaitingReasons}
-        items={master.waitingReasons}
+        items={master.waitingReasons || []}
         onChange={update("waitingReasons")}
+        t={t}
+        isViewer={isViewer}
       />
       <TagList
         label={t.settingsWarrantyStatuses}
-        items={master.warrantyStatuses}
+        items={master.warrantyStatuses || []}
         onChange={update("warrantyStatuses")}
+        t={t}
+        isViewer={isViewer}
       />
       <TagList
         label={t.settingsQcResults}
-        items={master.qcResults}
+        items={master.qcResults || []}
         onChange={update("qcResults")}
+        t={t}
+        isViewer={isViewer}
       />
       <TagList
         label={t.settingsShippingMethod}
-        items={master.pengiriman}
+        items={master.pengiriman || []}
         onChange={update("pengiriman")}
+        t={t}
+        isViewer={isViewer}
       />
       <TagList
         label={t.settingsPcbaTypes}
-        items={master.pcbaTypes}
+        items={master.pcbaTypes || []}
         onChange={update("pcbaTypes")}
+        t={t}
+        isViewer={isViewer}
       />
       <TagList
         label={t.settingsSuppliers}
-        items={master.suppliers}
+        items={master.suppliers || []}
         onChange={update("suppliers")}
+        t={t}
+        isViewer={isViewer}
       />
       <TagList
         label={t.settingsWarehouseLocations}
-        items={master.warehouseLocations}
+        items={master.warehouseLocations || []}
         onChange={update("warehouseLocations")}
+        t={t}
+        isViewer={isViewer}
+      />
+      <TagList
+        label={t.settingsPcbaReceivedBy || "PCBA Received By"}
+        items={master.pcbaReceivedBy || []}
+        onChange={update("pcbaReceivedBy")}
+        t={t}
+        isViewer={isViewer}
       />
       <Field label={t.settingsMinStockDefault}>
         <TextInput
           type="number"
           min="0"
+          disabled={isViewer}
           value={master.minStockDefault}
-          onChange={(e) =>
-            setMaster((m) => ({
-              ...m,
-              minStockDefault: Number(e.target.value) || 0,
-            }))
-          }
+          onChange={(e) => {
+            if (isViewer) return;
+            setMaster((m) => {
+              const next = {
+                ...m,
+                minStockDefault: Number(e.target.value) || 0,
+              };
+              storeSet(KEYS.master, next);
+              return next;
+            });
+          }}
         />
       </Field>
     </div>
@@ -5915,6 +6001,11 @@ function PcbaBadge({ status, t }) {
 }
 
 function GoodsReceiptForm({ master, pcbaItems = [], onSave, onClose, t }) {
+  const pcbaRecList =
+    master.pcbaReceivedBy && master.pcbaReceivedBy.length > 0
+      ? master.pcbaReceivedBy
+      : master.engineers || [];
+
   const [f, setF] = useState({
     serialNo: "",
     pcbaType: master.pcbaTypes[0] || "",
@@ -5922,7 +6013,7 @@ function GoodsReceiptForm({ master, pcbaItems = [], onSave, onClose, t }) {
     supplier: master.suppliers[0] || "",
     warehouseLocation: master.warehouseLocations[0] || "",
     receivedDate: todayISO(),
-    receivedBy: master.engineers?.[0] || "",
+    receivedBy: pcbaRecList[0] || "",
     notes: "",
   });
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
@@ -5985,7 +6076,7 @@ function GoodsReceiptForm({ master, pcbaItems = [], onSave, onClose, t }) {
         </Field>
         <Field label={t.pcbaReceivedBy || "Penerima PCBA"}>
           <Select
-            options={master.engineers}
+            options={pcbaRecList}
             value={f.receivedBy}
             onChange={set("receivedBy")}
           />
@@ -6042,7 +6133,7 @@ function PcbaDetailModal({ item, pcba, rma, onClose, t }) {
   if (!item) return null;
 
   const itemTransactions = (pcba.transactions || []).filter((t) => t.pcbaItemId === item.id);
-  const itemRepairs = (pcba.repairs || []).filter((r) => r.pcbaItemId === item.id);
+  const itemChinaShipments = (pcba.chinaShipments || []).filter((s) => s.pcbaItemId === item.id);
 
   return (
     <Modal title={`DETAIL PCBA — ${item.serialNo || "-"}`} onClose={onClose} width={640}>
@@ -6168,24 +6259,28 @@ function PcbaDetailModal({ item, pcba, rma, onClose, t }) {
           </div>
         )}
 
-        {/* Repair History */}
-        {itemRepairs.length > 0 && (
+        {/* China Shipments History */}
+        {itemChinaShipments.length > 0 && (
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 6 }}>
-              {(t.pcbaRepairHistory || "Riwayat Repair ({n})").replace("{n}", itemRepairs.length)}
+              {(t.pcbaChinaShipmentHistory || "Riwayat Kirim ke China ({n})").replace("{n}", itemChinaShipments.length)}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {itemRepairs.map((rpr) => (
+              {itemChinaShipments.map((shp) => (
                 <div
-                  key={rpr.id}
+                  key={shp.id}
                   style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 6, padding: "8px 12px", fontSize: 12 }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontFamily: mono, fontWeight: 600, color: T.cyan }}>{rpr.repairNo}</span>
-                    <span>{t.colEngineer || "Engineer"}: {rpr.engineer || "-"} | Result: {rpr.repairResult} | QC: {rpr.qcStatus}</span>
+                    <span style={{ fontFamily: mono, fontWeight: 600, color: T.cyan }}>{shp.shipmentNo || shp.id}</span>
+                    <span style={{ color: T.ink3 }}>{fmtDate(shp.date || shp.createdAt)}</span>
                   </div>
-                  {rpr.analysis && <div style={{ color: T.ink2 }}>{t.analysis || "Analisis"}: {rpr.analysis}</div>}
-                  {rpr.actionTaken && <div style={{ color: T.ink2 }}>{t.action || "Tindakan"}: {rpr.actionTaken}</div>}
+                  {shp.macAddress && shp.macAddress !== "-" && (
+                    <div style={{ color: T.ink2, marginBottom: 2 }}>
+                      MAC: <span style={{ fontFamily: mono }}>{shp.macAddress}</span>
+                    </div>
+                  )}
+                  {shp.notes && <div style={{ color: T.ink2 }}>{t.pcbaNotes || "Catatan"}: {shp.notes}</div>}
                 </div>
               ))}
             </div>
@@ -6203,6 +6298,11 @@ function PcbaDetailModal({ item, pcba, rma, onClose, t }) {
 }
 
 function EditPcbaModal({ item, pcbaItems = [], master, onSave, onClose, t }) {
+  const pcbaRecList =
+    master.pcbaReceivedBy && master.pcbaReceivedBy.length > 0
+      ? master.pcbaReceivedBy
+      : master.engineers || [];
+
   const [f, setF] = useState({
     serialNo: item.serialNo || "",
     pcbaType: item.pcbaType || master.pcbaTypes[0] || "",
@@ -6211,7 +6311,7 @@ function EditPcbaModal({ item, pcbaItems = [], master, onSave, onClose, t }) {
     warehouseLocation: item.warehouseLocation || master.warehouseLocations[0] || "",
     status: item.status || "Good",
     receivedDate: item.receivedDate || parseToISODate(item.createdAt) || todayISO(),
-    receivedBy: item.receivedBy || master.engineers?.[0] || "",
+    receivedBy: item.receivedBy || pcbaRecList[0] || "",
     notes: item.notes || "",
   });
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
@@ -6274,7 +6374,7 @@ function EditPcbaModal({ item, pcbaItems = [], master, onSave, onClose, t }) {
           </Field>
           <Field label={t.pcbaReceivedBy || "Penerima PCBA"}>
             <Select
-              options={master.engineers}
+              options={pcbaRecList}
               value={f.receivedBy}
               onChange={set("receivedBy")}
             />
@@ -6545,6 +6645,9 @@ function ReplacementDetailModal({ replacement, pcba, rma, onClose, t }) {
   const rmaTicket = (rma || []).find((x) => x.id === replacement.rmaId);
   const oldItem = (pcba.items || []).find((i) => i.id === replacement.oldPcbaItemId);
   const newItem = (pcba.items || []).find((i) => i.id === replacement.newPcbaItemId);
+  const isSentToChina = (pcba.chinaShipments || []).some(
+    (s) => s.pcbaItemId === replacement.oldPcbaItemId || (oldItem?.serialNo && (s.serialNumber === oldItem.serialNo || s.serialNo === oldItem.serialNo))
+  ) || oldItem?.status === "Sent" || oldItem?.status === "Sent to China";
 
   return (
     <Modal title={`DETAIL REPLACEMENT — ${replacement.replacementNo || "-"}`} onClose={onClose} width={560}>
@@ -6563,6 +6666,22 @@ function ReplacementDetailModal({ replacement, pcba, rma, onClose, t }) {
             <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{oldItem?.serialNo || "-"}</div>
           </div>
           <div>
+            <div style={{ color: T.ink3 }}>{t.colChinaStatus || "Status Kirim China"}:</div>
+            <div>
+              {isSentToChina ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 999, background: `${T.cyan}22`, color: T.cyan, fontSize: 11.5, fontWeight: 700, border: `1px solid ${T.cyan}44` }}>
+                  <Truck size={12} />
+                  {t.statusSent || "Sent"}
+                </span>
+              ) : (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 999, background: `${T.red}18`, color: T.red, fontSize: 11.5, fontWeight: 600, border: `1px solid ${T.red}33` }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.red }} />
+                  {oldItem?.status ? getLocalizedStatus(oldItem.status, t) : (t.statusNotSent || "Belum Dikirim")}
+                </span>
+              )}
+            </div>
+          </div>
+          <div>
             <div style={{ color: T.ink3 }}>{t.pcbaReplaceNew || "PCBA Baru (Dipasang)"}:</div>
             <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{newItem?.serialNo || "-"}</div>
           </div>
@@ -6576,9 +6695,144 @@ function ReplacementDetailModal({ replacement, pcba, rma, onClose, t }) {
           </div>
         </div>
 
+        {replacement.notes && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 4 }}>{t.pcbaNotes || "Catatan"}</div>
+            <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: T.ink }}>{replacement.notes}</div>
+          </div>
+        )}
+
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
           <Btn variant="solid" onClick={onClose}>
             {t.close || "Tutup"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function EditReplacementModal({ replacement, pcba, rma, master, onSave, onClose, t }) {
+  if (!replacement) return null;
+  const oldItem = (pcba.items || []).find((i) => i.id === replacement.oldPcbaItemId);
+
+  const selectableNewItems = useMemo(() => {
+    return (pcba.items || []).filter((i) => i.status === "Good" || i.id === replacement.newPcbaItemId);
+  }, [pcba.items, replacement.newPcbaItemId]);
+
+  const [rmaId, setRmaId] = useState(replacement.rmaId || "");
+  const [newPcbaItemId, setNewPcbaItemId] = useState(replacement.newPcbaItemId || "");
+  const [oldSerialNo, setOldSerialNo] = useState(oldItem?.serialNo || "");
+  const [replacedBy, setReplacedBy] = useState(replacement.replacedBy || master.engineers?.[0] || "");
+  const [replacedAt, setReplacedAt] = useState(
+    replacement.replacedAt ? replacement.replacedAt.slice(0, 10) : todayISO()
+  );
+  const [notes, setNotes] = useState(replacement.notes || "");
+  const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const rmaOpenList = useMemo(() => {
+    return (rma || []).filter((r) => {
+      const st = (r.status || "").toLowerCase();
+      return st !== "dibatalkan" || r.id === replacement.rmaId;
+    });
+  }, [rma, replacement.rmaId]);
+
+  return (
+    <Modal title={t.editReplacementTitle || "EDIT REPLACEMENT PCBA"} onClose={onClose} width={580}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {err && <InlineHint tone="warn">{err}</InlineHint>}
+
+        <Field label={t.pcbaRelatedRma || "RMA Terkait"}>
+          <Select
+            options={rmaOpenList.map((r) => r.ticketNo)}
+            value={rmaOpenList.find((r) => r.id === rmaId)?.ticketNo || ""}
+            onChange={(e) => {
+              const found = rmaOpenList.find((r) => r.ticketNo === e.target.value);
+              setRmaId(found ? found.id : "");
+            }}
+          />
+        </Field>
+
+        <Field label={t.pcbaNewGoodStock || "PCBA Baru (Stok Dipasang)"}>
+          <Select
+            options={selectableNewItems.map((i) => `${i.serialNo} (${i.pcbaType})`)}
+            value={(() => {
+              const found = selectableNewItems.find((i) => i.id === newPcbaItemId);
+              return found ? `${found.serialNo} (${found.pcbaType})` : "";
+            })()}
+            onChange={(e) => {
+              const found = selectableNewItems.find(
+                (i) => `${i.serialNo} (${i.pcbaType})` === e.target.value
+              );
+              setNewPcbaItemId(found ? found.id : "");
+            }}
+          />
+        </Field>
+
+        <Field label={t.pcbaOldSerialLabel || "No. Serial PCBA Lama (yang dilepas dari unit)"}>
+          <TextInput
+            value={oldSerialNo}
+            onChange={(e) => setOldSerialNo(e.target.value)}
+            style={{ fontFamily: mono }}
+          />
+        </Field>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Field label={t.colEngineer || "Engineer"}>
+            <Select
+              options={master.engineers || []}
+              value={replacedBy}
+              onChange={(e) => setReplacedBy(e.target.value)}
+            />
+          </Field>
+
+          <Field label={t.colDate || "Tanggal Replacement"}>
+            <TextInput
+              type="date"
+              value={replacedAt}
+              onChange={(e) => setReplacedAt(e.target.value)}
+            />
+          </Field>
+        </div>
+
+        <Field label={t.pcbaNotes || "Catatan"}>
+          <TextArea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
+        </Field>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 4 }}>
+          <Btn variant="ghost" onClick={onClose} disabled={saving}>
+            {t.cancel || "Batal"}
+          </Btn>
+          <Btn
+            variant="solid"
+            disabled={saving}
+            onClick={async () => {
+              if (!rmaId) return setErr("Pilih RMA terkait dulu.");
+              if (!newPcbaItemId) return setErr("Pilih PCBA baru dulu.");
+              if (!oldSerialNo.trim()) return setErr("No. Serial PCBA lama wajib diisi.");
+              if (!replacedBy) return setErr("Pilih engineer yang melakukan replacement.");
+              if (!replacedAt) return setErr("Tanggal replacement wajib diisi.");
+
+              setSaving(true);
+              const ok = await onSave(replacement.id, {
+                rmaId,
+                newPcbaItemId,
+                oldSerialNo: oldSerialNo.trim(),
+                replacedBy,
+                replacedAt: replacedAt.length === 10 ? `${replacedAt}T00:00:00.000Z` : replacedAt,
+                notes: notes.trim(),
+              });
+              setSaving(false);
+              if (ok) {
+                onClose();
+              } else {
+                setErr("Gagal menyimpan perubahan replacement.");
+              }
+            }}
+          >
+            {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
+            {t.saveAction || "Simpan Perubahan"}
           </Btn>
         </div>
       </div>
@@ -6651,68 +6905,158 @@ function DeleteReplacementModal({ replacement, pcba, rma, onDelete, onClose, t }
   );
 }
 
-function RepairDetailModal({ repair, pcba, onClose, t }) {
-  if (!repair) return null;
+function EditChinaShipmentModal({ shipment, pcba, onSave, onClose, t }) {
+  if (!shipment) return null;
+  const item = (pcba.items || []).find((i) => i.id === shipment.pcbaItemId);
 
-  const item = (pcba.items || []).find((i) => i.id === repair.pcbaItemId);
+  const [serialNumber, setSerialNumber] = useState(shipment.serialNumber || shipment.serialNo || item?.serialNo || "");
+  const [macAddress, setMacAddress] = useState(shipment.macAddress || shipment.mac || item?.mac || "");
+  const [date, setDate] = useState(
+    shipment.date ? shipment.date.slice(0, 10) : (shipment.createdAt ? shipment.createdAt.slice(0, 10) : todayISO())
+  );
+  const [notes, setNotes] = useState(shipment.notes || "");
+  const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
 
   return (
-    <Modal title={`DETAIL REPAIR & QC — ${repair.repairNo || "-"}`} onClose={onClose} width={580}>
+    <Modal title={t.editChinaShipmentTitle || "EDIT PENGIRIMAN KE CHINA"} onClose={onClose} width={580}>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 12.5 }}>
+        {err && <InlineHint tone="warn">{err}</InlineHint>}
+
+        <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ color: T.ink3 }}>{t.pcbaNoRepair || "No. Repair"}:</div>
-            <div style={{ fontWeight: 700, fontFamily: mono, color: T.cyan }}>{repair.repairNo || repair.id}</div>
+            <div style={{ color: T.ink3, fontSize: 11 }}>No. Pengiriman:</div>
+            <div style={{ fontWeight: 700, fontFamily: mono, color: T.cyan, fontSize: 13 }}>{shipment.shipmentNo || shipment.id}</div>
           </div>
           <div>
-            <div style={{ color: T.ink3 }}>{t.pcbaSerialNo || "Serial PCBA"}:</div>
-            <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{item?.serialNo || "-"}</div>
+            <div style={{ color: T.ink3, fontSize: 11 }}>Tipe PCBA:</div>
+            <div style={{ fontWeight: 600, color: T.ink, fontSize: 13 }}>{item?.pcbaType || "-"}</div>
           </div>
           <div>
-            <div style={{ color: T.ink3 }}>{t.colEngineer || "Engineer"}:</div>
-            <div style={{ fontWeight: 600, color: T.ink }}>{repair.engineer || "-"}</div>
-          </div>
-          <div>
-            <div style={{ color: T.ink3 }}>{t.pcbaRepairResult || "Hasil Repair"}:</div>
-            <div style={{ fontWeight: 600, color: T.ink }}>{repair.repairResult || "-"}</div>
-          </div>
-          <div>
-            <div style={{ color: T.ink3 }}>QC Status:</div>
+            <div style={{ color: T.ink3, fontSize: 11 }}>Status Item:</div>
             <div>
-              {repair.qcStatus ? (
-                <PcbaBadge
-                  status={repair.qcStatus === "Passed" ? "Good" : repair.qcStatus === "Failed" ? "Bad" : "Under Repair"}
-                  t={t}
-                />
-              ) : (
-                "-"
-              )}
+              <PcbaBadge status={item?.status || "Sent"} t={t} />
             </div>
-          </div>
-          <div>
-            <div style={{ color: T.ink3 }}>{t.colDate || "Tanggal Repair"}:</div>
-            <div style={{ fontWeight: 600, color: T.ink }}>{fmtDate(repair.createdAt)}</div>
           </div>
         </div>
 
-        {repair.analysis && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Field label="No. Serial (SN)">
+            <TextInput
+              value={serialNumber}
+              onChange={(e) => setSerialNumber(e.target.value)}
+              style={{ fontFamily: mono }}
+            />
+          </Field>
+
+          <Field label="MAC Address">
+            <TextInput
+              value={macAddress}
+              onChange={(e) => setMacAddress(e.target.value)}
+              placeholder="AA:BB:CC:DD:EE:FF"
+              style={{ fontFamily: mono }}
+            />
+          </Field>
+        </div>
+
+        <Field label={t.colDate || "Tanggal Kirim"}>
+          <TextInput
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+        </Field>
+
+        <Field label={t.pcbaNotes || "Catatan Kerusakan / Keterangan"}>
+          <TextArea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            placeholder="Catatan kendala / keterangan pengiriman..."
+          />
+        </Field>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 4 }}>
+          <Btn variant="ghost" onClick={onClose} disabled={saving}>
+            {t.cancel || "Batal"}
+          </Btn>
+          <Btn
+            variant="solid"
+            disabled={saving}
+            onClick={async () => {
+              if (!serialNumber.trim()) return setErr("No. Serial (SN) wajib diisi.");
+              if (!date) return setErr("Tanggal pengiriman wajib diisi.");
+
+              setSaving(true);
+              const ok = await onSave(shipment.id, {
+                serialNumber: serialNumber.trim(),
+                serialNo: serialNumber.trim(),
+                macAddress: macAddress.trim() || "-",
+                mac: macAddress.trim() || "-",
+                date,
+                notes: notes.trim(),
+              });
+              setSaving(false);
+              if (ok) {
+                onClose();
+              } else {
+                setErr("Gagal menyimpan perubahan pengiriman.");
+              }
+            }}
+          >
+            {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
+            {t.saveAction || "Simpan Perubahan"}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function ChinaShipmentDetailModal({ shipment, pcba, onClose, t }) {
+  if (!shipment) return null;
+  const item = (pcba.items || []).find((i) => i.id === shipment.pcbaItemId);
+
+  return (
+    <Modal title={`DETAIL PENGIRIMAN KE CHINA — ${shipment.serialNumber || shipment.serialNo || "-"}`} onClose={onClose} width={580}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 12.5 }}>
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 4 }}>{t.pcbaDamageAnalysis || "Analisis Kerusakan"}</div>
-            <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: T.ink }}>{repair.analysis}</div>
+            <div style={{ color: T.ink3 }}>No. Pengiriman:</div>
+            <div style={{ fontWeight: 700, fontFamily: mono, color: T.cyan }}>{shipment.shipmentNo || shipment.id}</div>
           </div>
-        )}
-        {repair.actionTaken && (
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 4 }}>{t.action || "Tindakan"}</div>
-            <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: T.ink }}>{repair.actionTaken}</div>
+            <div style={{ color: T.ink3 }}>No. Serial (SN):</div>
+            <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{shipment.serialNumber || shipment.serialNo || item?.serialNo || "-"}</div>
           </div>
-        )}
-        {repair.componentsReplaced && (
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 4 }}>{t.pcbaComponentsReplaced || "Komponen Diganti"}</div>
-            <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: T.ink }}>{repair.componentsReplaced}</div>
+            <div style={{ color: T.ink3 }}>MAC Address:</div>
+            <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{shipment.macAddress || shipment.mac || item?.mac || "-"}</div>
           </div>
-        )}
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colDate || "Tanggal Kirim"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{fmtDate(shipment.date || shipment.createdAt)}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaType || "Tipe PCBA"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{item?.pcbaType || "-"}</div>
+          </div>
+          <div>
+            <div style={{ color: T.ink3 }}>{t.colStatus || "Status Item"}:</div>
+            <div>
+              <PcbaBadge status={item?.status || "Sent"} t={t} />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 4 }}>
+            {t.pcbaNotes || "Catatan Kerusakan / Keterangan"}
+          </div>
+          <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: T.ink, whiteSpace: "pre-wrap" }}>
+            {shipment.notes && shipment.notes.trim() ? shipment.notes : "-"}
+          </div>
+        </div>
 
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
           <Btn variant="solid" onClick={onClose}>
@@ -6724,47 +7068,47 @@ function RepairDetailModal({ repair, pcba, onClose, t }) {
   );
 }
 
-function DeleteRepairModal({ repair, pcba, onDelete, onClose, t }) {
+function DeleteChinaShipmentModal({ shipment, pcba, onDelete, onClose, t }) {
   const [deleting, setDeleting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  if (!repair) return null;
-  const item = (pcba.items || []).find((i) => i.id === repair.pcbaItemId);
+  if (!shipment) return null;
+  const item = (pcba.items || []).find((i) => i.id === shipment.pcbaItemId);
 
   const handleConfirm = async () => {
     setDeleting(true);
-    const ok = await onDelete(repair.id);
+    const ok = await onDelete(shipment.id);
     setDeleting(false);
     if (ok) {
       onClose();
     } else {
-      setErrorMsg(t.pcbaDeleteFailed || "Gagal menghapus repair. Silakan coba lagi.");
+      setErrorMsg("Gagal membatalkan pengiriman. Silakan coba lagi.");
     }
   };
 
   return (
-    <Modal title={t.deleteRepairTitle || "KONFIRMASI HAPUS REPAIR"} onClose={onClose}>
+    <Modal title={t.deleteChinaShipmentTitle || "KONFIRMASI BATALKAN PENGIRIMAN"} onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={{ fontSize: 13, color: T.ink }}>
-          {t.deleteRepairMsg || "Apakah Anda yakin ingin menghapus data repair ini? Status PCBA terkait akan dikembalikan menjadi Bad."}
+          {t.deleteChinaShipmentMsg || "Apakah Anda yakin ingin membatalkan/menghapus data pengiriman ini? Status PCBA terkait akan dikembalikan menjadi Bad."}
         </div>
 
         <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12.5 }}>
           <div>
-            <div style={{ color: T.ink3 }}>{t.pcbaNoRepair || "No. Repair"}:</div>
-            <div style={{ fontWeight: 700, fontFamily: mono, color: T.cyan }}>{repair.repairNo || repair.id}</div>
+            <div style={{ color: T.ink3 }}>No. Pengiriman:</div>
+            <div style={{ fontWeight: 700, fontFamily: mono, color: T.cyan }}>{shipment.shipmentNo || shipment.id}</div>
           </div>
           <div>
-            <div style={{ color: T.ink3 }}>{t.pcbaSerialNo || "Serial PCBA"}:</div>
-            <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{item?.serialNo || "-"}</div>
+            <div style={{ color: T.ink3 }}>Serial Number (SN):</div>
+            <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{shipment.serialNumber || shipment.serialNo || item?.serialNo || "-"}</div>
           </div>
           <div>
-            <div style={{ color: T.ink3 }}>{t.colEngineer || "Engineer"}:</div>
-            <div style={{ fontWeight: 600, color: T.ink }}>{repair.engineer || "-"}</div>
+            <div style={{ color: T.ink3 }}>MAC Address:</div>
+            <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{shipment.macAddress || shipment.mac || "-"}</div>
           </div>
           <div>
-            <div style={{ color: T.ink3 }}>{t.colDate || "Tanggal"}:</div>
-            <div style={{ color: T.ink, fontWeight: 600 }}>{fmtDate(repair.createdAt)}</div>
+            <div style={{ color: T.ink3 }}>Tanggal:</div>
+            <div style={{ color: T.ink, fontWeight: 600 }}>{fmtDate(shipment.date || shipment.createdAt)}</div>
           </div>
         </div>
 
@@ -6781,7 +7125,7 @@ function DeleteRepairModal({ repair, pcba, onDelete, onClose, t }) {
             disabled={deleting}
           >
             {deleting && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
-            {t.deleteAction || "Hapus"}
+            {t.deleteAction || "Hapus / Batalkan"}
           </Btn>
         </div>
       </div>
@@ -6887,104 +7231,203 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose, t })
   );
 }
 
-function RepairForm({ master, badItems = [], onSave, onClose, t }) {
-  const repairResultOptions = [
-    "Berhasil Diperbaiki",
-    "Tidak Dapat Diperbaiki",
-    "Perlu Follow-up Tim China",
-    "Return to Principal",
-    "Scrap",
-  ];
-  const [f, setF] = useState({
-    pcbaItemId: badItems[0]?.id || "",
-    engineer: master.engineers?.[0] || "",
-    analysis: "",
-    actionTaken: "",
-    componentsReplaced: "",
-    testingResult: "",
-    repairResult: repairResultOptions[0],
-  });
-  const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+function SendToChinaForm({ pcba, onSave, onClose, t }) {
+  const badItems = useMemo(() => {
+    return (pcba.items || []).filter((i) => i.status === "Bad");
+  }, [pcba.items]);
+
+  const [selectedItemId, setSelectedItemId] = useState(badItems[0]?.id || "");
+  const [manualSn, setManualSn] = useState(badItems[0]?.serialNo || "");
+  const [macAddress, setMacAddress] = useState(badItems[0]?.mac || "");
+  const [date, setDate] = useState(todayISO());
+  const [notes, setNotes] = useState("");
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const handleSelectChange = (e) => {
+    const id = e.target.value;
+    setSelectedItemId(id);
+    const item = badItems.find((i) => i.id === id);
+    if (item) {
+      setManualSn(item.serialNo || "");
+      if (item.mac) setMacAddress(item.mac);
+      setErr("");
+    }
+  };
+
+  const handleSnBlur = () => {
+    const trimmed = manualSn.trim();
+    if (!trimmed) return;
+    const found = (pcba.items || []).find(
+      (i) => (i.serialNo || "").toLowerCase() === trimmed.toLowerCase()
+    );
+    if (found) {
+      setSelectedItemId(found.id);
+      if (found.mac && !macAddress) setMacAddress(found.mac);
+      if (found.status !== "Bad") {
+        setErr(`Peringatan: PCBA dengan SN "${trimmed}" berstatus "${found.status}". Hanya PCBA berstatus "Bad" yang dapat dikirim ke China.`);
+      } else {
+        setErr("");
+      }
+    } else {
+      setSelectedItemId("");
+      setErr(`SN "${trimmed}" tidak ditemukan di inventaris PCBA.`);
+    }
+  };
+
+  const selectedItem = (pcba.items || []).find(
+    (i) => i.id === selectedItemId || (manualSn.trim() && (i.serialNo || "").toLowerCase() === manualSn.trim().toLowerCase())
+  );
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <InlineHint>
+        Khusus untuk mencatat PCBA berstatus Bad yang dikirim ke China untuk proses perbaikan.
+        Stok Bad akan otomatis berkurang dan riwayat pengiriman tercatat di sistem.
+      </InlineHint>
       {err && <InlineHint tone="warn">{err}</InlineHint>}
-      <Field label={t?.pcbaRepairTarget || "PCBA (status Bad / Under Repair)"}>
-        <Select
-          options={badItems.map((i) => `${i.serialNo} (${i.pcbaType})`)}
-          value={(() => {
-            const found = badItems.find((i) => i.id === f.pcbaItemId);
-            return found ? `${found.serialNo} (${found.pcbaType})` : "";
-          })()}
-          onChange={(e) => {
-            const found = badItems.find(
-              (i) => `${i.serialNo} (${i.pcbaType})` === e.target.value,
-            );
-            setF((s) => ({ ...s, pcbaItemId: found ? found.id : "" }));
-          }}
-        />
-      </Field>
-      {badItems.length === 0 && (
+
+      {badItems.length === 0 ? (
         <InlineHint tone="warn">
-          Tidak ada PCBA berstatus Bad/Under Repair untuk direpair saat ini.
+          {t.pcbaNoBadItemsAvailable || "Tidak ada PCBA dengan status Bad di stok saat ini."}
         </InlineHint>
+      ) : (
+        <Field label={t.pcbaSelectBadItem || "Pilih dari Daftar PCBA Bad"}>
+          <select
+            value={selectedItemId}
+            onChange={handleSelectChange}
+            style={{
+              ...inputBase,
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
+            <option value="">-- {t.pcbaSelectItem || "Pilih PCBA"} --</option>
+            {badItems.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.serialNo} ({item.pcbaType || "Unknown"} - {item.supplier || "Supplier"})
+              </option>
+            ))}
+          </select>
+        </Field>
       )}
-      <Field label={t?.colEngineer || "Engineer"}>
-        <Select
-          options={master.engineers}
-          value={f.engineer}
-          onChange={set("engineer")}
-        />
-      </Field>
-      <Field label={t?.pcbaDamageAnalysis || "Analisis Kerusakan"}>
-        <TextArea value={f.analysis} onChange={set("analysis")} />
-      </Field>
-      <Field label={t?.action || "Tindakan"}>
-        <TextArea value={f.actionTaken} onChange={set("actionTaken")} />
-      </Field>
-      <Field label={t?.pcbaComponentsReplaced || "Komponen Diganti"}>
+
+      <div
+        className="form-grid-2"
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+      >
+        <Field label="No. Serial (SN)">
+          <TextInput
+            value={manualSn}
+            onChange={(e) => {
+              setManualSn(e.target.value);
+              setErr("");
+            }}
+            onBlur={handleSnBlur}
+            placeholder="Contoh: ABC123456"
+            style={{ fontFamily: mono }}
+          />
+        </Field>
+
+        <Field label="MAC Address">
+          <TextInput
+            value={macAddress}
+            onChange={(e) => setMacAddress(e.target.value)}
+            placeholder="Contoh: AA:BB:CC:DD:EE:FF"
+            style={{ fontFamily: mono }}
+          />
+        </Field>
+
+        <Field label={t.colDate || "Tanggal Kirim"}>
+          <TextInput
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+        </Field>
+
+        <Field label={t.colStatus || "Status Saat Ini"}>
+          <div
+            style={{
+              background: T.panel2,
+              border: `1px solid ${T.line}`,
+              borderRadius: 6,
+              padding: "7px 10px",
+              fontSize: 12.5,
+              display: "flex",
+              alignItems: "center",
+              height: 38,
+              boxSizing: "border-box",
+            }}
+          >
+            {selectedItem ? (
+              <PcbaBadge status={selectedItem.status} t={t} />
+            ) : (
+              <span style={{ color: T.ink3 }}>Belum dipilih</span>
+            )}
+          </div>
+        </Field>
+      </div>
+
+      <Field label={t.pcbaNotes || "Catatan Kerusakan / Keterangan"}>
         <TextArea
-          value={f.componentsReplaced}
-          onChange={set("componentsReplaced")}
-          placeholder="cth. IC optical module x1, capacitor 10uF x2"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Contoh: PON tidak detect, Power issue, chip terbakar..."
+          rows={3}
         />
       </Field>
-      <Field label={t?.pcbaTestingResult || "Hasil Testing"}>
-        <TextArea value={f.testingResult} onChange={set("testingResult")} />
-      </Field>
-      <Field label={t?.pcbaRepairResult || "Hasil Repair"}>
-        <Select
-          options={repairResultOptions}
-          value={f.repairResult}
-          onChange={set("repairResult")}
-        />
-      </Field>
-      {f.repairResult === "Berhasil Diperbaiki" && (
-        <InlineHint>
-          PCBA akan berstatus "Repaired" dan menunggu QC sebelum resmi kembali
-          ke stok Good.
-        </InlineHint>
-      )}
+
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
         <Btn variant="ghost" onClick={onClose} disabled={saving}>
-          {t?.cancel || "Batal"}
+          {t.cancel || "Batal"}
         </Btn>
         <Btn
           variant="solid"
           disabled={saving}
           onClick={async () => {
-            if (!f.pcbaItemId) return setErr("Pilih PCBA dulu.");
-            if (!f.repairResult) return setErr("Pilih hasil repair dulu.");
+            const snTrimmed = manualSn.trim();
+            if (!snTrimmed) {
+              return setErr("No. Serial (SN) wajib diisi.");
+            }
+
+            const targetItem = (pcba.items || []).find(
+              (i) => (i.id === selectedItemId) || ((i.serialNo || "").toLowerCase() === snTrimmed.toLowerCase())
+            );
+
+            if (!targetItem) {
+              return setErr(`PCBA dengan SN "${snTrimmed}" tidak ditemukan di inventaris.`);
+            }
+
+            if (targetItem.status !== "Bad") {
+              return setErr(
+                `Hanya PCBA dengan status "Bad" yang dapat dikirim ke China. Status item saat ini adalah "${targetItem.status}".`
+              );
+            }
+
+            if (!date) {
+              return setErr("Tanggal pengiriman wajib diisi.");
+            }
+
             setSaving(true);
-            const res = await onSave(f);
+            const res = await onSave({
+              pcbaItemId: targetItem.id,
+              serialNumber: targetItem.serialNo,
+              serialNo: targetItem.serialNo,
+              macAddress: macAddress.trim() || targetItem.mac || "-",
+              mac: macAddress.trim() || targetItem.mac || "-",
+              date: date,
+              notes: notes.trim(),
+            });
             setSaving(false);
-            if (res && res.ok === false) setErr(res.error);
+
+            if (res && res.ok === false) {
+              setErr(res.error || "Gagal menyimpan pengiriman.");
+            }
           }}
         >
           {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
-          {t?.pcbaSaveRepair || "Simpan Repair"}
+          {t.pcbaSendToChina || "Kirim PCBA Bad ke China"}
         </Btn>
       </div>
     </div>
@@ -7000,12 +7443,14 @@ function PcbaInventoryTab({
   onDeletePcbaItem,
   onDeletePcbaTransaction,
   onDeleteReplacement,
-  onDeleteRepair,
+  onEditReplacement,
+  onSendToChina,
+  onEditChinaShipment,
+  onDeleteChinaShipment,
   onReplacement,
-  onRepair,
-  onQc,
   setToastMsg,
   t,
+  isViewer = false,
 }) {
   const [subTab, setSubTab] = useState("stock");
   const [modal, setModal] = useState(null);
@@ -7022,9 +7467,7 @@ function PcbaInventoryTab({
   }, [pcba.items]);
 
   const badItems = useMemo(() => {
-    return (pcba.items || []).filter(
-      (i) => i.status === "Bad" || i.status === "Under Repair"
-    );
+    return (pcba.items || []).filter((i) => i.status === "Bad");
   }, [pcba.items]);
 
   const [search, setSearch] = useState("");
@@ -7121,20 +7564,13 @@ function PcbaInventoryTab({
     });
   }, [pcba.replacements, pcba.items, rma, search, typeFilter, statusFilter, supplierFilter, locationFilter]);
 
-  const filteredRepairs = useMemo(() => {
+  const filteredChinaShipments = useMemo(() => {
     const q = search.toLowerCase().trim();
-    return (pcba.repairs || []).filter((r) => {
-      const item = (pcba.items || []).find((i) => i.id === r.pcbaItemId);
+    return (pcba.chinaShipments || []).filter((s) => {
+      const item = (pcba.items || []).find((i) => i.id === s.pcbaItemId);
 
       if (typeFilter) {
         if (item?.pcbaType !== typeFilter) return false;
-      }
-
-      if (statusFilter) {
-        const itemStatusMatch = item?.status === statusFilter;
-        const resultMatch = r.repairResult === statusFilter;
-        const qcMatch = (r.qcStatus === "Passed" && statusFilter === "Good") || (r.qcStatus === "Failed" && statusFilter === "Bad") || (r.qcStatus === "Pending" && statusFilter === "Under Repair");
-        if (!itemStatusMatch && !resultMatch && !qcMatch) return false;
       }
 
       if (supplierFilter) {
@@ -7147,15 +7583,15 @@ function PcbaInventoryTab({
 
       if (q) {
         const haystack = [
-          r.repairNo,
-          r.id,
-          item?.serialNo,
+          s.shipmentNo,
+          s.serialNumber,
+          s.serialNo,
+          s.macAddress,
+          s.mac,
+          s.notes,
           item?.pcbaType,
-          r.engineer,
-          r.analysis,
-          r.actionTaken,
-          r.repairResult,
-          r.qcStatus,
+          item?.supplier,
+          item?.warehouseLocation,
         ]
           .filter(Boolean)
           .join(" ")
@@ -7165,7 +7601,7 @@ function PcbaInventoryTab({
 
       return true;
     });
-  }, [pcba.repairs, pcba.items, search, typeFilter, statusFilter, supplierFilter, locationFilter]);
+  }, [pcba.chinaShipments, pcba.items, search, typeFilter, supplierFilter, locationFilter]);
 
   const filteredTransactions = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -7239,6 +7675,7 @@ function PcbaInventoryTab({
         Repaired: 0,
         "Used for Replacement": 0,
         Scrapped: 0,
+        "Sent to China": 0,
       };
     });
 
@@ -7258,7 +7695,7 @@ function PcbaInventoryTab({
   const SUB_TABS = [
     { id: "stock", label: t.pcbaStock, icon: Boxes },
     { id: "replacement", label: t.pcbaReplacement, icon: ArrowLeftRight },
-    { id: "repair", label: t.pcbaRepair, icon: Wrench },
+    { id: "chinaShipments", label: t.pcbaSendToChina || "Kirim PCBA Bad ke China", icon: Truck },
     { id: "transactions", label: t.pcbaTransactions, icon: ClipboardList },
   ];
 
@@ -7568,43 +8005,66 @@ function PcbaInventoryTab({
             onClick={() => {
               let exportItems = filteredStockItems;
               let namePrefix = "PCBA_Inventory_Stock";
+              let customCols = null;
+              let sheetName = "PCBA_Stock";
+
               if (subTab === "replacement") {
-                exportItems = filteredReplacements;
+                exportItems = filteredReplacements.map((r) => {
+                  const rmaTicket = (rma || []).find((x) => x.id === r.rmaId);
+                  const oldItem = (pcba.items || []).find((i) => i.id === r.oldPcbaItemId);
+                  const newItem = (pcba.items || []).find((i) => i.id === r.newPcbaItemId);
+                  const isSent = (pcba.chinaShipments || []).some(
+                    (s) => s.pcbaItemId === r.oldPcbaItemId || (oldItem?.serialNo && (s.serialNumber === oldItem.serialNo || s.serialNo === oldItem.serialNo))
+                  ) || oldItem?.status === "Sent" || oldItem?.status === "Sent to China";
+
+                  return {
+                    ...r,
+                    rmaTicketNo: rmaTicket?.ticketNo || "-",
+                    oldSerialNo: oldItem?.serialNo || "-",
+                    chinaStatus: isSent ? "Sent" : (oldItem?.status || "Bad"),
+                    newSerialNo: newItem?.serialNo || "-",
+                  };
+                });
                 namePrefix = "PCBA_Inventory_Replacement";
-              } else if (subTab === "repair") {
-                exportItems = filteredRepairs;
-                namePrefix = "PCBA_Inventory_Repair";
+                customCols = REPLACEMENT_COLUMNS;
+                sheetName = "Replacements";
+              } else if (subTab === "chinaShipments") {
+                exportItems = filteredChinaShipments;
+                namePrefix = "PCBA_Bad_Kirim_Ke_China";
+                customCols = CHINA_SHIPMENT_COLUMNS;
+                sheetName = "Kirim_Ke_China";
               } else if (subTab === "transactions") {
                 exportItems = filteredTransactions;
                 namePrefix = "PCBA_Inventory_Transactions";
+                sheetName = "Transactions";
               }
 
               if (exportItems.length === 0) {
                 if (setToastMsg) setToastMsg(t.noDataToExport || "Tidak ada data untuk diexport.");
-                exportPcbaToExcel([], `${namePrefix}_Empty`);
+                exportPcbaToExcel([], `${namePrefix}_Empty`, customCols, sheetName);
                 return;
               }
               const isFiltered = Boolean(search || typeFilter || statusFilter || supplierFilter || locationFilter);
-              exportPcbaToExcel(exportItems, isFiltered ? `${namePrefix}_Filtered` : namePrefix);
+              exportPcbaToExcel(exportItems, isFiltered ? `${namePrefix}_Filtered` : namePrefix, customCols, sheetName);
             }}
             title="Export data (sesuai filter) ke .xlsx"
           >
             <FileDown size={14} /> {t.rmaExportExcel || "Export Excel"}
           </Btn>
 
-          {subTab === "stock" && (
+          {!isViewer && subTab === "stock" && (
             <Btn variant="solid" onClick={() => setModal({ type: "receipt" })}>
               <Plus size={14} /> {t.pcbaReceiveNew}
             </Btn>
           )}
-          {subTab === "replacement" && (
+          {!isViewer && subTab === "replacement" && (
             <Btn variant="solid" onClick={() => setModal({ type: "replacement" })}>
               <Plus size={14} /> {t.pcbaNewReplacement || "Replacement Baru"}
             </Btn>
           )}
-          {subTab === "repair" && (
-            <Btn variant="solid" onClick={() => setModal({ type: "repair" })}>
-              <Plus size={14} /> {t.pcbaNewRepair || "Repair Baru"}
+          {!isViewer && subTab === "chinaShipments" && (
+            <Btn variant="solid" onClick={() => setModal({ type: "sendToChina" })}>
+              <Plus size={14} /> {t.pcbaSendToChina || "Kirim PCBA Bad ke China"}
             </Btn>
           )}
         </div>
@@ -7672,8 +8132,34 @@ function PcbaInventoryTab({
               render: (r) => r.receivedBy || "-",
             },
             {
+              key: "notes",
+              label: t.pcbaNotes || "Catatan",
+              width: 280,
+              minWidth: 280,
+              maxWidth: 280,
+              render: (r) => {
+                const text = r.notes && r.notes.trim() ? r.notes.trim() : "-";
+                return (
+                  <div
+                    title={r.notes && r.notes.trim() ? r.notes.trim() : undefined}
+                    style={{
+                      width: 280,
+                      minWidth: 280,
+                      maxWidth: 280,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    {text}
+                  </div>
+                );
+              },
+            },
+            {
               key: "actions",
-              label: "",
+              label: t.pcbaAction || "Aksi",
               render: (r) => (
                 <div style={{ display: "flex", gap: 6 }}>
                   <IconBtn
@@ -7681,17 +8167,21 @@ function PcbaInventoryTab({
                     onClick={() => setModal({ type: "view", item: r })}
                     title={t.viewDetail || "Detail"}
                   />
-                  <IconBtn
-                    icon={Pencil}
-                    onClick={() => setModal({ type: "edit", item: r })}
-                    title={t.editAction || "Edit"}
-                  />
-                  <IconBtn
-                    icon={Trash2}
-                    danger
-                    onClick={() => setModal({ type: "delete", item: r })}
-                    title={t.deleteAction || "Hapus"}
-                  />
+                  {!isViewer && (
+                    <>
+                      <IconBtn
+                        icon={Pencil}
+                        onClick={() => setModal({ type: "edit", item: r })}
+                        title={t.editAction || "Edit"}
+                      />
+                      <IconBtn
+                        icon={Trash2}
+                        danger
+                        onClick={() => setModal({ type: "delete", item: r })}
+                        title={t.deleteAction || "Hapus"}
+                      />
+                    </>
+                  )}
                 </div>
               ),
             },
@@ -7717,14 +8207,68 @@ function PcbaInventoryTab({
             },
             {
               key: "oldPcbaItemId",
-              label: t.pcbaReplaceOld,
+              label: t.pcbaReplaceOld || "PCBA Lama",
               render: (r) =>
                 pcba.items.find((i) => i.id === r.oldPcbaItemId)?.serialNo ||
                 "-",
             },
             {
+              key: "chinaStatus",
+              label: t.colChinaStatus || "Status Kirim China",
+              render: (r) => {
+                const oldItem = (pcba.items || []).find((i) => i.id === r.oldPcbaItemId);
+                const isSent = (pcba.chinaShipments || []).some(
+                  (s) => s.pcbaItemId === r.oldPcbaItemId || (oldItem?.serialNo && (s.serialNumber === oldItem.serialNo || s.serialNo === oldItem.serialNo))
+                ) || oldItem?.status === "Sent" || oldItem?.status === "Sent to China";
+
+                if (isSent) {
+                  return (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        padding: "2px 8px",
+                        borderRadius: 999,
+                        background: `${T.cyan}22`,
+                        color: T.cyan,
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        border: `1px solid ${T.cyan}44`,
+                      }}
+                      title="PCBA Bad ini sudah dikirim ke China"
+                    >
+                      <Truck size={12} />
+                      {t.statusSent || "Sent"}
+                    </span>
+                  );
+                }
+
+                return (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      background: `${T.red}18`,
+                      color: T.red,
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      border: `1px solid ${T.red}33`,
+                    }}
+                    title="PCBA Bad ini belum dikirim ke China"
+                  >
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.red }} />
+                    {oldItem?.status ? getLocalizedStatus(oldItem.status, t) : (t.statusNotSent || "Belum Dikirim")}
+                  </span>
+                );
+              },
+            },
+            {
               key: "newPcbaItemId",
-              label: t.pcbaReplaceNew,
+              label: t.pcbaReplaceNew || "PCBA Baru",
               render: (r) =>
                 pcba.items.find((i) => i.id === r.newPcbaItemId)?.serialNo ||
                 "-",
@@ -7737,7 +8281,7 @@ function PcbaInventoryTab({
             },
             {
               key: "actions",
-              label: "",
+              label: t.pcbaAction || "Aksi",
               render: (r) => (
                 <div style={{ display: "flex", gap: 6 }}>
                   <IconBtn
@@ -7745,12 +8289,21 @@ function PcbaInventoryTab({
                     onClick={() => setModal({ type: "viewReplacement", item: r })}
                     title={t.viewDetail || "Detail"}
                   />
-                  <IconBtn
-                    icon={Trash2}
-                    danger
-                    onClick={() => setModal({ type: "deleteReplacement", item: r })}
-                    title={t.deleteAction || "Hapus"}
-                  />
+                  {!isViewer && (
+                    <>
+                      <IconBtn
+                        icon={Pencil}
+                        onClick={() => setModal({ type: "editReplacement", item: r })}
+                        title={t.editAction || "Edit"}
+                      />
+                      <IconBtn
+                        icon={Trash2}
+                        danger
+                        onClick={() => setModal({ type: "deleteReplacement", item: r })}
+                        title={t.deleteAction || "Hapus"}
+                      />
+                    </>
+                  )}
                 </div>
               ),
             },
@@ -7764,73 +8317,86 @@ function PcbaInventoryTab({
         />
       )}
 
-      {subTab === "repair" && (
+      {subTab === "chinaShipments" && (
         <DataTable
           columns={[
-            { key: "repairNo", label: t.pcbaNoRepair || "No. Repair", mono: true },
             {
-              key: "pcbaItemId",
-              label: t.pcbaRepairItem,
-              render: (r) =>
-                pcba.items.find((i) => i.id === r.pcbaItemId)?.serialNo ||
-                "-",
+              key: "serialNumber",
+              label: "SN",
+              mono: true,
+              render: (r) => r.serialNumber || r.serialNo || "-",
             },
-            { key: "engineer", label: t.colEngineer || "Engineer" },
-            { key: "repairResult", label: t.pcbaRepairResult || t.pcbaQcResult },
             {
-              key: "qcStatus",
-              label: "QC",
-              render: (r) =>
-                r.qcStatus ? (
-                  <PcbaBadge
-                    status={
-                      r.qcStatus === "Passed"
-                        ? "Good"
-                        : r.qcStatus === "Failed"
-                        ? "Bad"
-                        : "Under Repair"
-                    }
-                    t={t}
-                  />
-                ) : (
-                  "-"
-                ),
+              key: "macAddress",
+              label: "MAC",
+              mono: true,
+              render: (r) => r.macAddress || r.mac || "-",
+            },
+            {
+              key: "date",
+              label: t.colDate || "Tanggal",
+              render: (r) => fmtDate(r.date || r.createdAt),
+            },
+            {
+              key: "notes",
+              label: t.pcbaNotes || "Catatan",
+              width: 280,
+              minWidth: 280,
+              maxWidth: 280,
+              render: (r) => {
+                const text = r.notes && r.notes.trim() ? r.notes.trim() : "-";
+                return (
+                  <div
+                    title={r.notes && r.notes.trim() ? r.notes.trim() : undefined}
+                    style={{
+                      width: 280,
+                      minWidth: 280,
+                      maxWidth: 280,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    {text}
+                  </div>
+                );
+              },
             },
             {
               key: "actions",
-              label: "",
+              label: t.pcbaAction || "Action",
               render: (r) => (
-                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  {r.qcStatus === "Pending" && (
-                    <>
-                      <Btn variant="solid" style={{ padding: "3px 8px", fontSize: 11 }} onClick={() => onQc(r.id, "Passed")}>
-                        Pass
-                      </Btn>
-                      <Btn variant="danger" style={{ padding: "3px 8px", fontSize: 11 }} onClick={() => onQc(r.id, "Failed")}>
-                        Fail
-                      </Btn>
-                    </>
-                  )}
+                <div style={{ display: "flex", gap: 6 }}>
                   <IconBtn
                     icon={Eye}
-                    onClick={() => setModal({ type: "viewRepair", item: r })}
+                    onClick={() => setModal({ type: "viewChinaShipment", item: r })}
                     title={t.viewDetail || "Detail"}
                   />
-                  <IconBtn
-                    icon={Trash2}
-                    danger
-                    onClick={() => setModal({ type: "deleteRepair", item: r })}
-                    title={t.deleteAction || "Hapus"}
-                  />
+                  {!isViewer && (
+                    <>
+                      <IconBtn
+                        icon={Pencil}
+                        onClick={() => setModal({ type: "editChinaShipment", item: r })}
+                        title={t.editAction || "Edit"}
+                      />
+                      <IconBtn
+                        icon={Trash2}
+                        danger
+                        onClick={() => setModal({ type: "deleteChinaShipment", item: r })}
+                        title={t.deleteAction || "Hapus"}
+                      />
+                    </>
+                  )}
                 </div>
               ),
             },
           ]}
-          rows={filteredRepairs}
+          rows={filteredChinaShipments}
           emptyLabel={
-            search || typeFilter || statusFilter || supplierFilter || locationFilter
+            search || typeFilter || supplierFilter || locationFilter
               ? (t.noDataForDateRange || "Tidak ada data yang memenuhi filter.")
-              : (t.pcbaEmptyRepair || "Belum ada repair PCBA.")
+              : (t.pcbaEmptySendToChina || "Belum ada data pengiriman PCBA Bad ke China.")
           }
         />
       )}
@@ -7875,12 +8441,14 @@ function PcbaInventoryTab({
                     onClick={() => setModal({ type: "viewTrx", item: r })}
                     title={t.viewDetail || "Detail"}
                   />
-                  <IconBtn
-                    icon={Trash2}
-                    danger
-                    onClick={() => setModal({ type: "deleteTrx", item: r })}
-                    title={t.deleteAction || "Hapus"}
-                  />
+                  {!isViewer && (
+                    <IconBtn
+                      icon={Trash2}
+                      danger
+                      onClick={() => setModal({ type: "deleteTrx", item: r })}
+                      title={t.deleteAction || "Hapus"}
+                    />
+                  )}
                 </div>
               ),
             },
@@ -7938,10 +8506,36 @@ function PcbaInventoryTab({
           t={t}
         />
       )}
-      {modal?.type === "viewRepair" && (
-        <RepairDetailModal
-          repair={modal.item}
+      {modal?.type === "editReplacement" && (
+        <EditReplacementModal
+          replacement={modal.item}
           pcba={pcba}
+          rma={rma}
+          master={master}
+          onSave={async (repId, updatedData) => {
+            const ok = await onEditReplacement(repId, updatedData);
+            return ok;
+          }}
+          onClose={() => setModal(null)}
+          t={t}
+        />
+      )}
+      {modal?.type === "viewChinaShipment" && (
+        <ChinaShipmentDetailModal
+          shipment={modal.item}
+          pcba={pcba}
+          onClose={() => setModal(null)}
+          t={t}
+        />
+      )}
+      {modal?.type === "editChinaShipment" && (
+        <EditChinaShipmentModal
+          shipment={modal.item}
+          pcba={pcba}
+          onSave={async (shipmentId, updatedData) => {
+            const ok = await onEditChinaShipment(shipmentId, updatedData);
+            return ok;
+          }}
           onClose={() => setModal(null)}
           t={t}
         />
@@ -7996,12 +8590,12 @@ function PcbaInventoryTab({
           t={t}
         />
       )}
-      {modal?.type === "deleteRepair" && (
-        <DeleteRepairModal
-          repair={modal.item}
+      {modal?.type === "deleteChinaShipment" && (
+        <DeleteChinaShipmentModal
+          shipment={modal.item}
           pcba={pcba}
-          onDelete={async (repairId) => {
-            const ok = await onDeleteRepair(repairId);
+          onDelete={async (shipmentId) => {
+            const ok = await onDeleteChinaShipment(shipmentId);
             return ok;
           }}
           onClose={() => setModal(null)}
@@ -8024,13 +8618,15 @@ function PcbaInventoryTab({
           />
         </Modal>
       )}
-      {modal?.type === "repair" && (
-        <Modal title={t?.pcbaNewRepairTitle || "MULAI REPAIR PCBA"} onClose={() => setModal(null)}>
-          <RepairForm
-            master={master}
-            badItems={badItems}
+      {modal?.type === "sendToChina" && (
+        <Modal
+          title={t.pcbaSendToChinaTitle || "KIRIM PCBA BAD KE CHINA"}
+          onClose={() => setModal(null)}
+        >
+          <SendToChinaForm
+            pcba={pcba}
             onSave={async (data) => {
-              const res = await onRepair(data);
+              const res = await onSendToChina(data);
               if (!res || res.ok !== false) setModal(null);
               return res;
             }}
@@ -8702,7 +9298,7 @@ function WaDetailModal({ entry, onClose, t }) {
    MAIN APP
    ============================================================ */
 export default function App() {
-  const { user } = useAuth();
+  const { user, profile, role, isAdministrator, isEngineer, isViewer, can, assert } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
   const [tab, setTab] = useState("home");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -8835,8 +9431,18 @@ export default function App() {
       ]);
       setRma(r);
       setWa(w);
-      setMaster({ ...DEFAULT_MASTER, ...m });
-      setPcba(p);
+      const loadedMaster = { ...DEFAULT_MASTER, ...m };
+      if (!loadedMaster.pcbaReceivedBy || loadedMaster.pcbaReceivedBy.length === 0) {
+        loadedMaster.pcbaReceivedBy = (m && m.engineers && m.engineers.length > 0)
+          ? [...m.engineers]
+          : [...DEFAULT_MASTER.pcbaReceivedBy];
+      }
+      setMaster(loadedMaster);
+      setPcba({
+        ...PCBA_DEFAULT,
+        ...p,
+        chinaShipments: (p && Array.isArray(p.chinaShipments)) ? p.chinaShipments : [],
+      });
       setLoading(false);
     })();
   }, []);
@@ -8850,6 +9456,18 @@ export default function App() {
   }, [language]);
 
   const saveRma = async (entry) => {
+    const isNew = !rma.some((e) => e.id === entry.id);
+    try {
+      assert(
+        isNew ? PERMISSIONS.RMA_CREATE : PERMISSIONS.RMA_UPDATE,
+        isNew ? "membuat tiket RMA baru" : "mengedit tiket RMA"
+      );
+    } catch (authErr) {
+      setSaveErr(authErr.message);
+      setToastMsg(authErr.message);
+      return { ok: false, error: authErr.message };
+    }
+
     // Check if Firebase Storage is available
     const storageAvailable = !!storage;
 
@@ -8901,13 +9519,34 @@ export default function App() {
     if (ok) setRmaModal(null);
     return { ok: !!ok };
   };
+
   const persistRma = useCallback(async (arr) => {
+    try {
+      assert(PERMISSIONS.RMA_UPDATE, "menyimpan data RMA");
+    } catch (authErr) {
+      setToastMsg(authErr.message);
+      setSaveErr(authErr.message);
+      return false;
+    }
     setRma(arr);
     const ok = await storeSet(KEYS.rma, arr);
     if (!ok) setSaveErr("Gagal menyimpan data RMA. Coba lagi.");
     return ok;
-  }, []);
+  }, [assert, setToastMsg]);
+
   const saveWa = async (entry) => {
+    const isNew = !wa.some((e) => e.id === entry.id);
+    try {
+      assert(
+        isNew ? PERMISSIONS.WA_CREATE : PERMISSIONS.WA_UPDATE,
+        isNew ? "membuat case WhatsApp baru" : "mengedit case WhatsApp"
+      );
+    } catch (authErr) {
+      setSaveErr(authErr.message);
+      setToastMsg(authErr.message);
+      return { ok: false, error: authErr.message };
+    }
+
     const exists = wa.some((e) => e.id === entry.id);
     const ok = await persistWa(
       exists ? wa.map((e) => (e.id === entry.id ? entry : e)) : [entry, ...wa],
@@ -8919,22 +9558,43 @@ export default function App() {
     }
     return { ok: !!ok };
   };
+
   const persistWa = useCallback(async (arr) => {
+    try {
+      assert(PERMISSIONS.WA_UPDATE, "menyimpan data WhatsApp");
+    } catch (authErr) {
+      setToastMsg(authErr.message);
+      setSaveErr(authErr.message);
+      return false;
+    }
     setWa(arr);
     const ok = await storeSet(KEYS.wa, arr);
     if (!ok) setSaveErr("Gagal menyimpan data WhatsApp. Coba lagi.");
     return ok;
-  }, []);
+  }, [assert, setToastMsg]);
 
   const persistPcba = useCallback(async (data) => {
+    try {
+      assert(PERMISSIONS.PCBA_UPDATE, "menyimpan data PCBA");
+    } catch (authErr) {
+      setToastMsg(authErr.message);
+      setSaveErr(authErr.message);
+      return false;
+    }
     setPcba(data);
     const ok = await storeSet(KEYS.pcba, data);
     if (!ok) setSaveErr("Gagal menyimpan data PCBA. Coba lagi.");
     return ok;
-  }, []);
+  }, [assert, setToastMsg]);
 
   const onGoodsReceipt = useCallback(
     async (formData) => {
+      try {
+        assert(PERMISSIONS.PCBA_CREATE, "menerima stok PCBA baru");
+      } catch (authErr) {
+        setToastMsg(authErr.message);
+        return false;
+      }
       const receivedDate = formData.receivedDate || todayISO();
       const receivedBy = formData.receivedBy ? formData.receivedBy.trim() : "-";
       const newItem = {
@@ -8966,15 +9626,23 @@ export default function App() {
         items: [newItem, ...pcba.items],
         transactions: [transaction, ...pcba.transactions],
         replacements: pcba.replacements,
-        repairs: pcba.repairs,
+        repairs: pcba.repairs || [],
+        chinaShipments: pcba.chinaShipments || [],
       };
       return persistPcba(newPcba);
     },
-    [pcba, persistPcba]
+    [pcba, persistPcba, assert, setToastMsg]
   );
 
   const onReplacement = useCallback(
     async (formData) => {
+      try {
+        assert(PERMISSIONS.PCBA_CREATE, "membuat replacement PCBA");
+      } catch (authErr) {
+        setToastMsg(authErr.message);
+        return { ok: false, error: authErr.message };
+      }
+
       const newPcbaItem = pcba.items.find((i) => i.id === formData.newPcbaItemId);
       if (!newPcbaItem) return { ok: false, error: "PCBA baru tidak ditemukan." };
       if (newPcbaItem.status !== "Good") return { ok: false, error: "PCBA baru harus berstatus Good." };
@@ -9033,30 +9701,43 @@ export default function App() {
         items: [oldItem, ...updatedItems],
         transactions: [trxOut, trxIn, ...pcba.transactions],
         replacements: [replacement, ...pcba.replacements],
-        repairs: pcba.repairs,
+        repairs: pcba.repairs || [],
+        chinaShipments: pcba.chinaShipments || [],
       };
       return persistPcba(newPcba);
     },
-    [pcba, rma, persistPcba]
+    [pcba, rma, persistPcba, assert, setToastMsg]
   );
 
-  const onRepair = useCallback(
+  const onSendToChina = useCallback(
     async (formData) => {
-      const item = pcba.items.find((i) => i.id === formData.pcbaItemId);
-      if (!item) return { ok: false, error: "PCBA tidak ditemukan." };
-      if (item.status === "Good") return { ok: false, error: "PCBA Good tidak perlu direpair." };
+      try {
+        assert(PERMISSIONS.PCBA_CREATE, "mencatat pengiriman PCBA ke China");
+      } catch (authErr) {
+        setToastMsg(authErr.message);
+        return { ok: false, error: authErr.message };
+      }
 
-      const repair = {
+      const item = (pcba.items || []).find((i) => i.id === formData.pcbaItemId);
+      if (!item) return { ok: false, error: "PCBA tidak ditemukan." };
+      if (item.status !== "Bad") {
+        return {
+          ok: false,
+          error: `Hanya PCBA dengan status Bad yang boleh dikirim ke China. Status item ini adalah "${item.status}".`,
+        };
+      }
+
+      const shipmentDate = formData.date || todayISO();
+      const shipment = {
         id: uid(),
-        repairNo: `RPR-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-4)}`,
+        shipmentNo: `SHP-CN-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-4)}`,
         pcbaItemId: item.id,
-        engineer: formData.engineer,
-        analysis: formData.analysis.trim(),
-        actionTaken: formData.actionTaken.trim(),
-        componentsReplaced: formData.componentsReplaced.trim(),
-        testingResult: formData.testingResult.trim(),
-        repairResult: formData.repairResult,
-        qcStatus: "Pending",
+        serialNumber: item.serialNo,
+        serialNo: item.serialNo,
+        macAddress: formData.macAddress || formData.mac || item.mac || "-",
+        mac: formData.macAddress || formData.mac || item.mac || "-",
+        date: shipmentDate,
+        notes: (formData.notes || "").trim(),
         createdAt: new Date().toISOString(),
       };
 
@@ -9064,66 +9745,126 @@ export default function App() {
         id: uid(),
         transactionNo: `TRX-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-4)}`,
         pcbaItemId: item.id,
-        type: "Repair Started",
+        type: "Send Bad PCBA to China",
         rmaId: null,
-        reason: formData.analysis.trim() || "Mulai repair",
+        previousStatus: "Bad",
+        action: "Sent to China",
+        reason: formData.notes?.trim() ? `Kirim PCBA Bad ke China (${formData.notes.trim()})` : "Kirim PCBA Bad ke China",
         createdAt: new Date().toISOString(),
+        date: shipmentDate,
       };
 
-      const updatedItems = pcba.items.map((i) =>
-        i.id === item.id ? { ...i, status: "Under Repair" } : i
+      // Update PCBA item status to "Sent to China" (so Bad stock decreases by 1, persistent)
+      const updatedItems = (pcba.items || []).map((i) =>
+        i.id === item.id ? { ...i, status: "Sent to China", mac: (shipment.macAddress && shipment.macAddress !== "-") ? shipment.macAddress : i.mac } : i
       );
+
       const newPcba = {
+        ...pcba,
         items: updatedItems,
-        transactions: [trx, ...pcba.transactions],
-        replacements: pcba.replacements,
-        repairs: [repair, ...pcba.repairs],
+        transactions: [trx, ...(pcba.transactions || [])],
+        chinaShipments: [shipment, ...(pcba.chinaShipments || [])],
       };
-      return persistPcba(newPcba);
+
+      const ok = await persistPcba(newPcba);
+      if (ok) {
+        const curT = I18N[language] || I18N.id;
+        setToastMsg(curT.toastPcbaSentToChina || "PCBA Bad berhasil dicatat dikirim ke China.");
+      }
+      return { ok: !!ok };
     },
-    [pcba, persistPcba]
+    [pcba, persistPcba, language, assert, setToastMsg]
   );
 
-  const onQc = useCallback(
-    async (repairId, qcStatus) => {
-      const repair = pcba.repairs.find((r) => r.id === repairId);
-      if (!repair) return { ok: false, error: "Repair tidak ditemukan." };
+  const onEditChinaShipment = useCallback(
+    async (shipmentId, updatedData) => {
+      try {
+        assert(PERMISSIONS.PCBA_UPDATE, "mengedit pengiriman ke China");
+      } catch (authErr) {
+        setToastMsg(authErr.message);
+        return false;
+      }
 
-      const item = pcba.items.find((i) => i.id === repair.pcbaItemId);
-      if (!item) return { ok: false, error: "PCBA terkait tidak ditemukan." };
+      const shipment = (pcba.chinaShipments || []).find((s) => s.id === shipmentId);
+      if (!shipment) return false;
 
-      const newStatus = qcStatus === "Passed" ? "Good" : "Bad";
+      const updatedItems = (pcba.items || []).map((item) => {
+        if (item.id === shipment.pcbaItemId) {
+          return {
+            ...item,
+            serialNo: updatedData.serialNumber || item.serialNo,
+            mac: (updatedData.macAddress && updatedData.macAddress !== "-") ? updatedData.macAddress : item.mac,
+          };
+        }
+        return item;
+      });
 
-      const updatedRepairs = pcba.repairs.map((r) =>
-        r.id === repairId ? { ...r, qcStatus } : r
+      const updatedShipments = (pcba.chinaShipments || []).map((s) =>
+        s.id === shipmentId ? { ...s, ...updatedData } : s
       );
-      const updatedItems = pcba.items.map((i) =>
-        i.id === item.id ? { ...i, status: newStatus } : i
-      );
-
-      const trx = {
-        id: uid(),
-        transactionNo: `TRX-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-4)}`,
-        pcbaItemId: item.id,
-        type: qcStatus === "Passed" ? "QC Passed" : "QC Failed",
-        rmaId: null,
-        reason: `QC ${qcStatus} untuk repair ${repair.repairNo}`,
-        createdAt: new Date().toISOString(),
-      };
 
       const newPcba = {
+        ...pcba,
         items: updatedItems,
-        transactions: [trx, ...pcba.transactions],
-        replacements: pcba.replacements,
-        repairs: updatedRepairs,
+        chinaShipments: updatedShipments,
       };
-      return persistPcba(newPcba);
+
+      const ok = await persistPcba(newPcba);
+      if (ok) {
+        const curT = I18N[language] || I18N.id;
+        setToastMsg(curT.toastChinaShipmentUpdated || "Data pengiriman ke China berhasil diperbarui.");
+      }
+      return ok;
     },
-    [pcba, persistPcba]
+    [pcba, persistPcba, language, assert, setToastMsg]
+  );
+
+  const onDeleteChinaShipment = useCallback(
+    async (shipmentId) => {
+      try {
+        assert(PERMISSIONS.PCBA_DELETE, "membatalkan pengiriman ke China");
+      } catch (authErr) {
+        setToastMsg(authErr.message);
+        return false;
+      }
+
+      const shipment = (pcba.chinaShipments || []).find((s) => s.id === shipmentId);
+      if (!shipment) return false;
+
+      // Revert PCBA item status back to "Bad"
+      const updatedItems = (pcba.items || []).map((item) => {
+        if (item.id === shipment.pcbaItemId && (item.status === "Sent to China" || item.status === "Sent")) {
+          return { ...item, status: "Bad" };
+        }
+        return item;
+      });
+
+      const updatedShipments = (pcba.chinaShipments || []).filter((s) => s.id !== shipmentId);
+      const newPcba = {
+        ...pcba,
+        items: updatedItems,
+        chinaShipments: updatedShipments,
+      };
+
+      const ok = await persistPcba(newPcba);
+      if (ok) {
+        const curT = I18N[language] || I18N.id;
+        setToastMsg(curT.toastShipmentDeleted || "Pengiriman ke China berhasil dibatalkan dan status PCBA kembali Bad.");
+      }
+      return ok;
+    },
+    [pcba, persistPcba, language, assert, setToastMsg]
   );
 
   const onEditPcbaItem = useCallback(
     async (itemId, updatedItemData) => {
+      try {
+        assert(PERMISSIONS.PCBA_UPDATE, "mengedit item PCBA");
+      } catch (authErr) {
+        setToastMsg(authErr.message);
+        return false;
+      }
+
       const updatedItems = pcba.items.map((i) => (i.id === itemId ? updatedItemData : i));
       const updatedTrx = (pcba.transactions || []).map((t) => {
         if (t.pcbaItemId === itemId) {
@@ -9143,11 +9884,18 @@ export default function App() {
       }
       return ok;
     },
-    [pcba, persistPcba, language]
+    [pcba, persistPcba, language, assert, setToastMsg]
   );
 
   const onDeletePcbaItem = useCallback(
     async (itemId) => {
+      try {
+        assert(PERMISSIONS.PCBA_DELETE, "menghapus item PCBA");
+      } catch (authErr) {
+        setToastMsg(authErr.message);
+        return false;
+      }
+
       const updatedItems = pcba.items.filter((i) => i.id !== itemId);
       const updatedTrx = (pcba.transactions || []).filter((t) => t.pcbaItemId !== itemId);
       const newPcba = { ...pcba, items: updatedItems, transactions: updatedTrx };
@@ -9158,11 +9906,18 @@ export default function App() {
       }
       return ok;
     },
-    [pcba, persistPcba, language]
+    [pcba, persistPcba, language, assert, setToastMsg]
   );
 
   const onDeletePcbaTransaction = useCallback(
     async (trxId) => {
+      try {
+        assert(PERMISSIONS.PCBA_DELETE, "menghapus transaksi PCBA");
+      } catch (authErr) {
+        setToastMsg(authErr.message);
+        return false;
+      }
+
       const updatedTrx = (pcba.transactions || []).filter((t) => t.id !== trxId);
       const newPcba = { ...pcba, transactions: updatedTrx };
       const ok = await persistPcba(newPcba);
@@ -9172,11 +9927,72 @@ export default function App() {
       }
       return ok;
     },
-    [pcba, persistPcba, language]
+    [pcba, persistPcba, language, assert, setToastMsg]
+  );
+
+  const onEditReplacement = useCallback(
+    async (repId, updatedData) => {
+      try {
+        assert(PERMISSIONS.PCBA_UPDATE, "mengedit replacement PCBA");
+      } catch (authErr) {
+        setToastMsg(authErr.message);
+        return false;
+      }
+
+      const rep = (pcba.replacements || []).find((r) => r.id === repId);
+      if (!rep) return false;
+
+      let updatedItems = pcba.items || [];
+      if (updatedData.newPcbaItemId && updatedData.newPcbaItemId !== rep.newPcbaItemId) {
+        updatedItems = updatedItems.map((item) => {
+          if (item.id === rep.newPcbaItemId && item.status === "Used for Replacement") {
+            return { ...item, status: "Good" };
+          }
+          if (item.id === updatedData.newPcbaItemId && item.status === "Good") {
+            return { ...item, status: "Used for Replacement" };
+          }
+          return item;
+        });
+      }
+
+      if (updatedData.oldSerialNo && rep.oldPcbaItemId) {
+        updatedItems = updatedItems.map((item) => {
+          if (item.id === rep.oldPcbaItemId) {
+            return { ...item, serialNo: updatedData.oldSerialNo };
+          }
+          return item;
+        });
+      }
+
+      const updatedReplacements = (pcba.replacements || []).map((r) =>
+        r.id === repId ? { ...r, ...updatedData } : r
+      );
+
+      const newPcba = {
+        ...pcba,
+        items: updatedItems,
+        replacements: updatedReplacements,
+      };
+
+      const ok = await persistPcba(newPcba);
+      if (ok) {
+        const curT = I18N[language] || I18N.id;
+        setToastMsg(curT.toastReplacementUpdated || "Data replacement berhasil diperbarui.");
+      }
+      return ok;
+    },
+    [pcba, persistPcba, language, assert, setToastMsg]
   );
 
   const onDeleteReplacement = useCallback(
     async (repId) => {
+      try {
+        assert(PERMISSIONS.PCBA_DELETE, "menghapus replacement PCBA");
+      } catch (authErr) {
+        setToastMsg(authErr.message);
+        return false;
+      }
+
       const rep = (pcba.replacements || []).find((r) => r.id === repId);
       if (!rep) return false;
 
@@ -9196,31 +10012,7 @@ export default function App() {
       }
       return ok;
     },
-    [pcba, persistPcba, language]
-  );
-
-  const onDeleteRepair = useCallback(
-    async (repairId) => {
-      const repairItem = (pcba.repairs || []).find((r) => r.id === repairId);
-      if (!repairItem) return false;
-
-      const updatedItems = (pcba.items || []).map((item) => {
-        if (item.id === repairItem.pcbaItemId && (item.status === "Under Repair" || item.status === "Repaired")) {
-          return { ...item, status: "Bad" };
-        }
-        return item;
-      });
-
-      const updatedRepairs = (pcba.repairs || []).filter((r) => r.id !== repairId);
-      const newPcba = { ...pcba, items: updatedItems, repairs: updatedRepairs };
-      const ok = await persistPcba(newPcba);
-      if (ok) {
-        const curT = I18N[language] || I18N.id;
-        setToastMsg(curT.toastRepairDeleted || "Data repair berhasil dihapus.");
-      }
-      return ok;
-    },
-    [pcba, persistPcba, language]
+    [pcba, persistPcba, language, assert, setToastMsg]
   );
 
   const unitHistoryLookup = useCallback(
@@ -9469,6 +10261,16 @@ export default function App() {
   const dbDate = (v) => (v ? new Date(v).getTime() : 0);
 
   const handleConfirmDelete = async ({ kind, entry }) => {
+    try {
+      assert(
+        kind === "wa" ? PERMISSIONS.WA_DELETE : PERMISSIONS.RMA_DELETE,
+        kind === "wa" ? "menghapus case WhatsApp" : "menghapus tiket RMA"
+      );
+    } catch (authErr) {
+      setToastMsg(authErr.message);
+      return false;
+    }
+
     const curT = I18N[language] || I18N.id;
     if (kind === "wa") {
       const updated = wa.filter((e) => e.id !== entry.id);
@@ -9510,6 +10312,9 @@ export default function App() {
     { id: "report", label: t.weeklyReport, icon: FileClock },
     { id: "pcba", label: t.pcbaInventory, icon: Boxes },
     { id: "settings", label: t.settings, icon: Settings2 },
+    ...(isAdministrator
+      ? [{ id: "users", label: t.userManagement || "User Management", icon: Users }]
+      : []),
   ];
 
   if (loading) {
@@ -9832,19 +10637,23 @@ export default function App() {
                     >
                       <FileDown size={14} /> {t.rmaExportExcel || "Export Excel"}
                     </Btn>
-                    <Btn
-                      variant="ghost"
-                      onClick={() => setRmaImportModal(true)}
-                      title="Import data RMA dari file .xlsx / .xls"
-                    >
-                      <FileUp size={14} /> {t.rmaImportExcel || "Import Excel"}
-                    </Btn>
-                    <Btn
-                      variant="solid"
-                      onClick={() => setRmaModal({ mode: "new" })}
-                    >
-                      <Plus size={14} /> {t.rmaNewTicket}
-                    </Btn>
+                    {!isViewer && (
+                      <>
+                        <Btn
+                          variant="ghost"
+                          onClick={() => setRmaImportModal(true)}
+                          title="Import data RMA dari file .xlsx / .xls"
+                        >
+                          <FileUp size={14} /> {t.rmaImportExcel || "Import Excel"}
+                        </Btn>
+                        <Btn
+                          variant="solid"
+                          onClick={() => setRmaModal({ mode: "new" })}
+                        >
+                          <Plus size={14} /> {t.rmaNewTicket}
+                        </Btn>
+                      </>
+                    )}
                   </div>
                 }
               />
@@ -10057,17 +10866,21 @@ export default function App() {
                           onClick={() => setWaMsgEntry({ kind: "rma", entry: r })}
                           title={t.waMessageAction}
                         />
-                        <IconBtn
-                          icon={Pencil}
-                          onClick={() => setRmaModal({ mode: "edit", entry: r })}
-                          title={t.editAction}
-                        />
-                        <IconBtn
-                          icon={Trash2}
-                          danger
-                          onClick={() => setDeleteConfirm({ kind: "rma", entry: r })}
-                          title={t.deleteAction}
-                        />
+                        {!isViewer && (
+                          <>
+                            <IconBtn
+                              icon={Pencil}
+                              onClick={() => setRmaModal({ mode: "edit", entry: r })}
+                              title={t.editAction}
+                            />
+                            <IconBtn
+                              icon={Trash2}
+                              danger
+                              onClick={() => setDeleteConfirm({ kind: "rma", entry: r })}
+                              title={t.deleteAction}
+                            />
+                          </>
+                        )}
                       </div>
                     ),
                   },
@@ -10098,19 +10911,23 @@ export default function App() {
                     >
                       <FileDown size={14} /> {t.waExportExcel || "Export Excel"}
                     </Btn>
-                    <Btn
-                      variant="ghost"
-                      onClick={() => setWaImportModal(true)}
-                      title="Import WhatsApp Log dari file .xlsx / .xls"
-                    >
-                      <FileUp size={14} /> {t.waImportExcel || "Import Excel"}
-                    </Btn>
-                    <Btn
-                      variant="solid"
-                      onClick={() => setWaModal({ mode: "new" })}
-                    >
-                      <Plus size={14} /> {t.waNewCase}
-                    </Btn>
+                    {!isViewer && (
+                      <>
+                        <Btn
+                          variant="ghost"
+                          onClick={() => setWaImportModal(true)}
+                          title="Import WhatsApp Log dari file .xlsx / .xls"
+                        >
+                          <FileUp size={14} /> {t.waImportExcel || "Import Excel"}
+                        </Btn>
+                        <Btn
+                          variant="solid"
+                          onClick={() => setWaModal({ mode: "new" })}
+                        >
+                          <Plus size={14} /> {t.waNewCase}
+                        </Btn>
+                      </>
+                    )}
                   </div>
                 }
               />
@@ -10382,17 +11199,21 @@ export default function App() {
                           onClick={() => setWaMsgEntry({ kind: "wa", entry: r })}
                           title={t.waMessageAction}
                         />
-                        <IconBtn
-                          icon={Pencil}
-                          onClick={() => setWaModal({ mode: "edit", entry: r })}
-                          title={t.editAction}
-                        />
-                        <IconBtn
-                          icon={Trash2}
-                          danger
-                          onClick={() => setDeleteConfirm({ kind: "wa", entry: r })}
-                          title={t.deleteAction}
-                        />
+                        {!isViewer && (
+                          <>
+                            <IconBtn
+                              icon={Pencil}
+                              onClick={() => setWaModal({ mode: "edit", entry: r })}
+                              title={t.editAction}
+                            />
+                            <IconBtn
+                              icon={Trash2}
+                              danger
+                              onClick={() => setDeleteConfirm({ kind: "wa", entry: r })}
+                              title={t.deleteAction}
+                            />
+                          </>
+                        )}
                       </div>
                     ),
                   },
@@ -10444,12 +11265,14 @@ export default function App() {
                 onDeletePcbaItem={onDeletePcbaItem}
                 onDeletePcbaTransaction={onDeletePcbaTransaction}
                 onDeleteReplacement={onDeleteReplacement}
-                onDeleteRepair={onDeleteRepair}
+                onEditReplacement={onEditReplacement}
+                onSendToChina={onSendToChina}
+                onEditChinaShipment={onEditChinaShipment}
+                onDeleteChinaShipment={onDeleteChinaShipment}
                 onReplacement={onReplacement}
-                onRepair={onRepair}
-                onQc={onQc}
                 setToastMsg={setToastMsg}
                 t={t}
+                isViewer={isViewer}
               />
             </>
           )}
@@ -10460,8 +11283,50 @@ export default function App() {
                 title={t.settings}
                 subtitle={t.settingsPageSubtitle}
               />
-              <SettingsTab master={master} setMaster={setMaster} t={t} />
+              <SettingsTab master={master} setMaster={setMaster} t={t} isViewer={isViewer} />
             </>
+          )}
+
+          {tab === "users" && (
+            isAdministrator ? (
+              <>
+                <SectionHeader
+                  title={t.userManagement || "User Management"}
+                  subtitle={t.userManagementSubtitle || "Kelola akun pengguna, role hak akses, dan status akun"}
+                />
+                <UserManagementTab
+                  currentUserProfile={profile}
+                  t={t}
+                  setToastMsg={setToastMsg}
+                />
+              </>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "60px 20px",
+                  textAlign: "center",
+                  background: T.panel,
+                  border: `1px solid ${T.line}`,
+                  borderRadius: 10,
+                  marginTop: 20,
+                }}
+              >
+                <ShieldAlert size={48} color={T.red} style={{ marginBottom: 16 }} />
+                <h2 style={{ fontSize: 20, color: T.red, marginBottom: 8, fontWeight: 700, fontFamily: sans }}>
+                  {t.accessDeniedTitle || "403 AKSES DITOLAK"}
+                </h2>
+                <p style={{ fontSize: 14, color: T.ink2, maxWidth: 460, marginBottom: 20, fontFamily: sans }}>
+                  {t.accessDeniedMsg || "Anda tidak memiliki izin (Permission Denied) untuk mengakses halaman ini."}
+                </p>
+                <Btn variant="solid" onClick={() => setTab("home")}>
+                  Kembali ke Dashboard
+                </Btn>
+              </div>
+            )
           )}
         </div>
       </div>
