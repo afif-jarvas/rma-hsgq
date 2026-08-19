@@ -68,7 +68,7 @@ import { PERMISSIONS, ROLES } from "./auth/rbac.js";
 import hsgqLogo from "./assets/hsgq-logo.png";
 import { exportRmaToExcel, parseRmaFromExcel } from "./utils/excelRma.js";
 import { exportWaToExcel, parseWaFromExcel } from "./utils/excelWa.js";
-import { exportPcbaToExcel, CHINA_SHIPMENT_COLUMNS, REPLACEMENT_COLUMNS } from "./utils/excelPcba.js";
+import { exportPcbaToExcel, parsePcbaFromExcel, CHINA_SHIPMENT_COLUMNS, REPLACEMENT_COLUMNS } from "./utils/excelPcba.js";
 
 /* ============================================================
    TOKENS — "Fiber patch bay" console
@@ -324,6 +324,12 @@ const I18N = {
     toastReplacementDeleted: "Data replacement berhasil dihapus.",
     deleteChinaShipmentTitle: "KONFIRMASI BATALKAN PENGIRIMAN",
     deleteChinaShipmentMsg: "Apakah Anda yakin ingin membatalkan/menghapus data pengiriman ini? Status PCBA terkait akan dikembalikan menjadi Bad.",
+    pcbaImportExcel: "Import Excel",
+    pcbaImportModalTitle: "IMPORT PCBA DARI EXCEL",
+    pcbaImportHint: "File Excel harus memiliki kolom: 'PCBA Serial No.', 'PCBA Type', dan 'Date'.",
+    pcbaImportValidCount: "PCBA valid siap diimport",
+    pcbaImportButton: "Import PCBA",
+    toastPcbaImportSuccess: "Import berhasil. {count} PCBA berhasil ditambahkan ke inventory.",
     userManagement: "User Management",
     userManagementSubtitle: "Kelola akun pengguna, role hak akses, dan status akun",
     accessDeniedTitle: "403 AKSES DITOLAK",
@@ -701,6 +707,12 @@ const I18N = {
     toastReplacementDeleted: "Replacement record deleted successfully.",
     deleteChinaShipmentTitle: "CONFIRM CANCEL SHIPMENT",
     deleteChinaShipmentMsg: "Are you sure you want to cancel this shipment? The PCBA status will revert to Bad.",
+    pcbaImportExcel: "Import Excel",
+    pcbaImportModalTitle: "IMPORT PCBA FROM EXCEL",
+    pcbaImportHint: "Excel file must contain columns: 'PCBA Serial No.', 'PCBA Type', and 'Date'.",
+    pcbaImportValidCount: "valid PCBA ready to import",
+    pcbaImportButton: "Import PCBA",
+    toastPcbaImportSuccess: "Import successful. {count} PCBA added to inventory.",
     userManagement: "User Management",
     userManagementSubtitle: "Manage user accounts, RBAC roles, and account statuses",
     accessDeniedTitle: "403 ACCESS DENIED",
@@ -1131,6 +1143,12 @@ const I18N = {
     toastReplacementDeleted: "替换记录成功删除。",
     deleteChinaShipmentTitle: "确认取消寄送",
     deleteChinaShipmentMsg: "您确定要取消此寄送记录吗？相关 PCBA 状态将恢复为不良品。",
+    pcbaImportExcel: "从 Excel 导入",
+    pcbaImportModalTitle: "从 EXCEL 导入 PCBA",
+    pcbaImportHint: "Excel 文件必须包含列：'PCBA Serial No.'、'PCBA Type' 和 'Date'。",
+    pcbaImportValidCount: "个有效 PCBA 准备导入",
+    pcbaImportButton: "导入 PCBA",
+    toastPcbaImportSuccess: "导入成功。已将 {count} 个 PCBA 添加到库存。",
     userManagement: "用户管理",
     userManagementSubtitle: "管理用户账户、权限角色及账户状态",
     accessDeniedTitle: "403 访问被拒绝",
@@ -7439,6 +7457,7 @@ function PcbaInventoryTab({
   rma,
   master,
   onGoodsReceipt,
+  onBulkImportPcba,
   onEditPcbaItem,
   onDeletePcbaItem,
   onDeletePcbaTransaction,
@@ -8053,6 +8072,16 @@ function PcbaInventoryTab({
           </Btn>
 
           {!isViewer && subTab === "stock" && (
+            <Btn
+              variant="ghost"
+              onClick={() => setModal({ type: "import" })}
+              title="Import data PCBA dari file Excel"
+            >
+              <FileUp size={14} /> {t.pcbaImportExcel || "Import Excel"}
+            </Btn>
+          )}
+
+          {!isViewer && subTab === "stock" && (
             <Btn variant="solid" onClick={() => setModal({ type: "receipt" })}>
               <Plus size={14} /> {t.pcbaReceiveNew}
             </Btn>
@@ -8635,6 +8664,18 @@ function PcbaInventoryTab({
           />
         </Modal>
       )}
+      {modal?.type === "import" && (
+        <PcbaImportModal
+          existingPcba={pcba.items || []}
+          master={master}
+          onImport={async (validItems, batchOptions) => {
+            const res = await onBulkImportPcba(validItems, batchOptions);
+            return res;
+          }}
+          onClose={() => setModal(null)}
+          t={t}
+        />
+      )}
     </div>
   );
 }
@@ -8989,6 +9030,284 @@ function WaImportModal({ existingWa, onImport, onClose, t }) {
           >
             {importing && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
             {(t.waImportConfirm || "Import {n} Case").replace("{n}", importCount)}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+/* ============================================================
+   PCBA IMPORT MODAL (BULK IMPORT DARI EXCEL)
+   ============================================================ */
+function PcbaImportModal({ existingPcba, master, onImport, onClose, t }) {
+  const [file, setFile] = useState(null);
+  const [parsing, setParsing] = useState(false);
+  const [parseResult, setParseResult] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const [batchOptions, setBatchOptions] = useState({
+    supplier: master?.suppliers?.[0] || "-",
+    warehouseLocation: master?.warehouseLocations?.[0] || "Gudang Utama",
+    receivedBy: master?.pcbaReceivedBy?.[0] || "Excel Import",
+  });
+
+  const existingSerialNos = useMemo(
+    () => (existingPcba || []).map((i) => i.serialNo).filter(Boolean),
+    [existingPcba]
+  );
+
+  const handleFileChange = async (e) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    setFile(selected);
+    setErrorMsg("");
+    setParseResult(null);
+    setParsing(true);
+    try {
+      const res = await parsePcbaFromExcel(selected, existingSerialNos);
+      setParseResult(res);
+    } catch (err) {
+      setErrorMsg(err.message || "Gagal membaca file Excel.");
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!parseResult || !parseResult.valid || parseResult.valid.length === 0) return;
+    setImporting(true);
+    setErrorMsg("");
+    try {
+      const res = await onImport(parseResult.valid, batchOptions);
+      setImporting(false);
+      if (res && res.ok !== false) {
+        onClose();
+      } else if (res && res.error) {
+        setErrorMsg(res.error);
+      }
+    } catch (err) {
+      setImporting(false);
+      setErrorMsg(err.message || "Gagal melakukan import data PCBA.");
+    }
+  };
+
+  return (
+    <Modal title={t.pcbaImportModalTitle || "IMPORT PCBA DARI EXCEL"} onClose={onClose} width={700}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <InlineHint>
+          {t.pcbaImportHint || "Pilih file Excel yang memiliki kolom: 'PCBA Serial No.', 'PCBA Type', dan 'Date'."}
+        </InlineHint>
+
+        {errorMsg && <InlineHint tone="warn">{errorMsg}</InlineHint>}
+
+        <Field label={t.rmaImportSelectFile || "Pilih file .xlsx / .xls"}>
+          <input
+            type="file"
+            accept=".xlsx, .xls, .csv"
+            onChange={handleFileChange}
+            style={{
+              fontFamily: sans,
+              fontSize: 13,
+              color: T.ink,
+              background: T.panel2,
+              border: `1px solid ${T.line}`,
+              borderRadius: 6,
+              padding: "8px 12px",
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          />
+        </Field>
+
+        {parsing && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: T.ink2, fontSize: 13 }}>
+            <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+            {t.rmaImportValidating || "Membaca dan memvalidasi file Excel..."}
+          </div>
+        )}
+
+        {parseResult && !parsing && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {parseResult.headerError ? (
+              <InlineHint tone="warn">
+                <strong>{t.rmaImportHeaderError || "Header tidak cocok"}:</strong> {parseResult.headerError}
+              </InlineHint>
+            ) : (
+              <>
+                {/* Summary Badges */}
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <div style={{ background: `${T.green}20`, color: T.green, border: `1px solid ${T.green}44`, padding: "8px 12px", borderRadius: 6, fontSize: 12.5, fontWeight: 700 }}>
+                    ✓ {parseResult.valid.length} {t.pcbaImportValidCount || "PCBA Siap Diimport"}
+                  </div>
+
+                  {parseResult.duplicates.length > 0 && (
+                    <div style={{ background: `${T.amber}20`, color: T.amber, border: `1px solid ${T.amber}44`, padding: "8px 12px", borderRadius: 6, fontSize: 12.5, fontWeight: 700 }}>
+                      ⚠ {parseResult.duplicates.length} {t.rmaImportDuplicates || "Duplikat (Dilewati)"}
+                    </div>
+                  )}
+
+                  {parseResult.errors.length > 0 && (
+                    <div style={{ background: `${T.red}20`, color: T.red, border: `1px solid ${T.red}44`, padding: "8px 12px", borderRadius: 6, fontSize: 12.5, fontWeight: 700 }}>
+                      ✕ {parseResult.errors.length} {t.rmaImportRowErrors || "Error / Data Kosong"}
+                    </div>
+                  )}
+                </div>
+
+                {/* Batch default settings (Supplier, Location, Received By) */}
+                <div
+                  style={{
+                    background: T.panel2,
+                    border: `1px solid ${T.line}`,
+                    borderRadius: 8,
+                    padding: "12px 14px",
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr",
+                    gap: 10,
+                  }}
+                >
+                  <div>
+                    <label style={{ fontSize: 11.5, fontWeight: 600, color: T.ink2, display: "block", marginBottom: 4 }}>
+                      Supplier
+                    </label>
+                    <select
+                      value={batchOptions.supplier}
+                      onChange={(e) => setBatchOptions({ ...batchOptions, supplier: e.target.value })}
+                      style={{
+                        width: "100%",
+                        height: 32,
+                        padding: "0 8px",
+                        background: T.panel,
+                        border: `1px solid ${T.line}`,
+                        borderRadius: 6,
+                        color: T.ink,
+                        fontSize: 12,
+                      }}
+                    >
+                      {(master?.suppliers || ["-"]).map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11.5, fontWeight: 600, color: T.ink2, display: "block", marginBottom: 4 }}>
+                      Lokasi Gudang
+                    </label>
+                    <select
+                      value={batchOptions.warehouseLocation}
+                      onChange={(e) => setBatchOptions({ ...batchOptions, warehouseLocation: e.target.value })}
+                      style={{
+                        width: "100%",
+                        height: 32,
+                        padding: "0 8px",
+                        background: T.panel,
+                        border: `1px solid ${T.line}`,
+                        borderRadius: 6,
+                        color: T.ink,
+                        fontSize: 12,
+                      }}
+                    >
+                      {(master?.warehouseLocations || ["Gudang Utama"]).map((loc) => (
+                        <option key={loc} value={loc}>{loc}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 11.5, fontWeight: 600, color: T.ink2, display: "block", marginBottom: 4 }}>
+                      Diterima Oleh
+                    </label>
+                    <input
+                      type="text"
+                      value={batchOptions.receivedBy}
+                      onChange={(e) => setBatchOptions({ ...batchOptions, receivedBy: e.target.value })}
+                      placeholder="Nama penerima..."
+                      style={{
+                        width: "100%",
+                        height: 32,
+                        padding: "0 8px",
+                        background: T.panel,
+                        border: `1px solid ${T.line}`,
+                        borderRadius: 6,
+                        color: T.ink,
+                        fontSize: 12,
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Preview Table */}
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 6 }}>
+                    Preview Data ({parseResult.allRows.length} baris):
+                  </div>
+                  <div style={{ maxHeight: 220, overflowY: "auto", border: `1px solid ${T.line}`, borderRadius: 8, background: T.panel2 }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, textAlign: "left" }}>
+                      <thead>
+                        <tr style={{ background: T.panel, borderBottom: `1px solid ${T.line}`, position: "sticky", top: 0, zIndex: 1 }}>
+                          <th style={{ padding: "8px 10px", color: T.ink2, fontWeight: 700, width: 40, textAlign: "center" }}>No.</th>
+                          <th style={{ padding: "8px 10px", color: T.ink2, fontWeight: 700 }}>PCBA Serial No.</th>
+                          <th style={{ padding: "8px 10px", color: T.ink2, fontWeight: 700 }}>PCBA Type</th>
+                          <th style={{ padding: "8px 10px", color: T.ink2, fontWeight: 700 }}>Date</th>
+                          <th style={{ padding: "8px 10px", color: T.ink2, fontWeight: 700 }}>Status Validasi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {parseResult.allRows.map((r, idx) => {
+                          const isValid = r.status === "valid";
+                          const isDup = r.status === "duplicate";
+                          return (
+                            <tr key={idx} style={{ borderBottom: `1px solid ${T.lineDim}`, background: isValid ? "transparent" : isDup ? `${T.amber}0a` : `${T.red}0a` }}>
+                              <td style={{ padding: "6px 10px", textAlign: "center", color: T.ink3, fontFamily: mono }}>{idx + 1}</td>
+                              <td style={{ padding: "6px 10px", fontWeight: 600, color: T.ink, fontFamily: mono }}>{r.serialNo}</td>
+                              <td style={{ padding: "6px 10px", color: T.ink }}>{r.pcbaType}</td>
+                              <td style={{ padding: "6px 10px", color: T.ink2 }}>{r.receivedDate ? fmtDate(r.receivedDate) : "-"}</td>
+                              <td style={{ padding: "6px 10px" }}>
+                                {isValid ? (
+                                  <span style={{ color: T.green, fontWeight: 600, fontSize: 11 }}>✓ Siap Diimport</span>
+                                ) : isDup ? (
+                                  <span style={{ color: T.amber, fontWeight: 600, fontSize: 11 }} title={r.message}>⚠ {r.message}</span>
+                                ) : (
+                                  <span style={{ color: T.red, fontWeight: 600, fontSize: 11 }} title={r.message}>✕ {r.message}</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 }}>
+          <Btn variant="ghost" onClick={onClose} disabled={importing}>
+            {t.cancel || "Batal"}
+          </Btn>
+          <Btn
+            variant="solid"
+            onClick={handleConfirmImport}
+            disabled={importing || !parseResult || !parseResult.valid || parseResult.valid.length === 0}
+          >
+            {importing ? (
+              <>
+                <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+                {t.rmaImporting || "Mengimport..."}
+              </>
+            ) : (
+              <>
+                <FileUp size={14} />
+                {parseResult?.valid?.length
+                  ? `Import ${parseResult.valid.length} PCBA`
+                  : (t.pcbaImportButton || "Import PCBA")}
+              </>
+            )}
           </Btn>
         </div>
       </div>
@@ -9632,6 +9951,80 @@ export default function App() {
       return persistPcba(newPcba);
     },
     [pcba, persistPcba, assert, setToastMsg]
+  );
+
+  const onBulkImportPcba = useCallback(
+    async (importedRows, batchOptions = {}) => {
+      try {
+        assert(PERMISSIONS.PCBA_CREATE, "mengimport data PCBA dari Excel");
+      } catch (authErr) {
+        setToastMsg(authErr.message);
+        return { ok: false, error: authErr.message };
+      }
+
+      if (!importedRows || importedRows.length === 0) {
+        return { ok: false, error: "Tidak ada data PCBA yang valid untuk diimport." };
+      }
+
+      const now = new Date().toISOString();
+      const newItems = [];
+      const newTransactions = [];
+
+      importedRows.forEach((row, idx) => {
+        const receivedDate = row.receivedDate || todayISO();
+        const receivedBy = batchOptions.receivedBy?.trim() || row.receivedBy?.trim() || (profile?.displayName || user?.displayName || "Excel Import");
+        const supplier = batchOptions.supplier || row.supplier || (master.suppliers?.[0] || "-");
+        const warehouseLocation = batchOptions.warehouseLocation || row.warehouseLocation || (master.warehouseLocations?.[0] || "Gudang Utama");
+
+        const newItem = {
+          id: uid(),
+          serialNo: String(row.serialNo).trim(),
+          pcbaType: String(row.pcbaType).trim(),
+          product: row.product?.trim() || "",
+          supplier,
+          warehouseLocation,
+          status: "Good",
+          receivedDate,
+          receivedBy,
+          notes: row.notes?.trim() || "Import dari Excel",
+          createdAt: now,
+        };
+
+        const transaction = {
+          id: uid(),
+          transactionNo: `TRX-${receivedDate.replace(/-/g, "")}-${String(Date.now() + idx).slice(-4)}`,
+          pcbaItemId: newItem.id,
+          type: "Goods Receipt",
+          rmaId: null,
+          receivedDate,
+          receivedBy,
+          performedBy: receivedBy,
+          reason: `Import stok PCBA (${receivedBy})`,
+          createdAt: now,
+        };
+
+        newItems.push(newItem);
+        newTransactions.push(transaction);
+      });
+
+      const newPcba = {
+        items: [...newItems, ...pcba.items],
+        transactions: [...newTransactions, ...pcba.transactions],
+        replacements: pcba.replacements,
+        repairs: pcba.repairs || [],
+        chinaShipments: pcba.chinaShipments || [],
+      };
+
+      const ok = await persistPcba(newPcba);
+      if (ok) {
+        const curT = I18N[language] || I18N.id;
+        const msg = (curT.toastPcbaImportSuccess || "Import berhasil. {count} PCBA berhasil ditambahkan ke inventory.")
+          .replace("{count}", newItems.length);
+        setToastMsg(msg);
+      }
+      return { ok: !!ok, count: newItems.length };
+    },
+    [pcba, persistPcba, assert, setToastMsg, master, profile, user, language]
   );
 
   const onReplacement = useCallback(
@@ -11261,6 +11654,7 @@ export default function App() {
                 rma={rma}
                 master={master}
                 onGoodsReceipt={onGoodsReceipt}
+                onBulkImportPcba={onBulkImportPcba}
                 onEditPcbaItem={onEditPcbaItem}
                 onDeletePcbaItem={onDeletePcbaItem}
                 onDeletePcbaTransaction={onDeletePcbaTransaction}

@@ -17,6 +17,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   XCircle,
+  Check,
+  X,
   Loader2,
   Mail,
   User,
@@ -336,6 +338,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
             <thead>
               <tr style={{ background: T.panel2, borderBottom: `1px solid ${T.line}` }}>
+                <th style={{ padding: "12px 14px", fontWeight: 700, color: T.ink2, width: 50, textAlign: "center" }}>No.</th>
                 <th style={{ padding: "12px 14px", fontWeight: 700, color: T.ink2 }}>Nama Pengguna</th>
                 <th style={{ padding: "12px 14px", fontWeight: 700, color: T.ink2 }}>Email / Username</th>
                 <th style={{ padding: "12px 14px", fontWeight: 700, color: T.ink2 }}>Role</th>
@@ -347,7 +350,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: "30px", textAlign: "center", color: T.ink3 }}>
+                  <td colSpan={7} style={{ padding: "30px", textAlign: "center", color: T.ink3 }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                       <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Memuat data user...
                     </div>
@@ -355,12 +358,12 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: "30px", textAlign: "center", color: T.ink3 }}>
+                  <td colSpan={7} style={{ padding: "30px", textAlign: "center", color: T.ink3 }}>
                     Tidak ada akun pengguna yang memenuhi filter.
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((u) => {
+                filteredUsers.map((u, index) => {
                   const uid = u.uid || u.id;
                   const isActive = u.status === "active" || u.status === "Active" || !u.status;
                   const isCurrent = currentUserProfile?.uid === uid || currentUserProfile?.id === uid;
@@ -373,35 +376,30 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
                         background: isCurrent ? `${T.cyan}08` : "transparent",
                       }}
                     >
+                      <td
+                        style={{
+                          padding: "12px 14px",
+                          textAlign: "center",
+                          color: T.ink3,
+                          fontFamily: mono,
+                          fontSize: 12.5,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {index + 1}
+                      </td>
+
                       <td style={{ padding: "12px 14px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <div
-                            style={{
-                              width: 30,
-                              height: 30,
-                              borderRadius: "50%",
-                              background: `${T.cyan}22`,
-                              color: T.cyan,
-                              fontWeight: 700,
-                              fontSize: 13,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            {(u.displayName || u.name || u.email || "U").charAt(0).toUpperCase()}
+                        <div>
+                          <div style={{ fontWeight: 600, color: T.ink, display: "flex", alignItems: "center", gap: 6 }}>
+                            <span>{u.displayName || u.name || "-"}</span>
+                            {isCurrent && (
+                              <span style={{ fontSize: 10, background: T.cyan, color: "#000", padding: "1px 5px", borderRadius: 4, fontWeight: 700 }}>
+                                YOU
+                              </span>
+                            )}
                           </div>
-                          <div>
-                            <div style={{ fontWeight: 600, color: T.ink }}>
-                              {u.displayName || u.name || "-"}
-                              {isCurrent && (
-                                <span style={{ marginLeft: 6, fontSize: 10, background: T.cyan, color: "#000", padding: "1px 5px", borderRadius: 4, fontWeight: 700 }}>
-                                  YOU
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: 11, color: T.ink3 }}>{u.company || u.phone || "HSGQ Team"}</div>
-                          </div>
+                          <div style={{ fontSize: 11, color: T.ink3 }}>{u.company || u.phone || "HSGQ Team"}</div>
                         </div>
                       </td>
 
@@ -457,8 +455,8 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
 
                           <button
                             type="button"
-                            title={isActive ? "Nonaktifkan Akun" : "Aktifkan Akun"}
-                            onClick={() => handleToggleStatus(u)}
+                            title={isActive ? "Nonaktifkan User" : "Aktifkan User"}
+                            onClick={() => setModal({ type: "toggleStatus", user: u })}
                             style={{
                               padding: "6px",
                               borderRadius: 6,
@@ -468,7 +466,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
                               cursor: "pointer",
                             }}
                           >
-                            {isActive ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
+                            {isActive ? <X size={14} /> : <Check size={14} />}
                           </button>
 
                           <button
@@ -531,6 +529,26 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
           onSuccess={() => {
             setModal(null);
             if (setToastMsg) setToastMsg(`Password untuk user ${modal.user.email} berhasil direset.`);
+          }}
+          currentUserProfile={currentUserProfile}
+        />
+      )}
+
+      {modal?.type === "toggleStatus" && (
+        <ToggleStatusModal
+          user={modal.user}
+          usersList={users}
+          onClose={() => setModal(null)}
+          onSuccess={(newStatus) => {
+            setModal(null);
+            loadUsers();
+            if (setToastMsg) {
+              setToastMsg(
+                newStatus === "active"
+                  ? `User ${modal.user.displayName || modal.user.email} berhasil diaktifkan.`
+                  : `User ${modal.user.displayName || modal.user.email} berhasil dinonaktifkan.`
+              );
+            }
           }}
           currentUserProfile={currentUserProfile}
         />
@@ -1017,11 +1035,266 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
 
   return (
     <div className="profile-overlay" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%",
+          maxWidth: 440,
+          background: T.panel,
+          border: `1px solid ${T.line}`,
+          borderRadius: 14,
+          boxShadow: "0 20px 30px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05)",
+          padding: "20px 22px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+          fontFamily: sans,
+          position: "relative",
+        }}
+      >
+        {/* HEADER */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                background: `${T.red}18`,
+                border: `1px solid ${T.red}33`,
+                color: T.red,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Trash2 size={18} />
+            </div>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: T.ink, lineHeight: 1.3 }}>
+                Hapus Akun
+              </h2>
+              <p style={{ margin: "2px 0 0", fontSize: 12, color: T.red, fontWeight: 500 }}>
+                Tindakan ini tidak dapat dibatalkan
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: T.ink3,
+              cursor: "pointer",
+              padding: 4,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 6,
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* PROMPT & USER SUMMARY CARD */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ fontSize: 13, color: T.ink2 }}>
+            Apakah Anda yakin ingin menghapus akun ini?
+          </div>
+
+          <div
+            style={{
+              background: T.panel2,
+              border: `1px solid ${T.line}`,
+              borderRadius: 10,
+              padding: "12px 14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  color: T.ink,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {user.displayName || user.name || "-"}
+              </div>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: T.ink2,
+                  fontFamily: mono,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  marginTop: 2,
+                }}
+              >
+                {user.email || "-"}
+              </div>
+            </div>
+
+            <div style={{ flexShrink: 0 }}>
+              <RoleBadge role={user.role} />
+            </div>
+          </div>
+        </div>
+
+        {/* ERROR MESSAGE */}
+        {err && (
+          <div
+            style={{
+              padding: "10px 12px",
+              background: `${T.red}18`,
+              border: `1px solid ${T.red}33`,
+              color: T.red,
+              borderRadius: 8,
+              fontSize: 12.5,
+            }}
+          >
+            {err}
+          </div>
+        )}
+
+        {/* LAST ADMIN BLOCKING NOTICE */}
+        {isBlockedLastAdmin && (
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              padding: 12,
+              background: `${T.amber}18`,
+              border: `1px solid ${T.amber}33`,
+              borderRadius: 8,
+              color: T.amber,
+              fontSize: 12.5,
+              lineHeight: 1.4,
+            }}
+          >
+            <AlertTriangle size={17} style={{ flexShrink: 0, marginTop: 1 }} />
+            <div>
+              <strong>Perlindungan Administrator Terakhir:</strong> Akun ini adalah satu-satunya Administrator aktif dalam sistem dan tidak boleh dihapus.
+            </div>
+          </div>
+        )}
+
+        {/* ACTIONS */}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 4 }}>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            style={{
+              height: 38,
+              padding: "0 16px",
+              borderRadius: 8,
+              border: `1px solid ${T.line}`,
+              background: "transparent",
+              color: T.ink,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={loading || isBlockedLastAdmin}
+            style={{
+              height: 38,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "0 18px",
+              borderRadius: 8,
+              border: "none",
+              background: T.red,
+              color: "#fff",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: isBlockedLastAdmin ? "not-allowed" : "pointer",
+              opacity: isBlockedLastAdmin ? 0.5 : 1,
+            }}
+          >
+            {loading ? (
+              <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+            ) : (
+              <Trash2 size={14} />
+            )}
+            Hapus Akun
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   TOGGLE STATUS MODAL (NONAKTIFKAN / AKTIFKAN USER)
+   ============================================================ */
+function ToggleStatusModal({ user, usersList, onClose, onSuccess, currentUserProfile }) {
+  const targetUid = user.uid || user.id;
+  const isCurrentActive = user.status === "active" || user.status === "Active" || !user.status;
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  const isBlockedLastAdmin =
+    isCurrentActive &&
+    (user.role === "Administrator" || user.role === "administrator") &&
+    isLastActiveAdmin(usersList, targetUid);
+
+  const handleConfirm = async () => {
+    setErr("");
+    try {
+      assertAuthorized(currentUserProfile, PERMISSIONS.USER_TOGGLE_STATUS, "mengubah status user");
+
+      if (isBlockedLastAdmin) {
+        return setErr("Aksi ditolak: Sistem harus memiliki minimal satu Administrator yang aktif.");
+      }
+
+      setLoading(true);
+      const nextStatus = isCurrentActive ? "inactive" : "active";
+      const res = await adminUpdateAccount(targetUid, { status: nextStatus });
+      setLoading(false);
+
+      if (res.ok) {
+        onSuccess(nextStatus);
+      } else {
+        setErr(res.error || "Gagal mengubah status user.");
+      }
+    } catch (error) {
+      setLoading(false);
+      setErr(error.message);
+    }
+  };
+
+  return (
+    <div className="profile-overlay" onClick={onClose}>
       <div className="profile-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440 }}>
         <div className="profile-modal-header">
           <div>
-            <h2 style={{ color: T.red }}>Konfirmasi Hapus Akun</h2>
-            <p>Tindakan ini tidak dapat dibatalkan</p>
+            <h2 style={{ color: isCurrentActive ? T.red : T.green }}>
+              {isCurrentActive ? "Nonaktifkan User?" : "Aktifkan User?"}
+            </h2>
+            <p>
+              {isCurrentActive
+                ? "Akun yang dinonaktifkan tidak dapat login ke sistem"
+                : "Akun yang diaktifkan akan dapat login kembali"}
+            </p>
           </div>
           <button className="modal-close-button" onClick={onClose}>
             ✕
@@ -1038,12 +1311,20 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
           <div style={{ display: "flex", gap: 10, padding: 12, background: `${T.amber}18`, border: `1px solid ${T.amber}33`, borderRadius: 6, color: T.amber, fontSize: 13, marginBottom: 14 }}>
             <AlertTriangle size={18} style={{ flexShrink: 0 }} />
             <div>
-              <strong>Perlindungan Administrator Terakhir:</strong> Akun ini adalah satu-satunya Administrator aktif dalam sistem dan tidak boleh dihapus.
+              <strong>Perlindungan Administrator Terakhir:</strong> Akun ini adalah satu-satunya Administrator aktif dalam sistem dan tidak boleh dinonaktifkan.
             </div>
           </div>
         ) : (
-          <div style={{ fontSize: 13, color: T.ink, marginBottom: 14 }}>
-            Apakah Anda yakin ingin menghapus akun <strong>{user.displayName || user.name}</strong> ({user.email})?
+          <div style={{ fontSize: 13, color: T.ink, marginBottom: 14, lineHeight: 1.5 }}>
+            {isCurrentActive ? (
+              <>
+                Apakah Anda yakin ingin menonaktifkan user <strong>{user.displayName || user.name || user.email}</strong>? User tidak akan dapat masuk ke sistem hingga diaktifkan kembali.
+              </>
+            ) : (
+              <>
+                Apakah Anda yakin ingin mengaktifkan user <strong>{user.displayName || user.name || user.email}</strong>? User akan dapat kembali masuk dan menggunakan sistem.
+              </>
+            )}
           </div>
         )}
 
@@ -1058,7 +1339,7 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
           </button>
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={handleConfirm}
             disabled={loading || isBlockedLastAdmin}
             style={{
               display: "flex",
@@ -1067,7 +1348,7 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
               padding: "8px 16px",
               borderRadius: 6,
               border: "none",
-              background: T.red,
+              background: isCurrentActive ? T.red : T.green,
               color: "#fff",
               fontWeight: 700,
               cursor: isBlockedLastAdmin ? "not-allowed" : "pointer",
@@ -1075,7 +1356,7 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
             }}
           >
             {loading && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
-            Hapus Akun
+            {isCurrentActive ? "Nonaktifkan User" : "Aktifkan User"}
           </button>
         </div>
       </div>
