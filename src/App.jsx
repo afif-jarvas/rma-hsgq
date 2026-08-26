@@ -301,6 +301,12 @@ const I18N = {
     pcbaColReceivedDate: "Tanggal Penerimaan",
     pcbaColReceivedBy: "Penerima",
     pcbaRelatedRma: "RMA Terkait",
+    pcbaSearchRmaPlaceholder: "Cari nomor RMA (misal: 20260813)...",
+    pcbaSelectRmaPlaceholder: "— Pilih RMA Terkait —",
+    pcbaNoRmaFound: "RMA tidak ditemukan",
+    pcbaUnlinkedRma: "— Tidak terkait RMA —",
+    pcbaSnNotFoundInRma: "SN PCBA tidak ditemukan pada RMA terkait.",
+    pcbaSelectRmaFirstPlaceholder: "Pilih RMA terkait terlebih dahulu...",
     pcbaNewGoodStock: "PCBA Baru (stok Good)",
     pcbaOldSerialLabel: "No. Serial PCBA Lama (yang dilepas dari unit)",
     pcbaProcessReplacement: "Proses Replacement",
@@ -681,6 +687,12 @@ const I18N = {
     pcbaColReceivedDate: "Received Date",
     pcbaColReceivedBy: "Received By",
     pcbaRelatedRma: "Related RMA",
+    pcbaSearchRmaPlaceholder: "Search RMA number (e.g. 20260813)...",
+    pcbaSelectRmaPlaceholder: "— Select Related RMA —",
+    pcbaNoRmaFound: "No RMA found",
+    pcbaUnlinkedRma: "— Not linked to RMA —",
+    pcbaSnNotFoundInRma: "PCBA SN not found in related RMA.",
+    pcbaSelectRmaFirstPlaceholder: "Select related RMA first...",
     pcbaNewGoodStock: "New PCBA (Good stock)",
     pcbaOldSerialLabel: "Old PCBA Serial No. (removed from unit)",
     pcbaProcessReplacement: "Process Replacement",
@@ -1117,6 +1129,12 @@ const I18N = {
     pcbaColReceivedDate: "接收日期",
     pcbaColReceivedBy: "接收人",
     pcbaRelatedRma: "相关 RMA",
+    pcbaSearchRmaPlaceholder: "搜索工单号 (例如: 20260813)...",
+    pcbaSelectRmaPlaceholder: "— 选择关联工单 —",
+    pcbaNoRmaFound: "未找到相关工单",
+    pcbaUnlinkedRma: "— 未关联工单 —",
+    pcbaSnNotFoundInRma: "相关工单中未找到 PCBA 序列号。",
+    pcbaSelectRmaFirstPlaceholder: "请先选择关联工单...",
     pcbaNewGoodStock: "新 PCBA (良品库存)",
     pcbaOldSerialLabel: "旧 PCBA 序列号 (拆卸于设备)",
     pcbaProcessReplacement: "处理替换",
@@ -1837,7 +1855,7 @@ Thank you.`;
    ============================================================ */
 function Field({ label, children, hint }) {
   return (
-    <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <span
         style={{
           fontSize: 11,
@@ -1851,7 +1869,7 @@ function Field({ label, children, hint }) {
       </span>
       {children}
       {hint && <span style={{ fontSize: 11, color: T.ink3 }}>{hint}</span>}
-    </label>
+    </div>
   );
 }
 const inputBase = {
@@ -1913,6 +1931,416 @@ function Select({ options, t, translateOptions = true, ...props }) {
           pointerEvents: "none",
         }}
       />
+    </div>
+  );
+}
+function SearchableRmaSelect({ rmaList = [], value, onChange, t, disabled = false }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const containerRef = useRef(null);
+  const searchInputRef = useRef(null);
+
+  const selectedRma = useMemo(() => {
+    return (rmaList || []).find((r) => r.id === value || r.ticketNo === value);
+  }, [rmaList, value]);
+
+  // Realtime search filtering by Ticket No, Customer, Device, SN, and Status
+  const filteredList = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return rmaList || [];
+    return (rmaList || []).filter((r) => {
+      const ticket = (r.ticketNo || "").toLowerCase();
+      const customer = (r.customerName || r.customer || "").toLowerCase();
+      const model = (r.deviceType || r.product || r.model || "").toLowerCase();
+      const sn = (r.sn || "").toLowerCase();
+      const status = (r.status || "").toLowerCase();
+      return (
+        ticket.includes(q) ||
+        customer.includes(q) ||
+        model.includes(q) ||
+        sn.includes(q) ||
+        status.includes(q)
+      );
+    });
+  }, [rmaList, search]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+    } else {
+      setSearch("");
+    }
+  }, [isOpen]);
+
+  const handleSelect = (chosenId, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (typeof onChange === "function") {
+      onChange(chosenId);
+    }
+    setIsOpen(false);
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      style={{ position: "relative", width: "100%" }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Trigger Box */}
+      <div
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!disabled) setIsOpen((prev) => !prev);
+        }}
+        onKeyDown={(e) => {
+          if (disabled) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsOpen((prev) => !prev);
+          } else if (e.key === "Escape") {
+            setIsOpen(false);
+          }
+        }}
+        style={{
+          ...inputBase,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          cursor: disabled ? "not-allowed" : "pointer",
+          userSelect: "none",
+          minHeight: 38,
+          boxSizing: "border-box",
+          borderColor: isOpen ? T.cyan : T.line,
+          boxShadow: isOpen ? `0 0 0 1px ${T.cyan}` : "none",
+          opacity: disabled ? 0.6 : 1,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            flex: 1,
+            paddingRight: 6,
+          }}
+        >
+          {selectedRma ? (
+            <>
+              <span style={{ fontFamily: mono, fontWeight: 700, color: T.cyan }}>
+                {selectedRma.ticketNo}
+              </span>
+              {(selectedRma.customerName || selectedRma.customer || selectedRma.deviceType) && (
+                <span
+                  style={{
+                    color: T.ink3,
+                    fontSize: 12,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  — {[selectedRma.customerName || selectedRma.customer, selectedRma.deviceType].filter(Boolean).join(" • ")}
+                </span>
+              )}
+            </>
+          ) : (
+            <span style={{ color: T.ink3 }}>
+              {t?.pcbaSelectRmaPlaceholder || "— Pilih RMA Terkait —"}
+            </span>
+          )}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+          {selectedRma && !disabled && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSelect("", e);
+              }}
+              title="Hapus pilihan"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: T.ink3,
+                cursor: "pointer",
+                padding: "2px 4px",
+                display: "flex",
+                alignItems: "center",
+                borderRadius: 4,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = T.red)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = T.ink3)}
+            >
+              <X size={13} />
+            </button>
+          )}
+          <ChevronDown
+            size={14}
+            color={isOpen ? T.cyan : T.ink3}
+            style={{
+              transition: "transform 0.2s ease",
+              transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Searchable Dropdown Popup */}
+      {isOpen && (
+        <div
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 1000,
+            background: T.panel,
+            border: `1px solid ${T.line}`,
+            borderRadius: 8,
+            boxShadow: "0 12px 36px rgba(0,0,0,0.35)",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* Search Header */}
+          <div
+            style={{
+              padding: "8px 10px",
+              borderBottom: `1px solid ${T.line}`,
+              background: T.panel2,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Search size={14} color={T.ink3} style={{ flexShrink: 0 }} />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t?.pcbaSearchRmaPlaceholder || "Cari nomor RMA (misal: 20260813)..."}
+              style={{
+                width: "100%",
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                color: T.ink,
+                fontSize: 13,
+                fontFamily: sans,
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setIsOpen(false);
+                } else if (e.key === "Enter" && filteredList.length === 1) {
+                  handleSelect(filteredList[0].id || filteredList[0].ticketNo, e);
+                }
+              }}
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  searchInputRef.current?.focus();
+                }}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: T.ink3,
+                  cursor: "pointer",
+                  padding: 2,
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          {/* List of RMA Items */}
+          <div
+            style={{
+              maxHeight: 230,
+              overflowY: "auto",
+              padding: "4px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            {/* Deselect / Unlink item */}
+            <button
+              type="button"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => handleSelect("", e)}
+              style={{
+                width: "100%",
+                border: "none",
+                textAlign: "left",
+                padding: "8px 10px",
+                borderRadius: 6,
+                fontSize: 12.5,
+                color: !value ? T.cyan : T.ink3,
+                background: !value ? T.cyanDim : "transparent",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                fontFamily: sans,
+              }}
+              onMouseEnter={(e) => {
+                if (value) e.currentTarget.style.background = T.panel2;
+              }}
+              onMouseLeave={(e) => {
+                if (value) e.currentTarget.style.background = "transparent";
+              }}
+            >
+              <span>{t?.pcbaUnlinkedRma || "— Tidak terkait RMA —"}</span>
+              {!value && <Check size={14} color={T.cyan} />}
+            </button>
+
+            {/* RMA matches (rendered up to 100 items for high performance) */}
+            {filteredList.slice(0, 100).map((r) => {
+              const rmaKey = r.id || r.ticketNo;
+              const isSelected = r.id === value || r.ticketNo === value;
+              return (
+                <button
+                  type="button"
+                  key={rmaKey}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => handleSelect(rmaKey, e)}
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    textAlign: "left",
+                    padding: "8px 10px",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    background: isSelected ? T.cyanDim : "transparent",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    transition: "background 0.15s ease",
+                    fontFamily: sans,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) e.currentTarget.style.background = T.panel2;
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2, overflow: "hidden" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span
+                        style={{
+                          fontFamily: mono,
+                          fontWeight: 700,
+                          fontSize: 13,
+                          color: isSelected ? T.cyan : T.ink,
+                        }}
+                      >
+                        {r.ticketNo}
+                      </span>
+                      {r.status && (
+                        <span
+                          style={{
+                            fontSize: 10.5,
+                            padding: "1px 6px",
+                            borderRadius: 4,
+                            background: `${T.cyan}18`,
+                            color: T.cyan,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {r.status}
+                        </span>
+                      )}
+                    </div>
+                    {(r.customerName || r.customer || r.deviceType || r.sn) && (
+                      <div
+                        style={{
+                          fontSize: 11.5,
+                          color: T.ink3,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {[
+                          r.customerName || r.customer,
+                          r.deviceType || r.product,
+                          r.sn ? `SN: ${r.sn}` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" • ")}
+                      </div>
+                    )}
+                  </div>
+
+                  {isSelected && <Check size={14} color={T.cyan} style={{ flexShrink: 0 }} />}
+                </button>
+              );
+            })}
+
+            {/* Empty state */}
+            {filteredList.length === 0 && (
+              <div
+                style={{
+                  padding: "24px 16px",
+                  textAlign: "center",
+                  color: T.ink3,
+                  fontSize: 12.5,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <Search size={18} color={T.ink3} />
+                <span>{t?.pcbaNoRmaFound || "RMA tidak ditemukan"}</span>
+                {search && (
+                  <span style={{ fontSize: 11, color: T.ink3, opacity: 0.8 }}>
+                    Keyword: "{search}"
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -6859,19 +7287,28 @@ function EditReplacementModal({ replacement, pcba, rma, master, onSave, onClose,
     });
   }, [rma, replacement.rmaId]);
 
+  const handleRmaChange = (newRmaId) => {
+    const selectedRma = (rmaOpenList || []).find((r) => r.id === newRmaId || r.ticketNo === newRmaId);
+    const sn = selectedRma ? (selectedRma.sn || selectedRma.serialNo || "").trim() : "";
+    setRmaId(newRmaId);
+    setOldSerialNo(sn);
+    if (err) setErr("");
+  };
+
+  const isRmaSelected = Boolean(rmaId);
+  const isSnMissing = isRmaSelected && !oldSerialNo;
+
   return (
     <Modal title={t.editReplacementTitle || "EDIT REPLACEMENT PCBA"} onClose={onClose} width={580}>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {err && <InlineHint tone="warn">{err}</InlineHint>}
 
         <Field label={t.pcbaRelatedRma || "RMA Terkait"}>
-          <Select
-            options={rmaOpenList.map((r) => r.ticketNo)}
-            value={rmaOpenList.find((r) => r.id === rmaId)?.ticketNo || ""}
-            onChange={(e) => {
-              const found = rmaOpenList.find((r) => r.ticketNo === e.target.value);
-              setRmaId(found ? found.id : "");
-            }}
+          <SearchableRmaSelect
+            rmaList={rmaOpenList}
+            value={rmaId}
+            onChange={handleRmaChange}
+            t={t}
           />
         </Field>
 
@@ -6891,11 +7328,32 @@ function EditReplacementModal({ replacement, pcba, rma, master, onSave, onClose,
           />
         </Field>
 
-        <Field label={t.pcbaOldSerialLabel || "No. Serial PCBA Lama (yang dilepas dari unit)"}>
+        <Field
+          label={t.pcbaOldSerialLabel || "No. Serial PCBA Lama (yang dilepas dari unit)"}
+          hint={
+            isSnMissing ? (
+              <span style={{ color: T.amber, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <AlertTriangle size={12} /> {t.pcbaSnNotFoundInRma || "SN PCBA tidak ditemukan pada RMA terkait."}
+              </span>
+            ) : null
+          }
+        >
           <TextInput
             value={oldSerialNo}
-            onChange={(e) => setOldSerialNo(e.target.value)}
-            style={{ fontFamily: mono }}
+            readOnly
+            placeholder={
+              !isRmaSelected
+                ? t.pcbaSelectRmaFirstPlaceholder || "Pilih RMA terkait terlebih dahulu..."
+                : t.pcbaSnNotFoundInRma || "SN PCBA tidak ditemukan pada RMA terkait."
+            }
+            style={{
+              fontFamily: mono,
+              background: T.panel,
+              cursor: "not-allowed",
+              color: oldSerialNo ? T.cyan : T.ink3,
+              fontWeight: oldSerialNo ? 700 : 400,
+              borderColor: isSnMissing ? T.amber : T.line,
+            }}
           />
         </Field>
 
@@ -7266,6 +7724,20 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose, t })
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const handleRmaChange = (newRmaId) => {
+    const selectedRma = (rmaOpenList || []).find((r) => r.id === newRmaId || r.ticketNo === newRmaId);
+    const sn = selectedRma ? (selectedRma.sn || selectedRma.serialNo || "").trim() : "";
+    setF((s) => ({
+      ...s,
+      rmaId: newRmaId,
+      oldSerialNo: sn,
+    }));
+    if (err) setErr("");
+  };
+
+  const isRmaSelected = Boolean(f.rmaId);
+  const isSnMissing = isRmaSelected && !f.oldSerialNo;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <InlineHint>
@@ -7274,15 +7746,11 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose, t })
       </InlineHint>
       {err && <InlineHint tone="warn">{err}</InlineHint>}
       <Field label={t.pcbaRelatedRma || "RMA Terkait"}>
-        <Select
-          options={rmaOpenList.map((r) => r.ticketNo)}
-          value={rmaOpenList.find((r) => r.id === f.rmaId)?.ticketNo || ""}
-          onChange={(e) => {
-            const found = rmaOpenList.find(
-              (r) => r.ticketNo === e.target.value,
-            );
-            setF((s) => ({ ...s, rmaId: found ? found.id : "" }));
-          }}
+        <SearchableRmaSelect
+          rmaList={rmaOpenList}
+          value={f.rmaId}
+          onChange={handleRmaChange}
+          t={t}
         />
       </Field>
       <Field label={t.pcbaNewGoodStock || "PCBA Baru (stok Good)"}>
@@ -7306,11 +7774,32 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose, t })
           Baru" dulu di tab Stok.
         </InlineHint>
       )}
-      <Field label={t.pcbaOldSerialLabel || "No. Serial PCBA Lama (yang dilepas dari unit)"}>
+      <Field
+        label={t.pcbaOldSerialLabel || "No. Serial PCBA Lama (yang dilepas dari unit)"}
+        hint={
+          isSnMissing ? (
+            <span style={{ color: T.amber, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <AlertTriangle size={12} /> {t.pcbaSnNotFoundInRma || "SN PCBA tidak ditemukan pada RMA terkait."}
+            </span>
+          ) : null
+        }
+      >
         <TextInput
           value={f.oldSerialNo}
-          onChange={set("oldSerialNo")}
-          style={{ fontFamily: mono }}
+          readOnly
+          placeholder={
+            !isRmaSelected
+              ? t.pcbaSelectRmaFirstPlaceholder || "Pilih RMA terkait terlebih dahulu..."
+              : t.pcbaSnNotFoundInRma || "SN PCBA tidak ditemukan pada RMA terkait."
+          }
+          style={{
+            fontFamily: mono,
+            background: T.panel,
+            cursor: "not-allowed",
+            color: f.oldSerialNo ? T.cyan : T.ink3,
+            fontWeight: f.oldSerialNo ? 700 : 400,
+            borderColor: isSnMissing ? T.amber : T.line,
+          }}
         />
       </Field>
       <Field label={t.colEngineer || "Engineer"}>
@@ -7335,7 +7824,7 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose, t })
             if (!f.newPcbaItemId)
               return setErr("Pilih PCBA baru (stok Good) dulu.");
             if (!f.oldSerialNo.trim())
-              return setErr("No. Serial PCBA lama wajib diisi.");
+              return setErr(t.pcbaSnNotFoundInRma || "SN PCBA tidak ditemukan pada RMA terkait.");
             if (!f.replacedBy)
               return setErr("Pilih engineer yang melakukan replacement.");
             setSaving(true);
