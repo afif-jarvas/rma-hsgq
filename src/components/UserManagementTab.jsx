@@ -11,7 +11,6 @@ import {
   RotateCcw,
   Pencil,
   Trash2,
-  KeyRound,
   Shield,
   ShieldAlert,
   ShieldCheck,
@@ -31,7 +30,6 @@ import {
   getUsersList,
   adminCreateAccount,
   adminUpdateAccount,
-  adminResetAccountPassword,
   adminDeleteAccount,
 } from "../firebase.js";
 import { ROLES, USER_STATUS, PERMISSIONS, assertAuthorized } from "../auth/rbac.js";
@@ -439,22 +437,6 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
 
                           <button
                             type="button"
-                            title="Reset Password"
-                            onClick={() => setModal({ type: "resetPassword", user: u })}
-                            style={{
-                              padding: "6px",
-                              borderRadius: 6,
-                              background: T.panel2,
-                              border: `1px solid ${T.line}`,
-                              color: T.amber,
-                              cursor: "pointer",
-                            }}
-                          >
-                            <KeyRound size={14} />
-                          </button>
-
-                          <button
-                            type="button"
                             title={isActive ? "Nonaktifkan User" : "Aktifkan User"}
                             onClick={() => setModal({ type: "toggleStatus", user: u })}
                             style={{
@@ -517,18 +499,6 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
             setModal(null);
             loadUsers();
             if (setToastMsg) setToastMsg("Data user berhasil diperbarui.");
-          }}
-          currentUserProfile={currentUserProfile}
-        />
-      )}
-
-      {modal?.type === "resetPassword" && (
-        <ResetPasswordModal
-          user={modal.user}
-          onClose={() => setModal(null)}
-          onSuccess={() => {
-            setModal(null);
-            if (setToastMsg) setToastMsg(`Password untuk user ${modal.user.email} berhasil direset.`);
           }}
           currentUserProfile={currentUserProfile}
         />
@@ -880,116 +850,6 @@ function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile
             >
               {loading && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
               Simpan Perubahan
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   RESET PASSWORD MODAL
-   ============================================================ */
-function ResetPasswordModal({ user, onClose, onSuccess, currentUserProfile }) {
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErr("");
-
-    try {
-      assertAuthorized(currentUserProfile, PERMISSIONS.USER_RESET_PASSWORD, "mereset password user");
-
-      if (!newPassword) return setErr("Password baru wajib diisi.");
-      if (newPassword.length < 6) return setErr("Password baru minimal 6 karakter.");
-      if (newPassword !== confirmPassword) return setErr("Konfirmasi password tidak cocok.");
-
-      setLoading(true);
-      const res = await adminResetAccountPassword(user.email, newPassword);
-      setLoading(false);
-      if (res.ok) {
-        onSuccess();
-      } else {
-        setErr(res.error || "Gagal mereset password.");
-      }
-    } catch (error) {
-      setLoading(false);
-      setErr(error.message);
-    }
-  };
-
-  return (
-    <div className="profile-overlay" onClick={onClose}>
-      <div className="profile-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440 }}>
-        <div className="profile-modal-header">
-          <div>
-            <h2>Reset Password User</h2>
-            <p>Atur password baru untuk akun <strong>{user.email}</strong></p>
-          </div>
-          <button className="modal-close-button" onClick={onClose}>
-            ✕
-          </button>
-        </div>
-
-        {err && (
-          <div style={{ padding: "10px 14px", background: `${T.red}18`, border: `1px solid ${T.red}33`, color: T.red, borderRadius: 6, fontSize: 12.5, marginBottom: 12 }}>
-            {err}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
-            Password Baru
-            <div style={{ position: "relative" }}>
-              <input
-                type={showPassword ? "text" : "password"}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Minimal 6 karakter"
-                style={{ width: "100%", padding: "8px 30px 8px 12px", boxSizing: "border-box", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: T.ink3, cursor: "pointer" }}
-              >
-                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-              </button>
-            </div>
-          </label>
-
-          <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
-            Konfirmasi Password Baru
-            <input
-              type={showPassword ? "text" : "password"}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Ketik ulang password baru"
-              style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel }}
-            />
-          </label>
-
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              style={{ padding: "8px 16px", borderRadius: 6, border: `1px solid ${T.line}`, background: "transparent", color: T.ink, cursor: "pointer" }}
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 6, border: "none", background: T.amber, color: "#000", fontWeight: 700, cursor: "pointer" }}
-            >
-              {loading && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
-              Reset Password
             </button>
           </div>
         </form>

@@ -5,10 +5,12 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   updateProfile,
+  updatePassword,
 } from "firebase/auth";
 
 import { auth, saveUserProfile, getUserProfile, getUsersList, isUsingFirebase } from "../firebase.js";
 import { useAuth } from "./AuthContext.jsx";
+import { verifyPassword, hashPassword } from "./rbac.js";
 
 import {
   Eye,
@@ -71,7 +73,7 @@ function getFirebaseErrorMessage(error) {
 }
 
 export default function Login() {
-  const { inactiveError } = useAuth();
+  const { inactiveError, loginWithUser } = useAuth();
   const [mode, setMode] = useState("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -96,44 +98,117 @@ export default function Login() {
       return;
     }
 
-    if (!auth || !isUsingFirebase) {
-      setError("Firebase belum dikonfigurasi. Isi firebaseConfig terlebih dahulu.");
-      return;
-    }
-
     try {
       setLoading(true);
 
-      // Resolve username to email if input doesn't contain '@'
-      let loginEmail = inputVal;
-      if (!inputVal.includes("@")) {
-        const users = await getUsersList();
-        const matched = users.find(
-          (u) => (u.username || "").toLowerCase() === inputVal.toLowerCase()
-        );
-        if (matched && matched.email) {
-          loginEmail = matched.email;
-        } else {
-          loginEmail = `${inputVal.toLowerCase()}@hsgq.local`;
+      // Find user record in users_v1 / Firestore
+      const users = await getUsersList();
+      const matched = users.find(
+        (u) =>
+          (u.email || "").toLowerCase() === inputVal.toLowerCase() ||
+          (u.username || "").toLowerCase() === inputVal.toLowerCase()
+      );
+
+      // If user is not found in registered users list at all (unless bootstrapping completely empty app)
+      if (!matched && users.length > 0) {
+        if (auth) {
+          try { await auth.signOut(); } catch (_) {}
         }
+        setError("Akun tidak ditemukan atau telah dinonaktifkan oleh Administrator.");
+        return;
       }
 
-      const cred = await signInWithEmailAndPassword(auth, loginEmail, password);
+      let loginEmail = inputVal;
+      if (matched && matched.email) {
+        loginEmail = matched.email;
+      } else if (!inputVal.includes("@")) {
+        loginEmail = `${inputVal.toLowerCase()}@hsgq.local`;
+      }
 
-      // Check account status in Firestore
-      const userProfile = await getUserProfile(cred.user.uid);
-      if (userProfile?.status === "inactive" || userProfile?.status === "Inactive") {
-        await auth.signOut();
+      // 1. Check account status
+      if (matched && (matched.status === "inactive" || matched.status === "Inactive")) {
+        if (auth) {
+          try { await auth.signOut(); } catch (_) {}
+        }
         setError("Akun Anda telah dinonaktifkan oleh Administrator. Hubungi Administrator untuk mengaktifkan kembali.");
         return;
       }
 
-      // Record last login time
-      if (userProfile) {
-        saveUserProfile(cred.user.uid, {
-          ...userProfile,
-          lastLoginAt: new Date().toISOString(),
-        });
+      let isAuthenticated = false;
+      let authenticatedUid = matched?.uid || matched?.id || null;
+
+      // 2. Verify password against stored password hash
+      if (matched && matched.passwordHash && matched.salt) {
+        const isPasswordValid = await verifyPassword(password, matched.passwordHash, matched.salt);
+        if (!isPasswordValid) {
+          setError("Email/Username atau password salah.");
+          return;
+        }
+        isAuthenticated = true;
+      }
+
+      // 3. Authenticate with Firebase Auth if available
+      let firebaseUser = null;
+      if (auth && isUsingFirebase) {
+        try {
+          const cred = await signInWithEmailAndPassword(auth, loginEmail, password);
+          firebaseUser = cred.user;
+          authenticatedUid = firebaseUser.uid;
+          isAuthenticated = true;
+        } catch (authErr) {
+          if (!isAuthenticated) {
+            setError(getFirebaseErrorMessage(authErr));
+            return;
+          }
+        }
+      }
+
+      if (!isAuthenticated || !authenticatedUid) {
+        setError("Email/Username atau password salah.");
+        return;
+      }
+
+      // 4. Fetch full user profile & strictly check registration
+      const userProfile = await getUserProfile(authenticatedUid);
+      if (!userProfile) {
+        if (auth) {
+          try { await auth.signOut(); } catch (_) {}
+        }
+        setError("Akun tidak ditemukan atau telah dinonaktifkan oleh Administrator.");
+        return;
+      }
+
+      if (userProfile.status === "inactive" || userProfile.status === "Inactive") {
+        if (auth) {
+          try { await auth.signOut(); } catch (_) {}
+        }
+        setError("Akun Anda telah dinonaktifkan oleh Administrator. Hubungi Administrator untuk mengaktifkan kembali.");
+        return;
+      }
+
+      // If user didn't have password hash stored yet, hash and save it now
+      if (!userProfile.passwordHash || !userProfile.salt) {
+        const { hash, salt } = await hashPassword(password);
+        userProfile.passwordHash = hash;
+        userProfile.salt = salt;
+      }
+
+      // 5. Record last login time
+      const finalProfile = {
+        ...userProfile,
+        lastLoginAt: new Date().toISOString(),
+      };
+      await saveUserProfile(authenticatedUid, finalProfile);
+
+      // 6. Establish user session in AuthContext
+      const sessionUser = firebaseUser || {
+        uid: authenticatedUid,
+        email: finalProfile.email || loginEmail,
+        displayName: finalProfile.displayName || finalProfile.name || "User",
+      };
+
+      if (typeof loginWithUser === "function") {
+        loginWithUser(sessionUser, finalProfile);
       }
     } catch (err) {
       console.error("Login error:", err);
@@ -145,73 +220,85 @@ export default function Login() {
 
   async function handleRegister(event) {
     event.preventDefault();
-
     resetMessages();
 
     if (!name.trim()) {
       setError("Nama wajib diisi.");
-
       return;
     }
 
     if (!email.trim()) {
       setError("Email wajib diisi.");
-
       return;
     }
 
     if (password.length < 6) {
       setError("Password minimal terdiri dari 6 karakter.");
-
-      return;
-    }
-
-    if (!auth || !isUsingFirebase) {
-      setError(
-        "Firebase belum dikonfigurasi. Isi firebaseConfig terlebih dahulu.",
-      );
-
       return;
     }
 
     try {
       setLoading(true);
 
-      const credential = await createUserWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password,
-      );
+      let uid = `usr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      let firebaseUser = null;
+
+      if (auth && isUsingFirebase) {
+        try {
+          const credential = await createUserWithEmailAndPassword(
+            auth,
+            email.trim(),
+            password,
+          );
+          firebaseUser = credential.user;
+          uid = firebaseUser.uid;
+
+          await updateProfile(credential.user, {
+            displayName: name.trim(),
+          });
+        } catch (authErr) {
+          setError(getFirebaseErrorMessage(authErr));
+          return;
+        }
+      }
 
       /*
-      Simpan nama ke Firebase Authentication.
+      Simpan profile lengkap ke Firestore dengan password hash.
       */
+      const { hash, salt } = await hashPassword(password);
 
-      await updateProfile(credential.user, {
+      const newProfile = {
+        uid,
+        id: uid,
         displayName: name.trim(),
-      });
-
-      /*
-      Simpan profile lengkap ke Firestore.
-      */
-
-      await saveUserProfile(credential.user.uid, {
-        displayName: name.trim(),
-        email: email.trim(),
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        username: email.trim().split("@")[0],
+        role: "Viewer",
+        status: "active",
+        passwordHash: hash,
+        salt,
         phone: "",
         company: "",
         address: "",
         theme: "system",
         createdAt: new Date().toISOString(),
-      });
+        updatedAt: new Date().toISOString(),
+      };
 
-      /*
-      onAuthStateChanged akan menangani
-      perpindahan ke aplikasi.
-      */
+      await saveUserProfile(uid, newProfile);
+
+      const sessionUser = firebaseUser || {
+        uid,
+        email: email.trim().toLowerCase(),
+        displayName: name.trim(),
+      };
+
+      if (typeof loginWithUser === "function") {
+        loginWithUser(sessionUser, newProfile);
+      }
     } catch (err) {
-      console.error(err);
-
+      console.error("Register error:", err);
       setError(getFirebaseErrorMessage(err));
     } finally {
       setLoading(false);

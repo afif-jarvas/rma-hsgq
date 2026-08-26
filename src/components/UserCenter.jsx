@@ -21,6 +21,7 @@ import { updateProfile, updatePassword } from "firebase/auth";
 import { auth, saveUserProfile } from "../firebase.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
+import { hashPassword } from "../auth/rbac.js";
 
 export default function UserCenter({ t }) {
   const { user, profile, setProfile, logout, role, isAdministrator, isEngineer, isViewer } = useAuth();
@@ -174,7 +175,27 @@ export default function UserCenter({ t }) {
 
     try {
       setSaving(true);
-      await updatePassword(auth.currentUser, passwordForm.newPassword);
+      if (auth?.currentUser) {
+        try {
+          await updatePassword(auth.currentUser, passwordForm.newPassword);
+        } catch (authErr) {
+          console.warn("Firebase Auth updatePassword warning:", authErr);
+        }
+      }
+      const { hash, salt } = await hashPassword(passwordForm.newPassword);
+      const currentUid = user?.uid || auth?.currentUser?.uid;
+      if (currentUid && profile) {
+        const updated = {
+          ...profile,
+          passwordHash: hash,
+          salt,
+          updatedAt: new Date().toISOString(),
+        };
+        await saveUserProfile(currentUid, updated);
+        if (typeof setProfile === "function") {
+          setProfile(updated);
+        }
+      }
       setMessage("Password akun Anda berhasil diperbarui.");
       setPasswordForm({ newPassword: "", confirmPassword: "" });
       setTimeout(() => {

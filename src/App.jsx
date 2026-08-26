@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   LayoutDashboard,
   PackageSearch,
@@ -1638,7 +1639,7 @@ const DEFAULT_MASTER = {
     "Ready to Ship",
     "Shipped",
     "Customer Received",
-    "Closed",
+    "Selesai",
   ],
   statusWA: ["On Progress", "Selesai", "FU Tim China", "Belum Ditag"],
   finalResults: [
@@ -1749,6 +1750,16 @@ function parseToISODate(val) {
   }
 
   return "";
+}
+function parseDateForSort(val) {
+  if (!val) return 0;
+  const iso = parseToISODate(val);
+  if (iso) {
+    const t = new Date(iso).getTime();
+    return isNaN(t) ? 0 : t;
+  }
+  const t = new Date(val).getTime();
+  return isNaN(t) ? 0 : t;
 }
 function genTicket(prefix, existingField) {
   const now = new Date();
@@ -2879,7 +2890,7 @@ function RmaForm({
       customerPhone: "",
       receivedDate: todayISO(),
       receivedTime: new Date().toTimeString().slice(0, 5),
-      receivedBy: currentUserDisplayName,
+      receivedBy: "",
       doNumber: "",
       courierName: "",
       physicalCondition: "",
@@ -4028,7 +4039,7 @@ function DataTable({ columns, rows, onRowClick, emptyLabel }) {
 // sortable   — whether to show sort options
 // valueKey   — actual field to read for unique values (defaults to key)
 
-function ColFilterPopover({ col, rows, colFilter, onApply, onClose, t }) {
+function ColFilterPopover({ col, rows, colFilter, onApply, onClose, t, popoverRef, style }) {
   // colFilter shape: { sort: "asc"|"desc"|null, values: Set<string> }
   const currentSort = colFilter?.sort ?? null;
   const currentValues = colFilter?.values ?? null; // null = all
@@ -4039,7 +4050,11 @@ function ColFilterPopover({ col, rows, colFilter, onApply, onClose, t }) {
     const seen = new Set();
     rows.forEach((r) => {
       const v = r[vk];
-      if (v !== undefined && v !== null && v !== "") seen.add(String(v));
+      if (v !== undefined && v !== null && v !== "") {
+        const strVal = String(v).trim();
+        if (col.key === "status" && strVal.toLowerCase() === "closed") return;
+        seen.add(strVal);
+      }
     });
     return [...seen].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
   }, [rows, col.key, col.valueKey]);
@@ -4088,26 +4103,26 @@ function ColFilterPopover({ col, rows, colFilter, onApply, onClose, t }) {
     ? { asc: "Kecil → Besar (1 → 9)", desc: "Besar → Kecil (9 → 1)" }
     : { asc: t?.sortAZ || "A → Z", desc: t?.sortZA || "Z → A" };
 
+  const isOnlySort = col.filterable === false || allValues.length === 0;
+
   return (
     <div
+      ref={popoverRef}
       style={{
-        position: "absolute",
-        top: "100%",
-        left: 0,
-        zIndex: 9999,
+        zIndex: 99999,
         background: T.panel,
         border: `1px solid ${T.line}`,
         borderRadius: 10,
-        boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
-        minWidth: 210,
-        maxWidth: 260,
+        boxShadow: "0 8px 32px rgba(0,0,0,0.22)",
+        minWidth: isOnlySort ? 195 : 210,
+        maxWidth: isOnlySort ? 225 : 260,
         overflow: "hidden",
-        marginTop: 4,
+        ...style,
       }}
     >
       {/* Sort options */}
       {col.sortable !== false && (
-        <div style={{ borderBottom: `1px solid ${T.line}`, padding: "6px 4px" }}>
+        <div style={{ borderBottom: isOnlySort ? "none" : `1px solid ${T.line}`, padding: "5px 4px" }}>
           {["asc", "desc"].map((dir) => (
             <button
               key={dir}
@@ -4274,19 +4289,88 @@ function ColFilterPopover({ col, rows, colFilter, onApply, onClose, t }) {
 
 function RmaTable({ columns, rows, allRows, colFilters, onColFilter, t, emptyLabel }) {
   const [openCol, setOpenCol] = useState(null);
+  const [anchorRect, setAnchorRect] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
   const popoverRef = useRef(null);
 
-  // Close popover on outside click
+  // Close popover on outside click or escape key
   useEffect(() => {
     if (!openCol) return;
     const handler = (e) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target) &&
+        !anchorEl?.contains(e.target)
+      ) {
         setOpenCol(null);
+        setAnchorEl(null);
+        setAnchorRect(null);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setOpenCol(null);
+        setAnchorEl(null);
+        setAnchorRect(null);
       }
     };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [openCol]);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openCol, anchorEl]);
+
+  // Keep popover position synchronized on scroll or resize
+  useEffect(() => {
+    if (!openCol || !anchorEl) return;
+    const updatePos = () => {
+      const rect = anchorEl.getBoundingClientRect();
+      if (
+        rect.bottom < 0 ||
+        rect.top > window.innerHeight ||
+        rect.right < 0 ||
+        rect.left > window.innerWidth
+      ) {
+        setOpenCol(null);
+        setAnchorEl(null);
+        setAnchorRect(null);
+        return;
+      }
+      setAnchorRect(rect);
+    };
+    window.addEventListener("scroll", updatePos, true);
+    window.addEventListener("resize", updatePos);
+    return () => {
+      window.removeEventListener("scroll", updatePos, true);
+      window.removeEventListener("resize", updatePos);
+    };
+  }, [openCol, anchorEl]);
+
+  const activeCol = useMemo(
+    () => columns.find((c) => c.key === openCol),
+    [columns, openCol]
+  );
+
+  const popoverPos = useMemo(() => {
+    if (!anchorRect) return { top: 0, left: 0 };
+    const isOnlySort = activeCol?.filterable === false;
+    const estHeight = isOnlySort ? 115 : 300;
+    const width = isOnlySort ? 205 : 240;
+    let left = anchorRect.left;
+    if (left + width > window.innerWidth - 12) {
+      left = Math.max(12, window.innerWidth - width - 12);
+    }
+    if (left < 12) {
+      left = 12;
+    }
+    let top = anchorRect.bottom + 4;
+    if (top + estHeight > window.innerHeight && anchorRect.top - estHeight > 10) {
+      top = Math.max(10, anchorRect.top - estHeight - 4);
+    }
+    return { top, left };
+  }, [anchorRect, activeCol]);
 
   return (
     <div
@@ -4345,7 +4429,16 @@ function RmaTable({ columns, rows, allRows, colFilters, onColFilter, t, emptyLab
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setOpenCol(isOpen ? null : col.key);
+                          if (isOpen) {
+                            setOpenCol(null);
+                            setAnchorEl(null);
+                            setAnchorRect(null);
+                          } else {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setAnchorEl(e.currentTarget);
+                            setAnchorRect(rect);
+                            setOpenCol(col.key);
+                          }
                         }}
                         style={{
                           display: "inline-flex",
@@ -4362,23 +4455,6 @@ function RmaTable({ columns, rows, allRows, colFilters, onColFilter, t, emptyLab
                       >
                         {isActive ? <ListFilter size={11} /> : <ArrowUpDown size={11} />}
                       </button>
-                    )}
-
-                    {/* Popover */}
-                    {isOpen && (
-                      <div ref={popoverRef} style={{ position: "absolute", top: "100%", left: 0, zIndex: 9999 }}>
-                        <ColFilterPopover
-                          col={col}
-                          rows={allRows}
-                          colFilter={cf}
-                          t={t}
-                          onApply={(applied) => {
-                            onColFilter(col.key, applied);
-                            setOpenCol(null);
-                          }}
-                          onClose={() => setOpenCol(null)}
-                        />
-                      </div>
                     )}
                   </div>
                 </th>
@@ -4421,6 +4497,33 @@ function RmaTable({ columns, rows, allRows, colFilters, onColFilter, t, emptyLab
           ))}
         </tbody>
       </table>
+      {openCol && activeCol && anchorRect && typeof document !== "undefined" &&
+        createPortal(
+          <ColFilterPopover
+            popoverRef={popoverRef}
+            style={{
+              position: "fixed",
+              top: popoverPos.top,
+              left: popoverPos.left,
+            }}
+            col={activeCol}
+            rows={allRows}
+            colFilter={colFilters[activeCol.key]}
+            t={t}
+            onApply={(applied) => {
+              onColFilter(activeCol.key, applied);
+              setOpenCol(null);
+              setAnchorEl(null);
+              setAnchorRect(null);
+            }}
+            onClose={() => {
+              setOpenCol(null);
+              setAnchorEl(null);
+              setAnchorRect(null);
+            }}
+          />,
+          document.body
+        )}
     </div>
   );
 }
@@ -5046,7 +5149,7 @@ function UnitHistorySummary({
       "Ready to Ship",
       "Shipped",
       "Customer Received",
-      "Closed",
+      "Selesai",
     ];
     const masterList = Array.isArray(master?.statusRMA) ? master.statusRMA : defaultList;
     const set = new Set();
@@ -10426,10 +10529,15 @@ export default function App() {
 
   const rmaStatusList = useMemo(() => {
     const base = master.statusRMA || DEFAULT_MASTER.statusRMA;
-    const set = new Set((base || []).map((s) => String(s).trim()));
+    const set = new Set(
+      (base || [])
+        .map((s) => String(s).trim())
+        .filter((s) => s.toLowerCase() !== "closed")
+    );
     (rma || []).forEach((e) => {
       if (e.status && e.status.trim()) {
         const trimmed = e.status.trim();
+        if (trimmed.toLowerCase() === "closed") return;
         if (!Array.from(set).some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
           set.add(trimmed);
         }
@@ -10510,13 +10618,16 @@ export default function App() {
     const sortEntry = Object.entries(colFilters).find(([, cf]) => cf?.sort);
     if (sortEntry) {
       const [sortKey, { sort }] = sortEntry;
-      const isDate = ["receivedDate", "eta", "closedDate"].includes(sortKey);
+      const isDate = ["receivedDate", "eta", "closedDate", "shippedDate"].includes(sortKey);
       result = [...result].sort((a, b) => {
         let av = a[sortKey] ?? "";
         let bv = b[sortKey] ?? "";
         if (isDate) {
-          const da = av ? new Date(av).getTime() : 0;
-          const db = bv ? new Date(bv).getTime() : 0;
+          if (!av && !bv) return 0;
+          if (!av) return 1;
+          if (!bv) return -1;
+          const da = parseDateForSort(av);
+          const db = parseDateForSort(bv);
           return sort === "asc" ? da - db : db - da;
         }
         const cmp = String(av).localeCompare(String(bv), undefined, { sensitivity: "base" });
@@ -10524,9 +10635,11 @@ export default function App() {
       });
     } else {
       // Default: newest receivedDate first
-      result = [...result].sort((a, b) =>
-        (b.receivedDate || "").localeCompare(a.receivedDate || "")
-      );
+      result = [...result].sort((a, b) => {
+        const da = parseDateForSort(a.receivedDate);
+        const db = parseDateForSort(b.receivedDate);
+        return db - da;
+      });
     }
 
     return result;
@@ -10629,8 +10742,8 @@ export default function App() {
           if (!av && !bv) return 0;
           if (!av) return 1;
           if (!bv) return -1;
-          const da = new Date(av).getTime();
-          const db = dbDate(bv);
+          const da = parseDateForSort(av);
+          const db = parseDateForSort(bv);
           return sort === "asc" ? da - db : db - da;
         }
 
@@ -10642,16 +10755,15 @@ export default function App() {
       });
     } else {
       // Default: newest caseDate first
-      result = [...result].sort((a, b) =>
-        (b.caseDate || "").localeCompare(a.caseDate || "")
-      );
+      result = [...result].sort((a, b) => {
+        const da = parseDateForSort(a.caseDate);
+        const db = parseDateForSort(b.caseDate);
+        return db - da;
+      });
     }
 
     return result;
   }, [baseFilteredWa, waStatusFilter, waColFilters]);
-
-  // Helper for date parsing in sort
-  const dbDate = (v) => (v ? new Date(v).getTime() : 0);
 
   const handleConfirmDelete = async ({ kind, entry }) => {
     try {

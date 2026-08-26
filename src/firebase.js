@@ -4,7 +4,9 @@ import {
   getAuth,
   setPersistence,
   browserLocalPersistence,
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  updatePassword,
   updateProfile,
   sendPasswordResetEmail,
   signOut as authSignOut,
@@ -186,46 +188,45 @@ export async function saveUsersList(users) {
 export async function getUserProfile(uid) {
   if (!uid) return null;
 
-  // 1. Try Firestore direct doc
-  let profile = null;
+  // 1. Check in users_v1 dataset
+  const usersList = await getUsersList();
+  const foundInList = usersList.find((u) => u.uid === uid || u.id === uid);
+
+  // 2. Try Firestore direct doc
+  let docProfile = null;
   if (db) {
     try {
       const snap = await getDoc(doc(db, "users", uid));
       if (snap.exists()) {
-        profile = snap.data();
+        docProfile = snap.data();
       }
     } catch (error) {
-      console.error("Gagal mengambil profile user:", error);
+      console.error("Gagal mengambil profile user doc:", error);
     }
   }
 
-  // 2. Also check in users_v1 dataset
-  const usersList = await getUsersList();
-  const foundInList = usersList.find((u) => u.uid === uid || u.id === uid);
-
-  if (foundInList) {
-    profile = { ...profile, ...foundInList };
+  // If user does not exist in usersList AND does not exist in Firestore doc, user is deleted/non-existent
+  if (!foundInList && !docProfile) {
+    // Only bootstrap if the entire system is completely fresh (0 users exist anywhere)
+    if (usersList.length === 0) {
+      const bootstrapProfile = {
+        uid,
+        id: uid,
+        displayName: "Administrator",
+        email: "",
+        role: "Administrator",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await saveUserProfile(uid, bootstrapProfile);
+      return bootstrapProfile;
+    }
+    return null;
   }
 
-  // If no profile found at all or no role set, check if this is the first user
-  if (!profile || !profile.role) {
-    const isFirstUser = usersList.length === 0 || (usersList.length === 1 && usersList[0].uid === uid);
-    const defaultRole = isFirstUser ? "Administrator" : "Viewer";
-    profile = {
-      uid,
-      displayName: profile?.displayName || "User",
-      email: profile?.email || "",
-      role: profile?.role || defaultRole,
-      status: profile?.status || "active",
-      createdAt: profile?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Save default profile so it's persisted
-    await saveUserProfile(uid, profile);
-  }
-
-  return profile;
+  const merged = { ...(docProfile || {}), ...(foundInList || {}) };
+  return merged;
 }
 
 export async function saveUserProfile(uid, data) {
@@ -357,40 +358,12 @@ export async function adminUpdateAccount(uid, updates) {
 }
 
 /**
- * Admin: Reset user password
- */
-export async function adminResetAccountPassword(email, newPassword) {
-  const cleanEmail = email.trim().toLowerCase();
-
-  // Send password reset email via Firebase if available
-  if (auth && isUsingFirebase) {
-    try {
-      await sendPasswordResetEmail(auth, cleanEmail);
-    } catch (err) {
-      console.warn("sendPasswordResetEmail warning:", err);
-    }
-  }
-
-  // Also hash and update stored password hash for data integrity
-  if (newPassword) {
-    const { hash, salt } = await hashPassword(newPassword);
-    const users = await getUsersList();
-    const target = users.find((u) => (u.email || "").toLowerCase() === cleanEmail);
-    if (target) {
-      await adminUpdateAccount(target.uid || target.id, {
-        passwordHash: hash,
-        salt,
-      });
-    }
-  }
-
-  return { ok: true };
-}
-
-/**
  * Admin: Delete user account
  */
 export async function adminDeleteAccount(uid) {
+  if (!uid) return { ok: false, error: "UID tidak valid." };
+
+  // 1. Delete doc from Firestore
   if (db) {
     try {
       await deleteDoc(doc(db, "users", uid));
@@ -399,9 +372,25 @@ export async function adminDeleteAccount(uid) {
     }
   }
 
+  // 2. Remove from users_v1 dataset
   const users = await getUsersList();
   const updated = users.filter((u) => u.uid !== uid && u.id !== uid);
   await saveUsersList(updated);
+
+  // 3. Record in deleted_users_v1 tombstone for immediate revocation
+  try {
+    const deletedList = await storeGet("deleted_users_v1", []);
+    const list = Array.isArray(deletedList) ? deletedList : [];
+    if (!list.some((d) => d.uid === uid || d.id === uid)) {
+      await storeSet("deleted_users_v1", [
+        ...list,
+        { uid, deletedAt: new Date().toISOString() },
+      ]);
+    }
+  } catch (err) {
+    console.warn("Tombstone save error:", err);
+  }
+
   return { ok: true };
 }
 
