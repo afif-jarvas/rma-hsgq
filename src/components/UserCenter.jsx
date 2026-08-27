@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 
 import {
   User,
+  Users,
   LogOut,
   Moon,
   Sun,
@@ -24,6 +25,8 @@ import { useAuth } from "../auth/AuthContext.jsx";
 
 import { useTheme } from "../context/ThemeContext.jsx";
 
+import UserManagementModal from "./UserManagementModal.jsx";
+
 export default function UserCenter({ t }) {
   const { user, profile, setProfile, logout } = useAuth();
 
@@ -32,6 +35,8 @@ export default function UserCenter({ t }) {
   const [open, setOpen] = useState(false);
 
   const [profileOpen, setProfileOpen] = useState(false);
+
+  const [userMgmtOpen, setUserMgmtOpen] = useState(false);
 
   const [saving, setSaving] = useState(false);
 
@@ -208,6 +213,27 @@ export default function UserCenter({ t }) {
                 <small>{t.editAccountInfo}</small>
               </span>
             </button>
+
+            {(profile?.role === "Administrator" ||
+              profile?.role === "Admin" ||
+              user?.email?.toLowerCase().includes("admin") ||
+              profile?.isAdmin) && (
+              <button
+                className="user-menu-item"
+                onClick={() => {
+                  setOpen(false);
+                  setUserMgmtOpen(true);
+                }}
+              >
+                <Users size={16} />
+
+                <span>
+                  <strong>Manajemen User</strong>
+
+                  <small>Kelola role & reset password</small>
+                </span>
+              </button>
+            )}
 
             <div className="user-menu-section">
               <div className="user-menu-section-title">{t.appearance}</div>
@@ -424,6 +450,14 @@ export default function UserCenter({ t }) {
             </form>
           </div>
         </div>
+      )}
+
+      {/* USER MANAGEMENT MODAL */}
+      {userMgmtOpen && (
+        <UserManagementModal
+          onClose={() => setUserMgmtOpen(false)}
+          t={t}
+        />
       )}
     </>
   );

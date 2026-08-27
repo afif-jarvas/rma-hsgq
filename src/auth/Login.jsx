@@ -7,7 +7,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 
-import { auth, saveUserProfile, isUsingFirebase } from "../firebase.js";
+import { auth, saveUserProfile, isUsingFirebase, findUserByUsernameOrEmail } from "../firebase.js";
 
 import {
   Eye,
@@ -96,7 +96,7 @@ export default function Login() {
     resetMessages();
 
     if (!email.trim() || !password) {
-      setError("Email dan password wajib diisi.");
+      setError("Email atau username dan password wajib diisi.");
 
       return;
     }
@@ -112,7 +112,17 @@ export default function Login() {
     try {
       setLoading(true);
 
-      await signInWithEmailAndPassword(auth, email.trim(), password);
+      let targetEmail = email.trim();
+      if (!targetEmail.includes("@")) {
+        const found = await findUserByUsernameOrEmail(targetEmail);
+        if (found?.email) {
+          targetEmail = found.email;
+        } else {
+          targetEmail = `${targetEmail.toLowerCase()}@hsgq.local`;
+        }
+      }
+
+      await signInWithEmailAndPassword(auth, targetEmail, password);
     } catch (err) {
       console.error(err);
 
@@ -272,16 +282,16 @@ export default function Login() {
 
             <form onSubmit={handleLogin} style={styles.form}>
               <label style={styles.label}>
-                Email
+                Email / Username
                 <div style={styles.inputWrapper}>
                   <Mail size={17} style={styles.inputIcon} />
 
                   <input
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="nama@email.com"
-                    autoComplete="email"
+                    placeholder="Email atau username"
+                    autoComplete="username"
                     style={styles.input}
                   />
                 </div>

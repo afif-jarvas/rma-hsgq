@@ -12,6 +12,7 @@ import {
   Search,
   Wifi,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   ArrowUpDown,
   ListFilter,
@@ -6446,10 +6447,16 @@ function PcbaInventoryTab({
   onRepair,
   onQc,
   setToastMsg,
+  initialSubTab,
   t,
 }) {
-  const [subTab, setSubTab] = useState("stock");
+  const [subTab, setSubTab] = useState(initialSubTab || "stock");
   const [modal, setModal] = useState(null);
+
+  // Sync sub-tab saat navigasi dari sidebar
+  useEffect(() => {
+    if (initialSubTab) setSubTab(initialSubTab);
+  }, [initialSubTab]);
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -7679,6 +7686,7 @@ export default function App() {
   const { user } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
   const [tab, setTab] = useState("home");
+  const [pcbaSubTab, setPcbaSubTab] = useState("stock"); // untuk navigasi sub-tab PCBA dari sidebar
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [language, setLanguage] = useState(getStoredLanguage);
   const [loading, setLoading] = useState(true);
