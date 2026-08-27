@@ -3,3 +3,6 @@ dist
 .DS_Store
 node_modules/
 firebase-debug.log
+scripts/*.json
+*serviceAccount*.json
+*service-account*.json
