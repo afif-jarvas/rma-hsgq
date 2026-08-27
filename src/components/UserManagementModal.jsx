@@ -150,31 +150,30 @@ export default function UserManagementModal({ onClose, t }) {
 
   async function handleConfirmResetPassword() {
     if (!resetConfirmUser) return;
-    const tempPassword = generateSecureTempPassword();
 
     try {
       setResetLoading(true);
-      await adminResetUserPassword(
+      const res = await adminResetUserPassword(
         resetConfirmUser.uid || resetConfirmUser.id,
-        tempPassword,
+        resetConfirmUser.email,
       );
 
       const target = resetConfirmUser;
+      const targetEmail = res.email || target.email;
       setResetConfirmUser(null);
 
-      // Show temporary password modal
+      // Show reset email sent confirmation modal
       setTempPassModal({
         targetUser: target,
-        tempPassword,
-        title: "Password Berhasil Direset",
-        message:
-          "Password sementara baru telah digenerate dan status user diubah menjadi WAJIB GANTI PASSWORD. Berikan password sementara ini kepada user.",
+        tempPassword: null,
+        title: "Email Reset Password Terkirim",
+        message: `Email instruksi reset password resmi dari Firebase telah berhasil dikirim ke: ${targetEmail}. Pengguna dapat membuka link pada email tersebut untuk membuat password baru secara mandiri.`,
       });
 
       await loadUsers();
     } catch (err) {
       console.error(err);
-      alert(err?.message || "Gagal mereset password user.");
+      alert(err?.message || "Gagal mengirim email reset password.");
     } finally {
       setResetLoading(false);
     }
@@ -691,77 +690,81 @@ export default function UserManagementModal({ onClose, t }) {
                 {tempPassModal.message}
               </div>
 
-              <div
-                style={{
-                  background: "#F8FAFC",
-                  border: "2px dashed #93C5FD",
-                  borderRadius: 10,
-                  padding: "16px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                  marginBottom: 16,
-                }}
-              >
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase" }}>
-                  Password Sementara:
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    background: "#FFFFFF",
-                    border: "1px solid #CBD5E1",
-                    borderRadius: 6,
-                    padding: "8px 12px",
-                  }}
-                >
-                  <code style={{ fontSize: 16, fontWeight: 700, color: "#1E293B", letterSpacing: 1 }}>
-                    {tempPassModal.tempPassword}
-                  </code>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(tempPassModal.tempPassword)}
+              {tempPassModal.tempPassword && (
+                <>
+                  <div
                     style={{
+                      background: "#F8FAFC",
+                      border: "2px dashed #93C5FD",
+                      borderRadius: 10,
+                      padding: "16px",
                       display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      padding: "5px 10px",
-                      borderRadius: 4,
-                      background: copied ? "#DCFCE7" : "#EFF6FF",
-                      color: copied ? "#15803D" : "#2563EB",
-                      border: "none",
-                      fontSize: 12,
-                      fontWeight: 650,
-                      cursor: "pointer",
+                      flexDirection: "column",
+                      gap: 10,
+                      marginBottom: 16,
                     }}
                   >
-                    {copied ? <Check size={14} /> : <Copy size={14} />}
-                    {copied ? "Tersalin!" : "Salin"}
-                  </button>
-                </div>
-              </div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase" }}>
+                      Password Sementara:
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        background: "#FFFFFF",
+                        border: "1px solid #CBD5E1",
+                        borderRadius: 6,
+                        padding: "8px 12px",
+                      }}
+                    >
+                      <code style={{ fontSize: 16, fontWeight: 700, color: "#1E293B", letterSpacing: 1 }}>
+                        {tempPassModal.tempPassword}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(tempPassModal.tempPassword)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                          padding: "5px 10px",
+                          borderRadius: 4,
+                          background: copied ? "#DCFCE7" : "#EFF6FF",
+                          color: copied ? "#15803D" : "#2563EB",
+                          border: "none",
+                          fontSize: 12,
+                          fontWeight: 650,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {copied ? <Check size={14} /> : <Copy size={14} />}
+                        {copied ? "Tersalin!" : "Salin"}
+                      </button>
+                    </div>
+                  </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  background: "#FFFBEB",
-                  border: "1px solid #FCD34D",
-                  borderRadius: 6,
-                  padding: "10px 12px",
-                  fontSize: 12,
-                  color: "#92400E",
-                  lineHeight: 1.4,
-                  marginBottom: 18,
-                }}
-              >
-                <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
-                <span>
-                  <strong>Penting:</strong> Password ini hanya ditampilkan saat ini. Setelah dialog ini ditutup, password tidak dapat dilihat kembali demi keamanan.
-                </span>
-              </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      background: "#FFFBEB",
+                      border: "1px solid #FCD34D",
+                      borderRadius: 6,
+                      padding: "10px 12px",
+                      fontSize: 12,
+                      color: "#92400E",
+                      lineHeight: 1.4,
+                      marginBottom: 18,
+                    }}
+                  >
+                    <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+                    <span>
+                      <strong>Penting:</strong> Password ini hanya ditampilkan saat ini. Setelah dialog ini ditutup, password tidak dapat dilihat kembali demi keamanan.
+                    </span>
+                  </div>
+                </>
+              )}
 
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
                 <button
@@ -778,7 +781,7 @@ export default function UserManagementModal({ onClose, t }) {
                     cursor: "pointer",
                   }}
                 >
-                  Tutup Dialog
+                  Tutup
                 </button>
               </div>
             </div>
@@ -791,16 +794,15 @@ export default function UserManagementModal({ onClose, t }) {
         <div className="profile-overlay" style={{ zIndex: 1100 }} onClick={() => setResetConfirmUser(null)}>
           <div className="profile-modal" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 14 }}>
-              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#FEF3C7", color: "#D97706", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#EFF6FF", color: "#2563EB", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <KeyRound size={20} />
               </div>
               <div>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0F172A" }}>
-                  Reset Password User
+                  Kirim Email Reset Password
                 </h3>
                 <p style={{ margin: "4px 0 0", fontSize: 13, color: "#64748B", lineHeight: 1.5 }}>
-                  Anda akan mereset password untuk <strong>{resetConfirmUser.displayName || resetConfirmUser.name || resetConfirmUser.email}</strong>.
-                  Sistem akan meng-generate password baru dan mewajibkan user mengganti password saat login berikutnya.
+                  Sistem akan mengirimkan link reset password resmi dari Firebase ke alamat email: <strong style={{ color: "#0F172A" }}>{resetConfirmUser.email || resetConfirmUser.displayName || resetConfirmUser.name}</strong>.
                 </p>
               </div>
             </div>
@@ -816,12 +818,12 @@ export default function UserManagementModal({ onClose, t }) {
               <button
                 type="button"
                 className="profile-save"
-                style={{ background: "#D97706" }}
+                style={{ background: "#2563EB" }}
                 disabled={resetLoading}
                 onClick={handleConfirmResetPassword}
               >
-                {resetLoading ? <Loader2 size={15} className="spin" /> : <KeyRound size={15} />}
-                {resetLoading ? "Mereset..." : "Ya, Reset Password"}
+                {resetLoading ? <Loader2 size={15} className="spin" /> : <Mail size={15} />}
+                {resetLoading ? "Mengirim..." : "Kirim Email Reset"}
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import {
   getAuth,
   setPersistence,
   browserLocalPersistence,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import {
   getStorage,
@@ -376,60 +377,46 @@ export async function adminCreateUser({
 
 /**
  * Admin: Reset User Password & set mustChangePassword to true.
+/**
+ * Admin: Reset User Password via Firebase Auth Password Reset Email
  *
- * Strategy:
- * 1. Try Firebase Auth REST API (identitytoolkit) to actually set the new password
- *    so user can login with the temporary password immediately.
- * 2. Always update Firestore/localStorage profile: mustChangePassword = true.
- * 3. Store a simple XOR-obfuscated temp password token in profile for fallback
- *    verification when Firestore auth is unavailable.
- *
- * NOTE: plaintext password is NEVER stored — only a reversible token used for
- * one-time login verification, cleared after the user changes their password.
+ * Sends an official password reset email to the user's registered email address.
+ * Updates profile metadata to record when the reset email was triggered.
  */
-export async function adminResetUserPassword(uid, newTemporaryPassword) {
+export async function adminResetUserPassword(uid, targetEmail = "") {
   if (!uid) throw new Error("User ID tidak valid.");
-  if (!newTemporaryPassword) throw new Error("Temporary password tidak boleh kosong.");
 
-  const profileData = {
-    mustChangePassword: true,
-    passwordResetAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    // Store obfuscated temp token for offline/fallback login verification.
-    // This is NOT the plaintext password — it's a simple reversible token
-    // that gets cleared once the user successfully changes their password.
-    _tempToken: btoa(unescape(encodeURIComponent(newTemporaryPassword + ":hsgq:" + uid.slice(0, 8)))),
-  };
+  let email = targetEmail;
+  if (!email) {
+    const userProfile = await getUserProfile(uid);
+    email = userProfile?.email;
+  }
 
-  // 1. Try to update Firebase Auth password via REST API
-  if (isUsingFirebase && firebaseConfig.apiKey) {
+  if (!email || !email.includes("@")) {
+    throw new Error("Email user tidak valid atau tidak ditemukan.");
+  }
+
+  if (isUsingFirebase && auth) {
     try {
-      // First get the user's email from their profile
-      const userProfile = await getUserProfile(uid);
-      const userEmail = userProfile?.email;
-
-      if (userEmail && auth?.currentUser) {
-        // Use Firebase Auth REST API: admin signs user in with their email,
-        // then updates their password. This requires knowing the current password.
-        // Instead, use the "update" endpoint which allows setting password if you
-        // have a valid idToken for the target user — or use password reset email.
-        // The reliable approach: send a password reset email to let user set it.
-        // But we also store the temp token for immediate use if email isn't available.
-
-        // Use Firebase Auth REST API update endpoint:
-        // https://identitytoolkit.googleapis.com/v1/accounts:update
-        // This requires an idToken for the user, which admin doesn't have.
-        // So we fall back to the token-based approach.
-        console.info("[HSGQ] Password reset for uid:", uid, "— mustChangePassword flag set + temp token stored.");
-      }
-    } catch (restErr) {
-      console.warn("[HSGQ] Auth REST API reset attempt:", restErr?.message);
+      await sendPasswordResetEmail(auth, email.trim());
+    } catch (err) {
+      console.error("[HSGQ] sendPasswordResetEmail error:", err);
+      throw new Error(
+        err?.code === "auth/user-not-found"
+          ? "Akun email tersebut tidak ditemukan di Firebase Auth."
+          : `Gagal mengirim email reset password: ${err.message}`,
+      );
     }
   }
 
-  // 2. Always persist the flag update
-  const success = await saveUserProfile(uid, profileData);
-  return success;
+  // Update profile metadata in Firestore/localStorage
+  const profileData = {
+    passwordResetEmailSentAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  await saveUserProfile(uid, profileData);
+  return { success: true, email: email.trim() };
 }
 
 /**
