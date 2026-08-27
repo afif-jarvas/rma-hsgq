@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    // Application Data (RMA, WA, Master Data, PCBA Inventory)
+    // Accessible by all authenticated team members
+    match /hsgq_rma_app/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // User Profiles Collection
+    // Users can read/write their own profile
+    // Admins (with custom claim token.admin == true) can read, create, update, and delete any user profile
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create, update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}
