@@ -19,12 +19,12 @@ import {
 */
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCj35siCrdarl87a7gjujWQjXXRMAOqGks",
-  authDomain: "hsgq-rma.firebaseapp.com",
-  projectId: "hsgq-rma",
-  storageBucket: "hsgq-rma.firebasestorage.app",
-  messagingSenderId: "638280186408",
-  appId: "1:638280186408:web:9c2d03b3394c7d53f9131d",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
 };
 
 /*
@@ -33,8 +33,12 @@ const firebaseConfig = {
 ============================================================
 */
 
-export const isUsingFirebase = !Object.values(firebaseConfig).some((value) =>
-  String(value).includes("GANTI"),
+export const isUsingFirebase = Boolean(
+  firebaseConfig.apiKey &&
+  firebaseConfig.projectId &&
+  !Object.values(firebaseConfig).some((value) =>
+    String(value).includes("GANTI") || String(value).includes("your_"),
+  ),
 );
 
 let app = null;
