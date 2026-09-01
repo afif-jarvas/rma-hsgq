@@ -4,6 +4,29 @@ import { requireAuth } from "../auth.js";
 
 const router = Router();
 
+const pad2 = (n) => String(n).padStart(2, "0");
+
+/**
+ * Calendar-safe date arithmetic (no timezone drift)
+ */
+function addDaysCalendar(isoDate, days = 3) {
+  if (!isoDate) return "";
+  const parts = String(isoDate).split("T")[0].split("-");
+  if (parts.length === 3) {
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+      const dt = new Date(y, m, d + days);
+      return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
+    }
+  }
+  const dt = new Date(isoDate);
+  if (isNaN(dt.getTime())) return "";
+  dt.setDate(dt.getDate() + days);
+  return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
+}
+
 /**
  * Helper to parse RMA row into frontend object format
  */
@@ -18,10 +41,14 @@ function formatRmaRow(row) {
     labelPhotos = JSON.parse(row.label_photos_json || "[]");
   } catch (_) {}
 
+  // Deterministic ETA calculation: received_date + 3 calendar days
+  const calculatedEta = row.received_date ? addDaysCalendar(row.received_date, 3) : "";
+
   return {
     id: row.id,
     ticketNo: row.ticket_no,
     receivedDate: row.received_date,
+    eta: calculatedEta,
     engineer: row.engineer,
     customerName: row.customer_name || "",
     company: row.company || "",
@@ -44,7 +71,9 @@ function formatRmaRow(row) {
     qcBy: row.qc_by || "",
     qcDate: row.qc_date || "",
     pengiriman: row.pengiriman || "",
+    shipping: row.pengiriman || "",
     trackingNo: row.tracking_no || "",
+    shippedDate: row.shipped_date || "",
     closedDate: row.closed_date || "",
     customerReceivedDate: row.customer_received_date || "",
     notes: row.notes || "",
@@ -101,6 +130,11 @@ router.post("/", requireAuth, (req, res) => {
   const unitPhotos = Array.isArray(entry.unitPhotos) ? entry.unitPhotos : [];
   const labelPhotos = Array.isArray(entry.labelPhotos) ? entry.labelPhotos : [];
 
+  const receivedDate = entry.receivedDate || now.slice(0, 10);
+  const calculatedEta = receivedDate ? addDaysCalendar(receivedDate, 3) : "";
+  const shippedDate = entry.shippedDate || entry.shipped_date || null;
+  const pengiriman = entry.shipping || entry.pengiriman || "";
+
   try {
     const insertStmt = db.prepare(`
       INSERT INTO rma_entries (
@@ -108,14 +142,14 @@ router.post("/", requireAuth, (req, res) => {
         product, product_type, sn, mac, completeness, initial_problem, symptom,
         checking_result, root_cause, action_taken, status, final_result, waiting_reason,
         warranty_status, qc_result, qc_by, qc_date, pengiriman, tracking_no,
-        closed_date, customer_received_date, notes, unit_photos_json, label_photos_json,
+        shipped_date, eta, closed_date, customer_received_date, notes, unit_photos_json, label_photos_json,
         raw_data_json, created_at, updated_at
       ) VALUES (
         @id, @ticket_no, @received_date, @engineer, @customer_name, @company, @customer_phone,
         @product, @product_type, @sn, @mac, @completeness, @initial_problem, @symptom,
         @checking_result, @root_cause, @action_taken, @status, @final_result, @waiting_reason,
         @warranty_status, @qc_result, @qc_by, @qc_date, @pengiriman, @tracking_no,
-        @closed_date, @customer_received_date, @notes, @unit_photos_json, @label_photos_json,
+        @shipped_date, @eta, @closed_date, @customer_received_date, @notes, @unit_photos_json, @label_photos_json,
         @raw_data_json, @created_at, @updated_at
       )
     `);
@@ -123,7 +157,7 @@ router.post("/", requireAuth, (req, res) => {
     insertStmt.run({
       id,
       ticket_no: entry.ticketNo.trim(),
-      received_date: entry.receivedDate || now.slice(0, 10),
+      received_date: receivedDate,
       engineer: entry.engineer.trim(),
       customer_name: entry.customerName || "",
       company: entry.company || "",
@@ -145,8 +179,10 @@ router.post("/", requireAuth, (req, res) => {
       qc_result: entry.qcResult || "Pending",
       qc_by: entry.qcBy || "",
       qc_date: entry.qcDate || "",
-      pengiriman: entry.pengiriman || "",
+      pengiriman,
       tracking_no: entry.trackingNo || "",
+      shipped_date: shippedDate,
+      eta: calculatedEta,
       closed_date: entry.closedDate || "",
       customer_received_date: entry.customerReceivedDate || "",
       notes: entry.notes || "",
@@ -179,6 +215,11 @@ router.put("/:id", requireAuth, (req, res) => {
   const unitPhotos = Array.isArray(entry.unitPhotos) ? entry.unitPhotos : [];
   const labelPhotos = Array.isArray(entry.labelPhotos) ? entry.labelPhotos : [];
 
+  const receivedDate = entry.receivedDate || now.slice(0, 10);
+  const calculatedEta = receivedDate ? addDaysCalendar(receivedDate, 3) : "";
+  const shippedDate = entry.shippedDate !== undefined ? (entry.shippedDate || null) : (entry.shipped_date || null);
+  const pengiriman = entry.shipping || entry.pengiriman || "";
+
   try {
     const updateStmt = db.prepare(`
       UPDATE rma_entries SET
@@ -207,6 +248,8 @@ router.put("/:id", requireAuth, (req, res) => {
         qc_date = @qc_date,
         pengiriman = @pengiriman,
         tracking_no = @tracking_no,
+        shipped_date = @shipped_date,
+        eta = @eta,
         closed_date = @closed_date,
         customer_received_date = @customer_received_date,
         notes = @notes,
@@ -220,7 +263,7 @@ router.put("/:id", requireAuth, (req, res) => {
     const result = updateStmt.run({
       id,
       ticket_no: entry.ticketNo?.trim(),
-      received_date: entry.receivedDate || now.slice(0, 10),
+      received_date: receivedDate,
       engineer: entry.engineer?.trim() || "-",
       customer_name: entry.customerName || "",
       company: entry.company || "",
@@ -242,8 +285,10 @@ router.put("/:id", requireAuth, (req, res) => {
       qc_result: entry.qcResult || "Pending",
       qc_by: entry.qcBy || "",
       qc_date: entry.qcDate || "",
-      pengiriman: entry.pengiriman || "",
+      pengiriman,
       tracking_no: entry.trackingNo || "",
+      shipped_date: shippedDate,
+      eta: calculatedEta,
       closed_date: entry.closedDate || "",
       customer_received_date: entry.customerReceivedDate || "",
       notes: entry.notes || "",
@@ -308,14 +353,14 @@ router.post("/bulk-import", requireAuth, (req, res) => {
       product, product_type, sn, mac, completeness, initial_problem, symptom,
       checking_result, root_cause, action_taken, status, final_result, waiting_reason,
       warranty_status, qc_result, qc_by, qc_date, pengiriman, tracking_no,
-      closed_date, customer_received_date, notes, unit_photos_json, label_photos_json,
+      shipped_date, eta, closed_date, customer_received_date, notes, unit_photos_json, label_photos_json,
       raw_data_json, created_at, updated_at
     ) VALUES (
       @id, @ticket_no, @received_date, @engineer, @customer_name, @company, @customer_phone,
       @product, @product_type, @sn, @mac, @completeness, @initial_problem, @symptom,
       @checking_result, @root_cause, @action_taken, @status, @final_result, @waiting_reason,
       @warranty_status, @qc_result, @qc_by, @qc_date, @pengiriman, @tracking_no,
-      @closed_date, @customer_received_date, @notes, @unit_photos_json, @label_photos_json,
+      @shipped_date, @eta, @closed_date, @customer_received_date, @notes, @unit_photos_json, @label_photos_json,
       @raw_data_json, @created_at, @updated_at
     )
   `);
@@ -328,10 +373,15 @@ router.post("/bulk-import", requireAuth, (req, res) => {
       }
       const ticketNo = (r.ticketNo || r.ticket_no).trim();
       const id = r.id || `rma_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const receivedDate = r.receivedDate || r.received_date || now.slice(0, 10);
+      const calculatedEta = receivedDate ? addDaysCalendar(receivedDate, 3) : "";
+      const shippedDate = r.shippedDate || r.shipped_date || null;
+      const pengiriman = r.shipping || r.pengiriman || "";
+
       insertStmt.run({
         id,
         ticket_no: ticketNo,
-        received_date: r.receivedDate || r.received_date || now.slice(0, 10),
+        received_date: receivedDate,
         engineer: r.engineer || req.user.full_name,
         customer_name: r.customerName || r.customer_name || "",
         company: r.company || "",
@@ -353,8 +403,10 @@ router.post("/bulk-import", requireAuth, (req, res) => {
         qc_result: r.qcResult || r.qc_result || "Pending",
         qc_by: r.qcBy || r.qc_by || "",
         qc_date: r.qcDate || r.qc_date || "",
-        pengiriman: r.pengiriman || "",
+        pengiriman,
         tracking_no: r.trackingNo || r.tracking_no || "",
+        shipped_date: shippedDate,
+        eta: calculatedEta,
         closed_date: r.closedDate || r.closed_date || "",
         customer_received_date: r.customerReceivedDate || r.customer_received_date || "",
         notes: r.notes || "",

@@ -94,6 +94,8 @@ db.exec(`
     qc_date TEXT,
     pengiriman TEXT,
     tracking_no TEXT,
+    shipped_date TEXT,
+    eta TEXT,
     closed_date TEXT,
     customer_received_date TEXT,
     notes TEXT,
@@ -244,6 +246,19 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_photos_rma_id ON rma_photos(rma_id);
   CREATE INDEX IF NOT EXISTS idx_photos_ticket ON rma_photos(ticket_no);
 `);
+
+// Auto-migration for rma_entries new columns if missing
+try {
+  const rmaCols = db.pragma("table_info(rma_entries)").map((c) => c.name);
+  if (!rmaCols.includes("shipped_date")) {
+    db.exec("ALTER TABLE rma_entries ADD COLUMN shipped_date TEXT;");
+  }
+  if (!rmaCols.includes("eta")) {
+    db.exec("ALTER TABLE rma_entries ADD COLUMN eta TEXT;");
+  }
+} catch (e) {
+  console.warn("RMA column migration notice:", e.message);
+}
 
 /**
  * PBKDF2-HMAC-SHA256 Server-side password hashing (100,000 iterations)

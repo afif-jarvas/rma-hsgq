@@ -1726,9 +1726,20 @@ const fmtSize = (bytes) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 const fmtDate = (d) => {
-  if (!d) return "";
-  const dt = new Date(d);
-  if (isNaN(dt)) return d;
+  if (!d) return "-";
+  const str = String(d).trim();
+  if (!str || str === "-") return "-";
+  const parts = str.split("T")[0].split("-");
+  if (parts.length === 3) {
+    const y = parts[0];
+    const m = parts[1];
+    const day = parts[2];
+    if (y.length === 4 && m.length === 2 && day.length === 2) {
+      return `${day}/${m}/${y}`;
+    }
+  }
+  const dt = new Date(str);
+  if (isNaN(dt.getTime())) return str;
   return `${pad2(dt.getDate())}/${pad2(dt.getMonth() + 1)}/${dt.getFullYear()}`;
 };
 const todayISO = () => {
@@ -1740,11 +1751,22 @@ const dateNDaysAgoISO = (n) => {
   d.setDate(d.getDate() - n);
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 };
-const addDaysISO = (iso, n) => {
+const addDaysISO = (iso, n = 3) => {
   if (!iso) return "";
-  const d = new Date(iso);
-  d.setDate(d.getDate() + n);
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  const parts = String(iso).split("T")[0].split("-");
+  if (parts.length === 3) {
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+      const dt = new Date(y, m, d + n);
+      return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
+    }
+  }
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return "";
+  dt.setDate(dt.getDate() + n);
+  return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
 };
 function parseToISODate(val) {
   if (!val) return "";
@@ -2954,14 +2976,14 @@ function DateRangeToolbar({
  */
 const fileRegistry = new Map();
 
-function PhotoPickerCard({ title, photos, onAdd, onRemove, addLabel, capture }) {
+function PhotoPickerCard({ title, photos = [], onAdd, onRemove, addLabel, capture }) {
   const inputRef = useRef(null);
   const MAX = 3;
-  const storageAvailable = !!storage;
+  const safePhotos = Array.isArray(photos) ? photos : [];
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files || []);
-    const remaining = MAX - photos.length;
+    const remaining = MAX - safePhotos.length;
     files.slice(0, remaining).forEach((file) => {
       const id = crypto.randomUUID
         ? crypto.randomUUID()
@@ -2969,11 +2991,11 @@ function PhotoPickerCard({ title, photos, onAdd, onRemove, addLabel, capture }) 
       const previewUrl = URL.createObjectURL(file);
       // Store File object in registry so upload can access it later
       fileRegistry.set(id, file);
-      onAdd({
+      onAdd && onAdd({
         id,
         name: file.name,
         size: file.size,
-        previewUrl, // temporary — NOT stored in Firestore/localStorage
+        previewUrl, // temporary — NOT stored in DB
         uploadedAt: new Date().toISOString(),
       });
     });
@@ -2986,24 +3008,18 @@ function PhotoPickerCard({ title, photos, onAdd, onRemove, addLabel, capture }) 
         {title} (Maks. {MAX})
       </div>
 
-      {!storageAvailable && (
-        <div style={{ fontSize: 11.5, color: "var(--amber)", padding: "6px 8px", background: "var(--amber-dim)", borderRadius: 6, marginBottom: 4 }}>
-          ⚠ Fitur foto sementara tidak tersedia (Firebase Storage belum aktif). Foto hanya preview lokal, tidak akan tersimpan.
-        </div>
-      )}
-
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {photos.length === 0 && (
+        {safePhotos.length === 0 && (
           <div style={{ fontSize: 12, color: "var(--ink3)", fontStyle: "italic" }}>
             Belum ada foto yang dipilih.
           </div>
         )}
-        {photos.map((item, idx) => (
-          <div key={item.id || idx} className="attachment-preview-item">
-            {item.previewUrl || item.url ? (
+        {safePhotos.map((item, idx) => (
+          <div key={item?.id || idx} className="attachment-preview-item">
+            {item?.previewUrl || item?.url ? (
               <img
                 src={item.previewUrl || item.url}
-                alt={item.name}
+                alt={item?.name || "Foto"}
                 className="attachment-thumb"
               />
             ) : (
@@ -3019,24 +3035,24 @@ function PhotoPickerCard({ title, photos, onAdd, onRemove, addLabel, capture }) 
                   whiteSpace: "nowrap",
                 }}
               >
-                {item.name}
+                {item?.name || "Foto"}
               </div>
-              {item.size != null && (
+              {item?.size != null && (
                 <div style={{ fontSize: 11, color: "var(--ink3)" }}>
                   {fmtSize(item.size)}
                 </div>
               )}
               <div style={{ fontSize: 10, color: "var(--ink3)", marginTop: 2 }}>
-                {item.url
-                  ? "✓ Tersimpan di cloud."
+                {item?.url
+                  ? "✓ Tersimpan di server."
                   : "Preview lokal. Akan diupload saat tiket disimpan."}
               </div>
             </div>
             <button
               type="button"
               onClick={() => {
-                fileRegistry.delete(item.id);
-                onRemove(idx);
+                if (item?.id) fileRegistry.delete(item.id);
+                onRemove && onRemove(idx);
               }}
               title="Hapus foto"
               style={{
@@ -3062,12 +3078,12 @@ function PhotoPickerCard({ title, photos, onAdd, onRemove, addLabel, capture }) 
         type="file"
         accept="image/*"
         capture={capture}
-        multiple={MAX - photos.length > 1}
+        multiple={MAX - safePhotos.length > 1}
         style={{ display: "none" }}
         onChange={handleFileChange}
       />
 
-      {photos.length < MAX && (
+      {safePhotos.length < MAX && (
         <button
           type="button"
           onClick={() => inputRef.current && inputRef.current.click()}
@@ -3235,6 +3251,15 @@ function RmaDetailModal({ entry, onClose, t }) {
             <Row label={tt.rmaReceivingNotes || "Catatan Receiving"} value={entry.receivingNotes} />
           </Section>
 
+          <Section title={tt.rmaShippingSection || "Pengiriman & Penutupan"} icon={Truck}>
+            <Row label={tt.rmaShippingMethod || "Metode Pengiriman"} value={entry.shipping || entry.pengiriman} />
+            <Row label={tt.rmaTrackingNo || "No. Resi / Surat Jalan"} value={entry.trackingNo} />
+            <Row label={tt.rmaShippedDate || "Tanggal Dikirim (Shipped)"} value={fmtDate(entry.shippedDate)} />
+            <Row label={tt.rmaCustomerReceivedDate || "Tanggal Diterima Customer"} value={fmtDate(entry.customerReceivedDate)} />
+            <Row label={tt.rmaClosedDate || "Tanggal Ditutup (Closed)"} value={fmtDate(entry.closedDate)} />
+            <Row label={tt.rmaNotes || "Keterangan"} value={entry.notes} />
+          </Section>
+
           {unitPhotos.length > 0 && (
             <Section title={tt.rmaUnitPhotos || "Foto Unit Perangkat"} icon={ScanSearch}>
               <PhotoGrid photos={unitPhotos} category="Foto Unit" />
@@ -3302,13 +3327,20 @@ function RmaForm({
   };
   const [f, setF] = useState(() => {
     if (initial) {
+      const receivedDate = initial.receivedDate || "";
+      const eta = receivedDate ? addDaysISO(receivedDate, 3) : (initial.eta || "");
       return {
         ...initial,
+        shipping: initial.shipping || initial.pengiriman || "",
+        shippedDate: initial.shippedDate || initial.shipped_date || "",
+        receivedDate,
+        eta,
         physicalDamageNotes: initial.physicalDamageNotes || "",
         unitPhotos: Array.isArray(initial.unitPhotos) ? initial.unitPhotos : [],
         labelPhotos: Array.isArray(initial.labelPhotos) ? initial.labelPhotos : [],
       };
     }
+    const recDate = todayISO();
     return {
       id: uid(),
       ticketNo: genTicket("RMA", existingTicketNos),
@@ -3320,7 +3352,7 @@ function RmaForm({
       customerName: "",
       company: "",
       customerPhone: "",
-      receivedDate: todayISO(),
+      receivedDate: recDate,
       receivedTime: new Date().toTimeString().slice(0, 5),
       receivedBy: "",
       doNumber: "",
@@ -3332,7 +3364,7 @@ function RmaForm({
       receivingNotes: "",
       unitPhotos: [],
       labelPhotos: [],
-      eta: addDaysISO(todayISO(), 3),
+      eta: addDaysISO(recDate, 3),
       closedDate: "",
       initialProblem: "",
       symptom: "",
@@ -3428,8 +3460,7 @@ function RmaForm({
         },
       ];
     }
-    let eta = f.eta;
-    if (!eta && f.receivedDate) eta = addDaysISO(f.receivedDate, 3);
+    const calculatedEta = f.receivedDate ? addDaysISO(f.receivedDate, 3) : "";
 
     // Strip temporary previewUrls before persisting — previewUrls are
     // browser object URLs only valid for the current session.
@@ -3440,7 +3471,10 @@ function RmaForm({
     setSaving(true);
     const result = await onSave({
       ...f,
-      eta,
+      eta: calculatedEta,
+      pengiriman: f.shipping || f.pengiriman || "",
+      shipping: f.shipping || f.pengiriman || "",
+      shippedDate: f.shippedDate || "",
       statusHistory,
       unitPhotos: stripPreview(f.unitPhotos),
       labelPhotos: stripPreview(f.labelPhotos),
@@ -3630,7 +3664,14 @@ function RmaForm({
               <TextInput
                 type="date"
                 value={f.receivedDate}
-                onChange={set("receivedDate")}
+                onChange={(e) => {
+                  const newRec = e.target.value;
+                  setF((s) => ({
+                    ...s,
+                    receivedDate: newRec,
+                    eta: newRec ? addDaysISO(newRec, 3) : "",
+                  }));
+                }}
               />
             </Field>
             <Field label="Jam Diterima">
@@ -3647,8 +3688,13 @@ function RmaForm({
                 placeholder="Nama penerima unit..."
               />
             </Field>
-            <Field label="Estimasi Selesai (ETA)" hint="Default masuk + 3 hari">
-              <TextInput type="date" value={f.eta} onChange={set("eta")} />
+            <Field label="Estimasi Selesai (ETA)" hint="Dihitung otomatis: Tanggal Masuk + 3 hari">
+              <TextInput
+                type="date"
+                value={f.receivedDate ? addDaysISO(f.receivedDate, 3) : (f.eta || "")}
+                disabled
+                style={{ opacity: 0.85, cursor: "not-allowed" }}
+              />
             </Field>
           </div>
 
@@ -3723,7 +3769,7 @@ function RmaForm({
           </div>
 
           <InlineHint tone="info">
-            Preview lokal. Penyimpanan cloud belum dikonfigurasi — foto hanya tampil selama sesi ini dan tidak diunggah ke server.
+            Foto yang dipilih akan diupload ke server lokal dan tersimpan metadata-nya di database saat tiket disimpan.
           </InlineHint>
 
           <div
