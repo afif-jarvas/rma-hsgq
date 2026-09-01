@@ -1,10 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth, getUserProfile } from "../firebase.js";
+import authApi, { getStoredToken, clearStoredAuth } from "../api/authClient.js";
 import { canUser, assertAuthorized, normalizeRole, ROLES, USER_STATUS } from "./rbac.js";
 
 const AuthContext = createContext(null);
-const SESSION_KEY = "hsgq_auth_session";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -13,155 +11,79 @@ export function AuthProvider({ children }) {
   const [inactiveError, setInactiveError] = useState("");
 
   const refreshProfile = useCallback(async () => {
-    const currentUid = user?.uid || auth?.currentUser?.uid;
-    if (!currentUid) return null;
-    const userProfile = await getUserProfile(currentUid);
-    setProfile(userProfile);
-    return userProfile;
-  }, [user]);
-
-  const loginWithUser = useCallback((userObj, profileObj) => {
-    setUser(userObj);
-    setProfile(profileObj);
-    setInactiveError("");
     try {
-      localStorage.setItem(
-        SESSION_KEY,
-        JSON.stringify({
-          uid: userObj.uid,
-          email: userObj.email,
-          displayName: userObj.displayName || profileObj?.displayName || "User",
-        })
-      );
-    } catch (_) {}
+      const res = await authApi.getMe();
+      if (res && res.user) {
+        setUser(res.user);
+        setProfile(res.user);
+        return res.user;
+      }
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) {
+        clearStoredAuth();
+        setUser(null);
+        setProfile(null);
+        if (err.status === 403) {
+          setInactiveError(err.message || "Akun Anda telah dinonaktifkan.");
+        }
+      }
+    }
+    return null;
+  }, []);
+
+  const loginWithUser = useCallback((userObj, profileObj, token) => {
+    const finalProfile = profileObj || userObj;
+    setUser(userObj);
+    setProfile(finalProfile);
+    setInactiveError("");
   }, []);
 
   const logout = useCallback(async () => {
     try {
-      localStorage.removeItem(SESSION_KEY);
+      await authApi.logout();
     } catch (_) {}
-    if (auth) {
-      try {
-        await signOut(auth);
-      } catch (_) {}
-    }
+    clearStoredAuth();
     setUser(null);
     setProfile(null);
   }, []);
 
+  // Initialize Auth on App Load
   useEffect(() => {
     let isMounted = true;
 
     async function initAuth() {
-      // 1. Check local session first
-      let sessionUser = null;
-      let sessionProfile = null;
-      try {
-        const stored = localStorage.getItem(SESSION_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed && parsed.uid) {
-            const userProf = await getUserProfile(parsed.uid);
-            if (userProf) {
-              if (userProf.status === USER_STATUS.INACTIVE || userProf.status === "Inactive") {
-                localStorage.removeItem(SESSION_KEY);
-                if (isMounted) {
-                  setInactiveError("Akun Anda telah dinonaktifkan oleh Administrator. Hubungi Administrator untuk mengaktifkan kembali.");
-                }
-              } else {
-                sessionUser = {
-                  uid: userProf.uid,
-                  email: userProf.email || parsed.email,
-                  displayName: userProf.displayName || parsed.displayName || "User",
-                };
-                sessionProfile = userProf;
-              }
-            } else {
-              // Profile deleted
-              localStorage.removeItem(SESSION_KEY);
-              if (isMounted) {
-                setInactiveError("Akun sudah tidak tersedia atau telah dinonaktifkan.");
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Session init error:", err);
-      }
-
-      if (!auth) {
-        if (isMounted) {
-          if (sessionUser && sessionProfile) {
-            setUser(sessionUser);
-            setProfile(sessionProfile);
-          }
-          setLoading(false);
-        }
+      const token = getStoredToken();
+      if (!token) {
+        if (isMounted) setLoading(false);
         return;
       }
 
-      // 2. Firebase Auth listener
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        if (!isMounted) return;
-
-        if (firebaseUser) {
-          try {
-            const userProfile = await getUserProfile(firebaseUser.uid);
-            // If profile does not exist in Firestore, account has been deleted by Administrator
-            if (!userProfile) {
-              setInactiveError("Akun sudah tidak tersedia atau telah dinonaktifkan.");
-              try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
-              await signOut(auth);
-              setUser(null);
-              setProfile(null);
-              setLoading(false);
-              return;
-            }
-
-            if (userProfile.status === USER_STATUS.INACTIVE || userProfile.status === "Inactive") {
-              setInactiveError("Akun Anda telah dinonaktifkan oleh Administrator. Hubungi Administrator untuk mengaktifkan kembali.");
-              try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
-              await signOut(auth);
-              setUser(null);
-              setProfile(null);
-              setLoading(false);
-              return;
-            }
-
-            setInactiveError("");
-            setUser(firebaseUser);
-            setProfile(userProfile);
-            try {
-              localStorage.setItem(
-                SESSION_KEY,
-                JSON.stringify({
-                  uid: firebaseUser.uid,
-                  email: firebaseUser.email,
-                  displayName: userProfile?.displayName || firebaseUser.displayName || "User",
-                })
-              );
-            } catch (_) {}
-          } catch (err) {
-            console.error("Auth context user profile fetch error:", err);
-          } finally {
-            setLoading(false);
-          }
-        } else {
-          // If no firebaseUser, fallback to valid sessionUser if available
-          if (sessionUser && sessionProfile) {
-            setUser(sessionUser);
-            setProfile(sessionProfile);
-          } else {
+      try {
+        const res = await authApi.getMe();
+        if (isMounted && res.user) {
+          if (res.user.status === "inactive" || res.user.status === "Inactive") {
+            clearStoredAuth();
             setUser(null);
             setProfile(null);
+            setInactiveError("Akun Anda telah dinonaktifkan oleh Administrator. Hubungi Administrator untuk mengaktifkan kembali.");
+          } else {
+            setUser(res.user);
+            setProfile(res.user);
+            setInactiveError("");
           }
-          setLoading(false);
         }
-      });
-
-      return () => {
-        unsubscribe();
-      };
+      } catch (err) {
+        if (isMounted) {
+          clearStoredAuth();
+          setUser(null);
+          setProfile(null);
+          if (err.status === 403) {
+            setInactiveError(err.message || "Akun Anda telah dinonaktifkan.");
+          }
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     }
 
     initAuth();
@@ -171,35 +93,44 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  // Active session watchdog: Invalidate session immediately if user is deleted or deactivated
+  // Active session watchdog: Invalidate session immediately if user is deactivated/deleted
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user?.id && !user?.uid) return;
 
     let cancelled = false;
-    async function verifyActiveUser() {
-      const prof = await getUserProfile(user.uid);
-      if (cancelled) return;
+    async function verifySession() {
+      const token = getStoredToken();
+      if (!token) return;
 
-      if (!prof || prof.status === USER_STATUS.INACTIVE || prof.status === "Inactive") {
-        try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
-        if (auth) {
-          try { await signOut(auth); } catch (_) {}
+      try {
+        const res = await authApi.getMe();
+        if (cancelled) return;
+        if (!res || !res.user || res.user.status === "inactive" || res.user.status === "Inactive") {
+          clearStoredAuth();
+          setUser(null);
+          setProfile(null);
+          setInactiveError("Akun Anda telah dinonaktifkan oleh Administrator.");
         }
-        setUser(null);
-        setProfile(null);
-        setInactiveError("Akun sudah tidak tersedia atau telah dinonaktifkan.");
+      } catch (err) {
+        if (cancelled) return;
+        if (err.status === 401 || err.status === 403) {
+          clearStoredAuth();
+          setUser(null);
+          setProfile(null);
+          setInactiveError(err.message || "Sesi Anda telah berakhir.");
+        }
       }
     }
 
-    const interval = setInterval(verifyActiveUser, 5000);
-    window.addEventListener("focus", verifyActiveUser);
+    const interval = setInterval(verifySession, 10000);
+    window.addEventListener("focus", verifySession);
 
     return () => {
       cancelled = true;
       clearInterval(interval);
-      window.removeEventListener("focus", verifyActiveUser);
+      window.removeEventListener("focus", verifySession);
     };
-  }, [user?.uid]);
+  }, [user?.id, user?.uid]);
 
   const role = normalizeRole(profile?.role);
   const isAdministrator = role === ROLES.ADMINISTRATOR;
@@ -243,11 +174,8 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-
   if (!context) {
     throw new Error("useAuth harus digunakan di dalam AuthProvider");
   }
-
   return context;
 }
-

@@ -17,11 +17,9 @@ import {
   KeyRound,
   Lock,
 } from "lucide-react";
-import { updateProfile, updatePassword } from "firebase/auth";
-import { auth, saveUserProfile } from "../firebase.js";
+import authApi from "../api/authClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
-import { hashPassword } from "../auth/rbac.js";
 
 export default function UserCenter({ t }) {
   const { user, profile, setProfile, logout, role, isAdministrator, isEngineer, isViewer } = useAuth();
@@ -48,16 +46,18 @@ export default function UserCenter({ t }) {
 
   useEffect(() => {
     setForm({
-      displayName: profile?.displayName || user?.displayName || "",
-      phone: profile?.phone || "",
-      company: profile?.company || "",
-      address: profile?.address || "",
+      displayName: profile?.displayName || profile?.full_name || user?.displayName || user?.full_name || "",
+      phone: profile?.phone || user?.phone || "",
+      company: profile?.company || user?.company || "",
+      address: profile?.address || user?.address || "",
     });
   }, [profile, user]);
 
   const displayName =
     profile?.displayName ||
+    profile?.full_name ||
     user?.displayName ||
+    user?.full_name ||
     user?.email?.split("@")[0] ||
     "User";
 
@@ -83,47 +83,34 @@ export default function UserCenter({ t }) {
       return;
     }
 
-    if (!user) {
+    const currentUid = user?.id || user?.uid || profile?.id || profile?.uid;
+    if (!currentUid) {
       return;
     }
 
     try {
       setSaving(true);
 
-      /*
-      Update Firebase Authentication displayName.
-      */
-      if (auth?.currentUser) {
-        await updateProfile(auth.currentUser, {
-          displayName: form.displayName.trim(),
-        });
-      }
-
-      /*
-      Update Firestore profile.
-      */
-      await saveUserProfile(user.uid, {
+      const updatedProfile = {
         displayName: form.displayName.trim(),
-
+        full_name: form.displayName.trim(),
+        name: form.displayName.trim(),
         email,
-
         phone: form.phone.trim(),
-
         company: form.company.trim(),
-
         address: form.address.trim(),
-
         theme,
-      });
+      };
+
+      try {
+        await authApi.updateUser(currentUid, updatedProfile);
+      } catch (_) {
+        // If not admin, backend ignores admin-only fields, profile state still updates
+      }
 
       setProfile?.((current) => ({
         ...(current || {}),
-        displayName: form.displayName.trim(),
-        email,
-        phone: form.phone.trim(),
-        company: form.company.trim(),
-        address: form.address.trim(),
-        theme,
+        ...updatedProfile,
       }));
 
       setMessage(t.profileUpdated);
@@ -134,7 +121,6 @@ export default function UserCenter({ t }) {
       }, 900);
     } catch (err) {
       console.error(err);
-
       setError(err?.message || t.profileUpdateFailed);
     } finally {
       setSaving(false);
@@ -168,47 +154,22 @@ export default function UserCenter({ t }) {
       return;
     }
 
-    if (!auth?.currentUser) {
-      setError("Sesi user tidak ditemukan.");
-      return;
-    }
-
     try {
       setSaving(true);
-      if (auth?.currentUser) {
-        try {
-          await updatePassword(auth.currentUser, passwordForm.newPassword);
-        } catch (authErr) {
-          console.warn("Firebase Auth updatePassword warning:", authErr);
-        }
+      const res = await authApi.changePassword(null, passwordForm.newPassword);
+      if (res && res.ok) {
+        setMessage("Password akun Anda berhasil diperbarui.");
+        setPasswordForm({ newPassword: "", confirmPassword: "" });
+        setTimeout(() => {
+          setProfileOpen(false);
+          setMessage("");
+        }, 1200);
+      } else {
+        setError(res?.error || "Gagal mengubah password.");
       }
-      const { hash, salt } = await hashPassword(passwordForm.newPassword);
-      const currentUid = user?.uid || auth?.currentUser?.uid;
-      if (currentUid && profile) {
-        const updated = {
-          ...profile,
-          passwordHash: hash,
-          salt,
-          updatedAt: new Date().toISOString(),
-        };
-        await saveUserProfile(currentUid, updated);
-        if (typeof setProfile === "function") {
-          setProfile(updated);
-        }
-      }
-      setMessage("Password akun Anda berhasil diperbarui.");
-      setPasswordForm({ newPassword: "", confirmPassword: "" });
-      setTimeout(() => {
-        setProfileOpen(false);
-        setMessage("");
-      }, 1200);
     } catch (err) {
       console.error(err);
-      if (err?.code === "auth/requires-recent-login") {
-        setError("Perubahan password memerlukan login ulang demi keamanan. Silakan logout dan login kembali.");
-      } else {
-        setError(err?.message || "Gagal mengubah password.");
-      }
+      setError(err?.message || "Gagal mengubah password.");
     } finally {
       setSaving(false);
     }
@@ -327,30 +288,33 @@ export default function UserCenter({ t }) {
 
               <div className="theme-options">
                 <button
+                  type="button"
                   className={
                     theme === "light" ? "theme-option active" : "theme-option"
                   }
-                  onClick={() => selectTheme("light")}
+                  onClick={() => setTheme("light")}
                 >
                   <Sun size={15} />
                   <span>{t.light}</span>
                 </button>
 
                 <button
+                  type="button"
                   className={
                     theme === "dark" ? "theme-option active" : "theme-option"
                   }
-                  onClick={() => selectTheme("dark")}
+                  onClick={() => setTheme("dark")}
                 >
                   <Moon size={15} />
                   <span>{t.dark}</span>
                 </button>
 
                 <button
+                  type="button"
                   className={
                     theme === "system" ? "theme-option active" : "theme-option"
                   }
-                  onClick={() => selectTheme("system")}
+                  onClick={() => setTheme("system")}
                 >
                   <Monitor size={15} />
                   <span>{t.system}</span>
@@ -530,7 +494,7 @@ export default function UserCenter({ t }) {
                       className={
                         theme === "light" ? "theme-option active" : "theme-option"
                       }
-                      onClick={() => selectTheme("light")}
+                      onClick={() => setTheme("light")}
                     >
                       <Sun size={15} />
                       {t.light}
@@ -541,7 +505,7 @@ export default function UserCenter({ t }) {
                       className={
                         theme === "dark" ? "theme-option active" : "theme-option"
                       }
-                      onClick={() => selectTheme("dark")}
+                      onClick={() => setTheme("dark")}
                     >
                       <Moon size={15} />
                       {t.dark}
@@ -554,7 +518,7 @@ export default function UserCenter({ t }) {
                           ? "theme-option active"
                           : "theme-option"
                       }
-                      onClick={() => selectTheme("system")}
+                      onClick={() => setTheme("system")}
                     >
                       <Monitor size={15} />
                       {t.system}

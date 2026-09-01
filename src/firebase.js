@@ -358,6 +358,45 @@ export async function adminUpdateAccount(uid, updates) {
 }
 
 /**
+ * Admin: Reset user password in database
+ */
+export async function adminResetAccountPassword(emailOrUid, newPassword) {
+  const cleanKey = String(emailOrUid || "").trim().toLowerCase();
+  if (!cleanKey || !newPassword) {
+    return { ok: false, error: "Email/UID dan password baru wajib diisi." };
+  }
+
+  if (newPassword.length < 6) {
+    return { ok: false, error: "Password baru minimal 6 karakter." };
+  }
+
+  const users = await getUsersList();
+  const target = users.find(
+    (u) =>
+      (u.email || "").toLowerCase() === cleanKey ||
+      u.uid === emailOrUid ||
+      u.id === emailOrUid
+  );
+  if (!target) {
+    return { ok: false, error: "Akun user tidak ditemukan di database." };
+  }
+
+  const targetUid = target.uid || target.id;
+
+  // 1. Hash password with secure random salt
+  const { hash, salt } = await hashPassword(newPassword);
+
+  // 2. Persist updated passwordHash and salt to user's Firestore profile
+  await adminUpdateAccount(targetUid, {
+    passwordHash: hash,
+    salt,
+    passwordResetByAdminAt: new Date().toISOString(),
+  });
+
+  return { ok: true };
+}
+
+/**
  * Admin: Delete user account
  */
 export async function adminDeleteAccount(uid) {

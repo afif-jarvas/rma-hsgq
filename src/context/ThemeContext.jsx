@@ -4,10 +4,10 @@ import React, {
   useEffect,
   useMemo,
   useState,
+  useCallback,
 } from "react";
-
 import { useAuth } from "../auth/AuthContext.jsx";
-import { saveUserProfile } from "../firebase.js";
+import authApi from "../api/authClient.js";
 
 const ThemeContext = createContext(null);
 
@@ -21,7 +21,6 @@ function getSystemTheme() {
   ) {
     return "dark";
   }
-
   return "light";
 }
 
@@ -29,91 +28,102 @@ function getStoredTheme() {
   if (typeof window === "undefined") {
     return "system";
   }
-
   const saved = localStorage.getItem("hsgq_theme");
-
   return VALID_THEMES.includes(saved) ? saved : "system";
+}
+
+function applyThemeToDocument(themeMode, resolvedMode) {
+  if (typeof document === "undefined") return;
+  document.documentElement.setAttribute("data-theme", resolvedMode);
+  document.documentElement.classList.toggle("dark", resolvedMode === "dark");
+  document.documentElement.style.colorScheme = resolvedMode;
+  try {
+    localStorage.setItem("hsgq_theme", themeMode);
+  } catch (_) {}
 }
 
 export function ThemeProvider({ children }) {
   const { user, profile, setProfile } = useAuth();
 
-  const [theme, setThemeState] = useState(profile?.theme || getStoredTheme());
+  const initialTheme = user?.theme || profile?.theme || getStoredTheme();
+  const [theme, setThemeState] = useState(initialTheme);
 
-  const [resolvedTheme, setResolvedTheme] = useState(
-    theme === "system" ? getSystemTheme() : theme,
-  );
+  const [resolvedTheme, setResolvedTheme] = useState(() => {
+    return initialTheme === "system" ? getSystemTheme() : initialTheme;
+  });
 
   /*
-  Saat profile Firebase selesai dimuat,
-  gunakan theme yang tersimpan di profile.
-  */
+   * Saat user login / profile dimuat dari backend SQLite,
+   * sinkronkan theme preference user aktif.
+   */
   useEffect(() => {
-    if (profile?.theme && VALID_THEMES.includes(profile.theme)) {
-      setThemeState(profile.theme);
+    const userTheme = profile?.theme || user?.theme;
+    if (userTheme && VALID_THEMES.includes(userTheme)) {
+      setThemeState(userTheme);
     }
-  }, [profile?.theme]);
+  }, [profile?.theme, user?.theme, user?.id, user?.uid]);
 
   /*
-  Pantau perubahan theme OS kalau user memilih System.
-  */
+   * Pantau perubahan theme OS jika mode "system" aktif.
+   */
   useEffect(() => {
     if (theme !== "system") {
       setResolvedTheme(theme);
       return;
     }
 
+    const currentSys = getSystemTheme();
+    setResolvedTheme(currentSys);
+
+    if (typeof window === "undefined" || !window.matchMedia) return;
     const media = window.matchMedia("(prefers-color-scheme: dark)");
 
-    const update = () => {
-      setResolvedTheme(media.matches ? "dark" : "light");
+    const update = (e) => {
+      setResolvedTheme(e.matches ? "dark" : "light");
     };
 
-    update();
-
-    media.addEventListener?.("change", update);
-
-    return () => {
-      media.removeEventListener?.("change", update);
-    };
+    if (media.addEventListener) {
+      media.addEventListener("change", update);
+      return () => media.removeEventListener("change", update);
+    } else if (media.addListener) {
+      media.addListener(update);
+      return () => media.removeListener(update);
+    }
   }, [theme]);
 
   /*
-  Terapkan theme ke document.
-  */
+   * Terapkan theme ke root HTML / document secara realtime.
+   */
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", resolvedTheme);
-
-    document.documentElement.style.colorScheme = resolvedTheme;
-
-    localStorage.setItem("hsgq_theme", theme);
+    applyThemeToDocument(theme, resolvedTheme);
   }, [theme, resolvedTheme]);
 
-  async function setTheme(nextTheme) {
-    if (!VALID_THEMES.includes(nextTheme)) {
-      return;
-    }
-
-    setThemeState(nextTheme);
-
-    /*
-    Simpan ke profile user kalau Firebase login.
-    */
-    if (user) {
-      try {
-        await saveUserProfile(user.uid, {
-          theme: nextTheme,
-        });
-
-        setProfile?.((current) => ({
-          ...(current || {}),
-          theme: nextTheme,
-        }));
-      } catch (error) {
-        console.error("Gagal menyimpan theme:", error);
+  const setTheme = useCallback(
+    async (nextTheme) => {
+      if (!VALID_THEMES.includes(nextTheme)) {
+        return;
       }
-    }
-  }
+
+      const nextResolved = nextTheme === "system" ? getSystemTheme() : nextTheme;
+      setThemeState(nextTheme);
+      setResolvedTheme(nextResolved);
+      applyThemeToDocument(nextTheme, nextResolved);
+
+      // Simpan ke database SQLite pengguna via backend API
+      if (user?.id || user?.uid) {
+        try {
+          await authApi.updatePreferences({ theme: nextTheme });
+          setProfile?.((current) => ({
+            ...(current || {}),
+            theme: nextTheme,
+          }));
+        } catch (error) {
+          console.error("Gagal menyimpan preferensi theme ke server:", error);
+        }
+      }
+    },
+    [user?.id, user?.uid, setProfile]
+  );
 
   const value = useMemo(
     () => ({
@@ -121,20 +131,16 @@ export function ThemeProvider({ children }) {
       resolvedTheme,
       setTheme,
     }),
-    [theme, resolvedTheme],
+    [theme, resolvedTheme, setTheme]
   );
 
-  return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
   const context = useContext(ThemeContext);
-
   if (!context) {
     throw new Error("useTheme harus digunakan di dalam ThemeProvider");
   }
-
   return context;
 }

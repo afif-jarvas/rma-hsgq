@@ -1,6 +1,7 @@
 /**
  * src/components/UserManagementTab.jsx
  * User Management Dashboard & Account Administration (Administrator Role Only)
+ * Powered by Local SQLite Backend API
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -22,16 +23,12 @@ import {
   Mail,
   User,
   Lock,
+  KeyRound,
   Eye,
   EyeOff,
   AlertTriangle,
 } from "lucide-react";
-import {
-  getUsersList,
-  adminCreateAccount,
-  adminUpdateAccount,
-  adminDeleteAccount,
-} from "../firebase.js";
+import authApi from "../api/authClient.js";
 import { ROLES, USER_STATUS, PERMISSIONS, assertAuthorized } from "../auth/rbac.js";
 
 const T = {
@@ -136,19 +133,22 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [modal, setModal] = useState(null); // { type: "create" | "edit" | "resetPassword" | "delete", user }
+  const [modal, setModal] = useState(null); // { type: "create" | "edit" | "resetPassword" | "toggleStatus" | "delete", user }
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await getUsersList();
-      setUsers(list);
+      const res = await authApi.getUsers();
+      if (res && Array.isArray(res.users)) {
+        setUsers(res.users);
+      }
     } catch (err) {
       console.error("Gagal memuat daftar user:", err);
+      if (setToastMsg) setToastMsg(err.message || "Gagal memuat daftar user.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setToastMsg]);
 
   useEffect(() => {
     loadUsers();
@@ -158,7 +158,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
     return (users || []).filter((u) => {
       const matchSearch =
         !search ||
-        (u.displayName || u.name || "").toLowerCase().includes(search.toLowerCase()) ||
+        (u.displayName || u.name || u.full_name || "").toLowerCase().includes(search.toLowerCase()) ||
         (u.email || "").toLowerCase().includes(search.toLowerCase()) ||
         (u.username || "").toLowerCase().includes(search.toLowerCase());
 
@@ -169,32 +169,6 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
       return matchSearch && matchRole && matchStatus;
     });
   }, [users, search, roleFilter, statusFilter]);
-
-  const handleToggleStatus = async (targetUser) => {
-    try {
-      assertAuthorized(currentUserProfile, PERMISSIONS.USER_TOGGLE_STATUS, "mengubah status user");
-
-      const isCurrentActive = targetUser.status === "active" || targetUser.status === "Active" || !targetUser.status;
-      const targetUid = targetUser.uid || targetUser.id;
-
-      // Self-Role & Last-Admin Protection
-      if (isCurrentActive && isLastActiveAdmin(users, targetUid)) {
-        alert("Aksi ditolak: Sistem harus memiliki minimal satu Administrator yang aktif.");
-        return;
-      }
-
-      const nextStatus = isCurrentActive ? "inactive" : "active";
-      const res = await adminUpdateAccount(targetUid, { status: nextStatus });
-      if (res.ok) {
-        if (setToastMsg) setToastMsg(`Status user ${targetUser.displayName || targetUser.email} diubah menjadi ${nextStatus}.`);
-        loadUsers();
-      } else {
-        alert(res.error || "Gagal mengubah status user.");
-      }
-    } catch (err) {
-      alert(err.message);
-    }
-  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -273,150 +247,110 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
           <option value="inactive">Inactive</option>
         </select>
 
-        {(search || roleFilter || statusFilter) && (
-          <button
-            type="button"
-            onClick={() => {
-              setSearch("");
-              setRoleFilter("");
-              setStatusFilter("");
-            }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-              height: 36,
-              padding: "0 10px",
-              background: "transparent",
-              border: `1px solid ${T.line}`,
-              borderRadius: 6,
-              color: T.ink2,
-              fontSize: 12,
-              cursor: "pointer",
-            }}
-          >
-            <RotateCcw size={13} /> Reset Filter
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={loadUsers}
+          title="Refresh Data"
+          style={{
+            height: 36,
+            padding: "0 12px",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: T.panel2,
+            border: `1px solid ${T.line}`,
+            borderRadius: 6,
+            color: T.ink,
+            fontSize: 13,
+            cursor: "pointer",
+          }}
+        >
+          <RotateCcw size={14} className={loading ? "spin" : ""} />
+          <span>Refresh</span>
+        </button>
 
-        <div style={{ marginLeft: "auto" }}>
-          <button
-            type="button"
-            onClick={() => setModal({ type: "create" })}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              height: 36,
-              padding: "0 14px",
-              background: T.cyan,
-              color: "#000",
-              fontWeight: 700,
-              fontSize: 13,
-              borderRadius: 6,
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            <UserPlus size={15} /> Tambah User Baru
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setModal({ type: "create" })}
+          style={{
+            height: 36,
+            padding: "0 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: T.cyan,
+            border: "none",
+            borderRadius: 6,
+            color: "#000",
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: "pointer",
+            marginLeft: "auto",
+          }}
+        >
+          <UserPlus size={15} />
+          <span>Tambah User Baru</span>
+        </button>
       </div>
 
       {/* USERS TABLE */}
       <div
         style={{
           background: T.panel,
-          border: `1px solid ${T.line}`,
           borderRadius: 10,
+          border: `1px solid ${T.line}`,
           overflow: "hidden",
         }}
       >
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
             <thead>
-              <tr style={{ background: T.panel2, borderBottom: `1px solid ${T.line}` }}>
-                <th style={{ padding: "12px 14px", fontWeight: 700, color: T.ink2, width: 50, textAlign: "center" }}>No.</th>
-                <th style={{ padding: "12px 14px", fontWeight: 700, color: T.ink2 }}>Nama Pengguna</th>
-                <th style={{ padding: "12px 14px", fontWeight: 700, color: T.ink2 }}>Email / Username</th>
-                <th style={{ padding: "12px 14px", fontWeight: 700, color: T.ink2 }}>Role</th>
-                <th style={{ padding: "12px 14px", fontWeight: 700, color: T.ink2 }}>Status</th>
-                <th style={{ padding: "12px 14px", fontWeight: 700, color: T.ink2 }}>Terdaftar</th>
-                <th style={{ padding: "12px 14px", fontWeight: 700, color: T.ink2, textAlign: "right" }}>Aksi</th>
+              <tr style={{ background: T.panel2, borderBottom: `1px solid ${T.line}`, color: T.ink3, fontSize: 11.5, textTransform: "uppercase" }}>
+                <th style={{ padding: "12px 14px", fontWeight: 700 }}>Nama Lengkap</th>
+                <th style={{ padding: "12px 14px", fontWeight: 700 }}>Email / Username</th>
+                <th style={{ padding: "12px 14px", fontWeight: 700 }}>Role</th>
+                <th style={{ padding: "12px 14px", fontWeight: 700 }}>Status</th>
+                <th style={{ padding: "12px 14px", fontWeight: 700 }}>Dibuat Pada</th>
+                <th style={{ padding: "12px 14px", fontWeight: 700, textAlign: "right" }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {loading && users.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: "30px", textAlign: "center", color: T.ink3 }}>
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                      <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Memuat data user...
+                  <td colSpan={6} style={{ padding: "36px", textAlign: "center", color: T.ink3 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                      <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
+                      <span>Memuat data pengguna...</span>
                     </div>
                   </td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: "30px", textAlign: "center", color: T.ink3 }}>
-                    Tidak ada akun pengguna yang memenuhi filter.
+                  <td colSpan={6} style={{ padding: "36px", textAlign: "center", color: T.ink3 }}>
+                    Tidak ada akun pengguna yang sesuai dengan filter.
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((u, index) => {
-                  const uid = u.uid || u.id;
+                filteredUsers.map((u) => {
                   const isActive = u.status === "active" || u.status === "Active" || !u.status;
-                  const isCurrent = currentUserProfile?.uid === uid || currentUserProfile?.id === uid;
-
                   return (
-                    <tr
-                      key={uid}
-                      style={{
-                        borderBottom: `1px solid ${T.lineDim}`,
-                        background: isCurrent ? `${T.cyan}08` : "transparent",
-                      }}
-                    >
-                      <td
-                        style={{
-                          padding: "12px 14px",
-                          textAlign: "center",
-                          color: T.ink3,
-                          fontFamily: mono,
-                          fontSize: 12.5,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {index + 1}
+                    <tr key={u.id || u.uid} style={{ borderBottom: `1px solid ${T.lineDim}`, transition: "background 0.15s ease" }}>
+                      <td style={{ padding: "12px 14px", fontWeight: 650, color: T.ink }}>
+                        {u.full_name || u.displayName || u.name || "-"}
                       </td>
-
                       <td style={{ padding: "12px 14px" }}>
-                        <div>
-                          <div style={{ fontWeight: 600, color: T.ink, display: "flex", alignItems: "center", gap: 6 }}>
-                            <span>{u.displayName || u.name || "-"}</span>
-                            {isCurrent && (
-                              <span style={{ fontSize: 10, background: T.cyan, color: "#000", padding: "1px 5px", borderRadius: 4, fontWeight: 700 }}>
-                                YOU
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ fontSize: 11, color: T.ink3 }}>{u.company || u.phone || "HSGQ Team"}</div>
-                        </div>
+                        <div style={{ color: T.ink, fontFamily: mono, fontSize: 12.5 }}>{u.email}</div>
+                        {u.username && <div style={{ color: T.ink3, fontSize: 11 }}>@{u.username}</div>}
                       </td>
-
-                      <td style={{ padding: "12px 14px", fontFamily: mono, color: T.ink2 }}>
-                        {u.email || "-"}
-                      </td>
-
                       <td style={{ padding: "12px 14px" }}>
                         <RoleBadge role={u.role} />
                       </td>
-
                       <td style={{ padding: "12px 14px" }}>
                         <StatusBadge status={u.status} />
                       </td>
-
                       <td style={{ padding: "12px 14px", color: T.ink3, fontSize: 12 }}>
-                        {u.createdAt ? new Date(u.createdAt).toLocaleDateString("id-ID") : "-"}
+                        {u.created_at ? new Date(u.created_at).toLocaleDateString("id-ID") : "-"}
                       </td>
-
                       <td style={{ padding: "12px 14px", textAlign: "right" }}>
                         <div style={{ display: "inline-flex", gap: 6 }}>
                           <button
@@ -433,6 +367,22 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
                             }}
                           >
                             <Pencil size={14} />
+                          </button>
+
+                          <button
+                            type="button"
+                            title="Reset Password"
+                            onClick={() => setModal({ type: "resetPassword", user: u })}
+                            style={{
+                              padding: "6px",
+                              borderRadius: 6,
+                              background: T.panel2,
+                              border: `1px solid ${T.line}`,
+                              color: T.amber,
+                              cursor: "pointer",
+                            }}
+                          >
+                            <KeyRound size={14} />
                           </button>
 
                           <button
@@ -504,6 +454,19 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
         />
       )}
 
+      {modal?.type === "resetPassword" && (
+        <ResetPasswordModal
+          user={modal.user}
+          onClose={() => setModal(null)}
+          onSuccess={() => {
+            setModal(null);
+            loadUsers();
+            if (setToastMsg) setToastMsg(`Password untuk user ${modal.user.displayName || modal.user.full_name || modal.user.email} berhasil direset.`);
+          }}
+          currentUserProfile={currentUserProfile}
+        />
+      )}
+
       {modal?.type === "toggleStatus" && (
         <ToggleStatusModal
           user={modal.user}
@@ -515,8 +478,8 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
             if (setToastMsg) {
               setToastMsg(
                 newStatus === "active"
-                  ? `User ${modal.user.displayName || modal.user.email} berhasil diaktifkan.`
-                  : `User ${modal.user.displayName || modal.user.email} berhasil dinonaktifkan.`
+                  ? `User ${modal.user.displayName || modal.user.full_name || modal.user.email} berhasil diaktifkan.`
+                  : `User ${modal.user.displayName || modal.user.full_name || modal.user.email} berhasil dinonaktifkan.`
               );
             }
           }}
@@ -569,7 +532,8 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
       if (password !== confirmPassword) return setErr("Konfirmasi password tidak cocok.");
 
       setLoading(true);
-      const res = await adminCreateAccount({
+      const res = await authApi.createUser({
+        full_name: name.trim(),
         name: name.trim(),
         email: email.trim(),
         password,
@@ -578,10 +542,10 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
       });
 
       setLoading(false);
-      if (res.ok) {
+      if (res && res.ok) {
         onSuccess();
       } else {
-        setErr(res.error || "Gagal membuat user baru.");
+        setErr(res?.error || "Gagal membuat user baru.");
       }
     } catch (error) {
       setLoading(false);
@@ -616,7 +580,7 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Contoh: Budi Santoso"
-              style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel }}
+              style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
             />
           </label>
 
@@ -627,7 +591,7 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="nama@hsgq.com"
-              style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel }}
+              style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
             />
           </label>
 
@@ -637,7 +601,7 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel }}
+                style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
               >
                 <option value={ROLES.ADMINISTRATOR}>Administrator (Full Access)</option>
                 <option value={ROLES.ENGINEER}>Engineer (Operational CRUD)</option>
@@ -650,7 +614,7 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel }}
+                style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
@@ -667,7 +631,7 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Min 6 karakter"
-                  style={{ width: "100%", padding: "8px 30px 8px 12px", boxSizing: "border-box", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel }}
+                  style={{ width: "100%", padding: "8px 30px 8px 12px", boxSizing: "border-box", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
                 />
                 <button
                   type="button"
@@ -686,7 +650,7 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Ulangi password"
-                style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel }}
+                style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
               />
             </label>
           </div>
@@ -719,8 +683,8 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
    EDIT USER MODAL
    ============================================================ */
 function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile }) {
-  const targetUid = user.uid || user.id;
-  const [name, setName] = useState(user.displayName || user.name || "");
+  const targetUid = user.id || user.uid;
+  const [name, setName] = useState(user.full_name || user.displayName || user.name || "");
   const [role, setRole] = useState(user.role || ROLES.VIEWER);
   const [status, setStatus] = useState(user.status || "active");
   const [loading, setLoading] = useState(false);
@@ -733,33 +697,19 @@ function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile
     try {
       assertAuthorized(currentUserProfile, PERMISSIONS.USER_UPDATE, "mengubah data user");
 
-      // Last-Admin Protection
-      const isDemotingAdmin =
-        (user.role === "Administrator" || user.role === "administrator") &&
-        role !== "Administrator" &&
-        role !== "administrator";
-      const isDeactivatingAdmin =
-        (user.role === "Administrator" || user.role === "administrator") &&
-        status !== "active" &&
-        status !== "Active";
-
-      if ((isDemotingAdmin || isDeactivatingAdmin) && isLastActiveAdmin(usersList, targetUid)) {
-        return setErr("Aksi ditolak: Sistem harus memiliki minimal satu Administrator yang aktif.");
-      }
-
       setLoading(true);
-      const res = await adminUpdateAccount(targetUid, {
-        displayName: name.trim(),
+      const res = await authApi.updateUser(targetUid, {
+        full_name: name.trim(),
         name: name.trim(),
         role,
         status,
       });
 
       setLoading(false);
-      if (res.ok) {
+      if (res && res.ok) {
         onSuccess();
       } else {
-        setErr(res.error || "Gagal memperbarui user.");
+        setErr(res?.error || "Gagal memperbarui user.");
       }
     } catch (error) {
       setLoading(false);
@@ -793,7 +743,7 @@ function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel }}
+              style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
             />
           </label>
 
@@ -813,7 +763,7 @@ function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel }}
+                style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
               >
                 <option value={ROLES.ADMINISTRATOR}>Administrator</option>
                 <option value={ROLES.ENGINEER}>Engineer</option>
@@ -826,7 +776,7 @@ function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel }}
+                style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
@@ -862,30 +812,22 @@ function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile
    DELETE USER MODAL
    ============================================================ */
 function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfile }) {
-  const targetUid = user.uid || user.id;
+  const targetUid = user.id || user.uid;
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
-
-  const isBlockedLastAdmin =
-    (user.role === "Administrator" || user.role === "administrator") &&
-    isLastActiveAdmin(usersList, targetUid);
 
   const handleDelete = async () => {
     setErr("");
     try {
       assertAuthorized(currentUserProfile, PERMISSIONS.USER_DELETE, "menghapus user");
 
-      if (isBlockedLastAdmin) {
-        return setErr("Aksi ditolak: Tidak dapat menghapus satu-satunya Administrator yang aktif.");
-      }
-
       setLoading(true);
-      const res = await adminDeleteAccount(targetUid);
+      const res = await authApi.deleteUser(targetUid);
       setLoading(false);
-      if (res.ok) {
+      if (res && res.ok) {
         onSuccess();
       } else {
-        setErr("Gagal menghapus user.");
+        setErr(res?.error || "Gagal menghapus user.");
       }
     } catch (error) {
       setLoading(false);
@@ -989,7 +931,7 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
                   textOverflow: "ellipsis",
                 }}
               >
-                {user.displayName || user.name || "-"}
+                {user.full_name || user.displayName || user.name || "-"}
               </div>
               <div
                 style={{
@@ -1028,28 +970,6 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
           </div>
         )}
 
-        {/* LAST ADMIN BLOCKING NOTICE */}
-        {isBlockedLastAdmin && (
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              padding: 12,
-              background: `${T.amber}18`,
-              border: `1px solid ${T.amber}33`,
-              borderRadius: 8,
-              color: T.amber,
-              fontSize: 12.5,
-              lineHeight: 1.4,
-            }}
-          >
-            <AlertTriangle size={17} style={{ flexShrink: 0, marginTop: 1 }} />
-            <div>
-              <strong>Perlindungan Administrator Terakhir:</strong> Akun ini adalah satu-satunya Administrator aktif dalam sistem dan tidak boleh dihapus.
-            </div>
-          </div>
-        )}
-
         {/* ACTIONS */}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 4 }}>
           <button
@@ -1073,7 +993,7 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
           <button
             type="button"
             onClick={handleDelete}
-            disabled={loading || isBlockedLastAdmin}
+            disabled={loading}
             style={{
               height: 38,
               display: "flex",
@@ -1086,8 +1006,7 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
               color: "#fff",
               fontSize: 13,
               fontWeight: 700,
-              cursor: isBlockedLastAdmin ? "not-allowed" : "pointer",
-              opacity: isBlockedLastAdmin ? 0.5 : 1,
+              cursor: "pointer",
             }}
           >
             {loading ? (
@@ -1107,34 +1026,25 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
    TOGGLE STATUS MODAL (NONAKTIFKAN / AKTIFKAN USER)
    ============================================================ */
 function ToggleStatusModal({ user, usersList, onClose, onSuccess, currentUserProfile }) {
-  const targetUid = user.uid || user.id;
+  const targetUid = user.id || user.uid;
   const isCurrentActive = user.status === "active" || user.status === "Active" || !user.status;
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
-
-  const isBlockedLastAdmin =
-    isCurrentActive &&
-    (user.role === "Administrator" || user.role === "administrator") &&
-    isLastActiveAdmin(usersList, targetUid);
 
   const handleConfirm = async () => {
     setErr("");
     try {
       assertAuthorized(currentUserProfile, PERMISSIONS.USER_TOGGLE_STATUS, "mengubah status user");
 
-      if (isBlockedLastAdmin) {
-        return setErr("Aksi ditolak: Sistem harus memiliki minimal satu Administrator yang aktif.");
-      }
-
-      setLoading(true);
       const nextStatus = isCurrentActive ? "inactive" : "active";
-      const res = await adminUpdateAccount(targetUid, { status: nextStatus });
+      setLoading(true);
+      const res = await authApi.toggleStatus(targetUid, nextStatus);
       setLoading(false);
 
-      if (res.ok) {
+      if (res && res.ok) {
         onSuccess(nextStatus);
       } else {
-        setErr(res.error || "Gagal mengubah status user.");
+        setErr(res?.error || "Gagal mengubah status user.");
       }
     } catch (error) {
       setLoading(false);
@@ -1147,14 +1057,8 @@ function ToggleStatusModal({ user, usersList, onClose, onSuccess, currentUserPro
       <div className="profile-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440 }}>
         <div className="profile-modal-header">
           <div>
-            <h2 style={{ color: isCurrentActive ? T.red : T.green }}>
-              {isCurrentActive ? "Nonaktifkan User?" : "Aktifkan User?"}
-            </h2>
-            <p>
-              {isCurrentActive
-                ? "Akun yang dinonaktifkan tidak dapat login ke sistem"
-                : "Akun yang diaktifkan akan dapat login kembali"}
-            </p>
+            <h2>{isCurrentActive ? "Nonaktifkan Akun" : "Aktifkan Akun"}</h2>
+            <p>{user.email}</p>
           </div>
           <button className="modal-close-button" onClick={onClose}>
             ✕
@@ -1167,26 +1071,17 @@ function ToggleStatusModal({ user, usersList, onClose, onSuccess, currentUserPro
           </div>
         )}
 
-        {isBlockedLastAdmin ? (
-          <div style={{ display: "flex", gap: 10, padding: 12, background: `${T.amber}18`, border: `1px solid ${T.amber}33`, borderRadius: 6, color: T.amber, fontSize: 13, marginBottom: 14 }}>
-            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
-            <div>
-              <strong>Perlindungan Administrator Terakhir:</strong> Akun ini adalah satu-satunya Administrator aktif dalam sistem dan tidak boleh dinonaktifkan.
-            </div>
-          </div>
-        ) : (
-          <div style={{ fontSize: 13, color: T.ink, marginBottom: 14, lineHeight: 1.5 }}>
-            {isCurrentActive ? (
-              <>
-                Apakah Anda yakin ingin menonaktifkan user <strong>{user.displayName || user.name || user.email}</strong>? User tidak akan dapat masuk ke sistem hingga diaktifkan kembali.
-              </>
-            ) : (
-              <>
-                Apakah Anda yakin ingin mengaktifkan user <strong>{user.displayName || user.name || user.email}</strong>? User akan dapat kembali masuk dan menggunakan sistem.
-              </>
-            )}
-          </div>
-        )}
+        <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.5, marginBottom: 14 }}>
+          {isCurrentActive ? (
+            <>
+              Apakah Anda yakin ingin menonaktifkan user <strong>{user.full_name || user.displayName || user.name || user.email}</strong>? User tidak akan dapat masuk ke sistem hingga diaktifkan kembali.
+            </>
+          ) : (
+            <>
+              Apakah Anda yakin ingin mengaktifkan user <strong>{user.full_name || user.displayName || user.name || user.email}</strong>? User akan dapat kembali masuk dan menggunakan sistem.
+            </>
+          )}
+        </div>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
           <button
@@ -1200,7 +1095,7 @@ function ToggleStatusModal({ user, usersList, onClose, onSuccess, currentUserPro
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={loading || isBlockedLastAdmin}
+            disabled={loading}
             style={{
               display: "flex",
               alignItems: "center",
@@ -1211,14 +1106,124 @@ function ToggleStatusModal({ user, usersList, onClose, onSuccess, currentUserPro
               background: isCurrentActive ? T.red : T.green,
               color: "#fff",
               fontWeight: 700,
-              cursor: isBlockedLastAdmin ? "not-allowed" : "pointer",
-              opacity: isBlockedLastAdmin ? 0.5 : 1,
+              cursor: "pointer",
             }}
           >
             {loading && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
             {isCurrentActive ? "Nonaktifkan User" : "Aktifkan User"}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   RESET PASSWORD MODAL
+   ============================================================ */
+function ResetPasswordModal({ user, onClose, onSuccess, currentUserProfile }) {
+  const targetUid = user.id || user.uid;
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErr("");
+
+    try {
+      assertAuthorized(currentUserProfile, PERMISSIONS.USER_RESET_PASSWORD, "mereset password user");
+
+      if (!newPassword) return setErr("Password baru wajib diisi.");
+      if (newPassword.length < 6) return setErr("Password baru minimal 6 karakter.");
+      if (newPassword !== confirmPassword) return setErr("Konfirmasi password tidak cocok.");
+
+      setLoading(true);
+      const res = await authApi.resetPassword(targetUid, newPassword);
+      setLoading(false);
+      if (res && res.ok) {
+        onSuccess();
+      } else {
+        setErr(res?.error || "Gagal mereset password.");
+      }
+    } catch (error) {
+      setLoading(false);
+      setErr(error.message);
+    }
+  };
+
+  return (
+    <div className="profile-overlay" onClick={onClose}>
+      <div className="profile-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440 }}>
+        <div className="profile-modal-header">
+          <div>
+            <h2>Reset Password User</h2>
+            <p>Atur password baru untuk akun <strong>{user.email || user.username}</strong></p>
+          </div>
+          <button className="modal-close-button" onClick={onClose}>
+            ✕
+          </button>
+        </div>
+
+        {err && (
+          <div style={{ padding: "10px 14px", background: `${T.red}18`, border: `1px solid ${T.red}33`, color: T.red, borderRadius: 6, fontSize: 12.5, marginBottom: 12 }}>
+            {err}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
+            Password Baru
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Minimal 6 karakter"
+                style={{ width: "100%", padding: "8px 30px 8px 12px", boxSizing: "border-box", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: T.ink3, cursor: "pointer" }}
+              >
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+          </label>
+
+          <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
+            Konfirmasi Password Baru
+            <input
+              type={showPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Ketik ulang password baru"
+              style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
+            />
+          </label>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              style={{ padding: "8px 16px", borderRadius: 6, border: `1px solid ${T.line}`, background: "transparent", color: T.ink, cursor: "pointer" }}
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 6, border: "none", background: T.amber, color: "#000", fontWeight: 700, cursor: "pointer" }}
+            >
+              {loading && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+              Reset Password
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

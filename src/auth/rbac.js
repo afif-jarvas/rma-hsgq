@@ -64,6 +64,7 @@ export const PERMISSIONS = {
   USER_UPDATE: "user:update",
   USER_DELETE: "user:delete",
   USER_CHANGE_ROLE: "user:change_role",
+  USER_RESET_PASSWORD: "user:reset_password",
   USER_TOGGLE_STATUS: "user:toggle_status",
 };
 
