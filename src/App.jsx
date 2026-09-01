@@ -59,7 +59,11 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { storeGet, storeSet, isUsingFirebase, uploadRmaPhoto, storage } from "./firebase.js";
+import rmaApi from "./api/rmaClient.js";
+import waApi from "./api/waClient.js";
+import pcbaApi from "./api/pcbaClient.js";
+import masterApi from "./api/masterClient.js";
+import { uploadLocalRmaPhoto } from "./api/uploadClient.js";
 import UserCenter from "./components/UserCenter.jsx";
 import UserManagementTab from "./components/UserManagementTab.jsx";
 import { useAuth } from "./auth/AuthContext.jsx";
@@ -6481,7 +6485,7 @@ function SettingsTab({ master, setMaster, t, isViewer = false }) {
     if (isViewer) return;
     setMaster((m) => {
       const next = { ...m, [k]: arr };
-      storeSet(KEYS.master, next);
+      masterApi.update(next).catch((err) => console.error("Gagal update master data ke SQLite:", err));
       return next;
     });
   };
@@ -10422,27 +10426,33 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const [r, w, m, p] = await Promise.all([
-        storeGet(KEYS.rma, []),
-        storeGet(KEYS.wa, []),
-        storeGet(KEYS.master, DEFAULT_MASTER),
-        storeGet(KEYS.pcba, PCBA_DEFAULT),
-      ]);
-      setRma(r);
-      setWa(w);
-      const loadedMaster = { ...DEFAULT_MASTER, ...m };
-      if (!loadedMaster.pcbaReceivedBy || loadedMaster.pcbaReceivedBy.length === 0) {
-        loadedMaster.pcbaReceivedBy = (m && m.engineers && m.engineers.length > 0)
-          ? [...m.engineers]
-          : [...DEFAULT_MASTER.pcbaReceivedBy];
+      try {
+        const [r, w, m, p] = await Promise.all([
+          rmaApi.getAll(),
+          waApi.getAll(),
+          masterApi.get(),
+          pcbaApi.getAll(),
+        ]);
+        setRma(r || []);
+        setWa(w || []);
+        const loadedMaster = { ...DEFAULT_MASTER, ...m };
+        if (!loadedMaster.pcbaReceivedBy || loadedMaster.pcbaReceivedBy.length === 0) {
+          loadedMaster.pcbaReceivedBy = (m && m.engineers && m.engineers.length > 0)
+            ? [...m.engineers]
+            : [...DEFAULT_MASTER.pcbaReceivedBy];
+        }
+        setMaster(loadedMaster);
+        setPcba({
+          ...PCBA_DEFAULT,
+          ...p,
+          chinaShipments: (p && Array.isArray(p.chinaShipments)) ? p.chinaShipments : [],
+        });
+      } catch (err) {
+        console.error("Gagal memuat data SQLite:", err);
+        setSaveErr("Gagal memuat data dari database server SQLite.");
+      } finally {
+        setLoading(false);
       }
-      setMaster(loadedMaster);
-      setPcba({
-        ...PCBA_DEFAULT,
-        ...p,
-        chinaShipments: (p && Array.isArray(p.chinaShipments)) ? p.chinaShipments : [],
-      });
-      setLoading(false);
     })();
   }, []);
 
@@ -10467,30 +10477,22 @@ export default function App() {
       return { ok: false, error: authErr.message };
     }
 
-    // Check if Firebase Storage is available
-    const storageAvailable = !!storage;
-
     // Upload any new photos that have a File object in fileRegistry.
-    // Photos already saved (have a real url, no pending file) are kept as-is.
     const uploadCategory = async (photos, category) => {
       const results = [];
       for (const photo of photos) {
         const file = fileRegistry.get(photo.id);
-        if (file && storageAvailable) {
-          // New photo — upload to Firebase Storage
+        if (file) {
           try {
-            const meta = await uploadRmaPhoto(file, entry.ticketNo, category, photo.id);
+            const meta = await uploadLocalRmaPhoto(file, entry.ticketNo, category, photo.id);
             fileRegistry.delete(photo.id);
-            // Revoke local previewUrl to free memory
             if (photo.previewUrl) URL.revokeObjectURL(photo.previewUrl);
-            results.push(meta); // clean metadata only — url is Firebase Storage URL
+            results.push(meta);
           } catch (err) {
-            console.error(`[HSGQ] Upload ${category} gagal:`, err);
+            console.error(`Upload ${category} foto gagal:`, err);
             setSaveErr(`Upload foto gagal: ${err.message}. Tiket disimpan tanpa foto tersebut.`);
-            // Skip this photo — do not persist previewUrl or corrupt the ticket
           }
         } else {
-          // Existing photo already in Firestore, or storage not available — keep metadata, strip previewUrl
           const { previewUrl: _p, ...rest } = photo;
           results.push(rest);
         }
@@ -10509,14 +10511,23 @@ export default function App() {
       labelPhotos: uploadedLabelPhotos,
     };
 
-    const exists = rma.some((e) => e.id === finalEntry.id);
-    const ok = await persistRma(
-      exists
-        ? rma.map((e) => (e.id === finalEntry.id ? finalEntry : e))
-        : [finalEntry, ...rma],
-    );
-    if (ok) setRmaModal(null);
-    return { ok: !!ok };
+    try {
+      if (isNew) {
+        const saved = await rmaApi.create(finalEntry);
+        setRma((prev) => [saved || finalEntry, ...prev.filter((e) => e.id !== finalEntry.id)]);
+      } else {
+        const saved = await rmaApi.update(finalEntry.id, finalEntry);
+        setRma((prev) => prev.map((e) => (e.id === finalEntry.id ? (saved || finalEntry) : e)));
+      }
+      setRmaModal(null);
+      const curT = I18N[language] || I18N.id;
+      setToastMsg(curT.toastRmaSaved || "Tiket RMA berhasil disimpan.");
+      return { ok: true };
+    } catch (err) {
+      console.error("Save RMA gagal:", err);
+      setSaveErr(err.message || "Gagal menyimpan tiket RMA.");
+      return { ok: false, error: err.message };
+    }
   };
 
   const persistRma = useCallback(async (arr) => {
@@ -10528,9 +10539,13 @@ export default function App() {
       return false;
     }
     setRma(arr);
-    const ok = await storeSet(KEYS.rma, arr);
-    if (!ok) setSaveErr("Gagal menyimpan data RMA. Coba lagi.");
-    return ok;
+    try {
+      await rmaApi.bulkImport(arr);
+      return true;
+    } catch (err) {
+      setSaveErr("Gagal menyimpan data RMA ke database SQLite.");
+      return false;
+    }
   }, [assert, setToastMsg]);
 
   const saveWa = async (entry) => {
@@ -10546,16 +10561,23 @@ export default function App() {
       return { ok: false, error: authErr.message };
     }
 
-    const exists = wa.some((e) => e.id === entry.id);
-    const ok = await persistWa(
-      exists ? wa.map((e) => (e.id === entry.id ? entry : e)) : [entry, ...wa],
-    );
-    if (ok) {
+    try {
+      if (isNew) {
+        const saved = await waApi.create(entry);
+        setWa((prev) => [saved || entry, ...prev.filter((e) => e.id !== entry.id)]);
+      } else {
+        const saved = await waApi.update(entry.id, entry);
+        setWa((prev) => prev.map((e) => (e.id === entry.id ? (saved || entry) : e)));
+      }
       const curT = I18N[language] || I18N.id;
       setToastMsg(curT.toastWaSaved || "Case WhatsApp berhasil disimpan.");
       setWaModal(null);
+      return { ok: true };
+    } catch (err) {
+      console.error("Save WA gagal:", err);
+      setSaveErr(err.message || "Gagal menyimpan case WhatsApp.");
+      return { ok: false, error: err.message };
     }
-    return { ok: !!ok };
   };
 
   const persistWa = useCallback(async (arr) => {
@@ -10567,9 +10589,13 @@ export default function App() {
       return false;
     }
     setWa(arr);
-    const ok = await storeSet(KEYS.wa, arr);
-    if (!ok) setSaveErr("Gagal menyimpan data WhatsApp. Coba lagi.");
-    return ok;
+    try {
+      await waApi.bulkImport(arr);
+      return true;
+    } catch (err) {
+      setSaveErr("Gagal menyimpan data WhatsApp ke database SQLite.");
+      return false;
+    }
   }, [assert, setToastMsg]);
 
   const persistPcba = useCallback(async (data) => {
@@ -10581,9 +10607,14 @@ export default function App() {
       return false;
     }
     setPcba(data);
-    const ok = await storeSet(KEYS.pcba, data);
-    if (!ok) setSaveErr("Gagal menyimpan data PCBA. Coba lagi.");
-    return ok;
+    try {
+      await pcbaApi.syncAll(data);
+      return true;
+    } catch (err) {
+      console.error("Save PCBA error:", err);
+      setSaveErr("Gagal menyimpan data PCBA ke database SQLite. Coba lagi.");
+      return false;
+    }
   }, [assert, setToastMsg]);
 
   const onGoodsReceipt = useCallback(
@@ -11644,12 +11675,12 @@ export default function App() {
             <div
               className="hsgq-header-status"
               style={{
-                background: isUsingFirebase ? T.greenDim : T.amberDim,
-                color: isUsingFirebase ? T.green : T.amber,
+                background: T.greenDim,
+                color: T.green,
               }}
             >
-              {isUsingFirebase ? <Cloud size={13} /> : <CloudOff size={13} />}
-              {isUsingFirebase ? t.firestoreConnected : t.localMode}
+              <Wifi size={13} />
+              {"SQLite Server Connected"}
             </div>
 
             <UserCenter t={t} />
@@ -11660,23 +11691,6 @@ export default function App() {
           className="hsgq-content"
           style={{ flex: 1, padding: 22, overflowY: "auto" }}
         >
-          {!isUsingFirebase && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: T.amberDim,
-                color: T.amber,
-                padding: "8px 12px",
-                borderRadius: 6,
-                fontSize: 12.5,
-                marginBottom: 14,
-              }}
-            >
-              <AlertTriangle size={14} /> {t.firebaseWarning}
-            </div>
-          )}
           {saveErr && (
             <div
               style={{

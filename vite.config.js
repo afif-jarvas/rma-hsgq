@@ -17,7 +17,12 @@ function localApiPlugin() {
 export default defineConfig({
   plugins: [react(), localApiPlugin()],
   server: {
+    host: "0.0.0.0",
     port: 5173,
     open: true,
+  },
+  preview: {
+    host: "0.0.0.0",
+    port: 5173,
   },
 });

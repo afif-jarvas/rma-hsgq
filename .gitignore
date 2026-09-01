@@ -2,3 +2,10 @@ dist
 .env
 .DS_Store
 node_modules/
+
+# SQLite Databases, WAL, SHM, Backups & Local Uploads
+server/data/*.db
+server/data/*.db-shm
+server/data/*.db-wal
+server/data/backups/
+server/uploads/
