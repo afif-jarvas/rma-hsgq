@@ -5293,11 +5293,39 @@ function Dashboard({ rma, wa, t, lastLoginLabel }) {
    ============================================================ */
 function WeeklyReport({ rma, wa, t }) {
   const tt = t || I18N.id;
-  const [start, setStart] = useState(dateNDaysAgoISO(7));
-  const [end, setEnd] = useState(todayISO());
+  const [preset, setPreset] = useState("last7");
+  const [start, setStart] = useState(() => getPresetDates("last7")?.from || dateNDaysAgoISO(6));
+  const [end, setEnd] = useState(() => getPresetDates("last7")?.to || todayISO());
+
+  const applyPreset = useCallback((presetKey) => {
+    setPreset(presetKey);
+    if (presetKey === "custom") return;
+    if (!presetKey) {
+      setStart("");
+      setEnd("");
+      return;
+    }
+    const { from, to } = getPresetDates(presetKey);
+    setStart(from || "");
+    setEnd(to || "");
+  }, []);
+
+  const resetDate = useCallback(() => {
+    applyPreset("last7");
+  }, [applyPreset]);
+
+  const isInvalidRange = Boolean(start && end && start > end);
 
   const cases = useMemo(() => {
-    const inRange = (d) => d && d >= start && d <= end;
+    if (isInvalidRange) return [];
+    const inRange = (d) => {
+      if (!d) return false;
+      const iso = parseToISODate(d);
+      if (!iso) return false;
+      if (start && iso < start) return false;
+      if (end && iso > end) return false;
+      return true;
+    };
 
     // RMA cases ALWAYS first (priority 0), sorted Date DESC
     const rmaCases = rma
@@ -5347,7 +5375,7 @@ function WeeklyReport({ rma, wa, t }) {
   const cleanReportText = useMemo(() => {
     const header = `${tt.weeklyReportTitle || "RINGKASAN MINGGUAN - TECHNICAL SUPPORT"}
 ${tt.weeklyReportPeriod || "Periode"}:
-${fmtDate(start)} - ${fmtDate(end)}
+${fmtDate(start) || "—"} - ${fmtDate(end) || "—"}
 
 ${tt.weeklyReportActivitySummary || "Ringkasan Kegiatan"}:
 - ${tt.weeklyReportMonitoring || "Monitoring OLT dan ONU"}
@@ -5394,6 +5422,11 @@ ${tt.weeklyReportStatusLabel || "Status"}: ${locStatus}
   }
 
   function exportPdf() {
+    if (isInvalidRange) {
+      window.alert(tt.errInvalidDateRange || "Tanggal 'Dari' tidak boleh lebih besar dari 'Sampai Tanggal'.");
+      return;
+    }
+
     const rows = cases
       .map((c, i) => {
         const solText = c.solution.isDone
@@ -5485,31 +5518,67 @@ ${tt.weeklyReportStatusLabel || "Status"}: ${locStatus}
           <TextInput
             type="date"
             value={start}
-            onChange={(e) => setStart(e.target.value)}
+            onChange={(e) => {
+              setStart(e.target.value);
+              setPreset("custom");
+            }}
           />
         </Field>
+
         <Field label={tt.weeklyReportToDate || tt.reportToDate || "Sampai Tanggal"}>
           <TextInput
             type="date"
             value={end}
-            onChange={(e) => setEnd(e.target.value)}
+            onChange={(e) => {
+              setEnd(e.target.value);
+              setPreset("custom");
+            }}
           />
         </Field>
-        <Btn
-          variant="ghost"
-          onClick={() => {
-            setStart(dateNDaysAgoISO(7));
-            setEnd(todayISO());
-          }}
-        >
-          <CalendarRange size={14} /> {tt.weeklyReportLast7Days || tt.reportLast7Days || "7 Hari Terakhir"}
-        </Btn>
+
+        <Field label={tt.presetSelect || "Preset Rentang"}>
+          <select
+            value={preset}
+            onChange={(e) => applyPreset(e.target.value)}
+            style={{
+              ...inputBase,
+              padding: "7px 10px",
+              fontSize: 13,
+              width: "auto",
+              cursor: "pointer",
+            }}
+          >
+            <option value="">{tt.presetSelect || "Pilih Preset"}</option>
+            <option value="custom">{tt.customRange || "Custom (Bebas)"}</option>
+            <option value="today">{tt.today || "Hari Ini"}</option>
+            <option value="last7">{tt.weeklyReportLast7Days || tt.last7Days || "7 Hari Terakhir"}</option>
+            <option value="last30">{tt.last30Days || "30 Hari Terakhir"}</option>
+            <option value="thisMonth">{tt.thisMonth || "Bulan Ini"}</option>
+            <option value="lastMonth">{tt.lastMonth || "Bulan Lalu"}</option>
+            <option value="thisYear">{tt.thisYear || "Tahun Ini"}</option>
+          </select>
+        </Field>
+
+        {preset !== "last7" && (
+          <Btn variant="ghost" onClick={resetDate} style={{ marginBottom: 1 }}>
+            {tt.resetDate || "Reset (7 Hari)"}
+          </Btn>
+        )}
+
         <div style={{ flex: 1 }} />
-        <Btn variant="ghost" onClick={exportPdf}>
+
+        <Btn variant="ghost" onClick={exportPdf} disabled={isInvalidRange}>
           <FileDown size={14} /> {tt.weeklyReportExportPdf || tt.reportExportPdf || "Export PDF"}
         </Btn>
         <CopyButton text={cleanReportText} t={tt} />
       </div>
+
+      {isInvalidRange && (
+        <InlineHint tone="warn">
+          {tt.errInvalidDateRange || "Tanggal 'Dari' tidak boleh lebih besar dari 'Sampai Tanggal'."}
+        </InlineHint>
+      )}
+
       <div
         style={{
           background: T.void,
@@ -5525,7 +5594,11 @@ ${tt.weeklyReportStatusLabel || "Status"}: ${locStatus}
           overflowY: "auto",
         }}
       >
-        {cases.length === 0 ? (
+        {isInvalidRange ? (
+          <span style={{ color: T.red }}>
+            {tt.errInvalidDateRange || "Tanggal 'Dari' tidak boleh lebih besar dari 'Sampai Tanggal'."}
+          </span>
+        ) : cases.length === 0 ? (
           <span style={{ color: T.ink3 }}>
             {tt.weeklyReportEmptyRange || tt.reportEmptyRange || "Tidak ada case pada rentang tanggal ini."}
           </span>
@@ -7215,6 +7288,10 @@ function ReplacementDetailModal({ replacement, pcba, rma, onClose, t }) {
             <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{oldItem?.serialNo || "-"}</div>
           </div>
           <div>
+            <div style={{ color: T.ink3 }}>{t.pcbaType || "Tipe PCBA"}:</div>
+            <div style={{ fontWeight: 600, color: T.ink }}>{newItem?.pcbaType || replacement.pcbaType || oldItem?.pcbaType || "-"}</div>
+          </div>
+          <div>
             <div style={{ color: T.ink3 }}>{t.colChinaStatus || "Status Kirim China"}:</div>
             <div>
               {isSentToChina ? (
@@ -8161,6 +8238,7 @@ function PcbaInventoryTab({
           rmaTicket?.ticketNo,
           newItem?.serialNo,
           newItem?.pcbaType,
+          r.pcbaType,
           oldItem?.serialNo,
           oldItem?.pcbaType,
           r.replacedBy,
@@ -8632,6 +8710,7 @@ function PcbaInventoryTab({
                     ...r,
                     rmaTicketNo: rmaTicket?.ticketNo || "-",
                     oldSerialNo: oldItem?.serialNo || "-",
+                    pcbaType: newItem?.pcbaType || r.pcbaType || oldItem?.pcbaType || "-",
                     chinaStatus: isSent ? "Sent" : (oldItem?.status || "Bad"),
                     newSerialNo: newItem?.serialNo || "-",
                   };
@@ -8832,6 +8911,15 @@ function PcbaInventoryTab({
               render: (r) =>
                 pcba.items.find((i) => i.id === r.oldPcbaItemId)?.serialNo ||
                 "-",
+            },
+            {
+              key: "pcbaType",
+              label: t.pcbaType || "Tipe PCBA",
+              render: (r) => {
+                const newItem = (pcba.items || []).find((i) => i.id === r.newPcbaItemId);
+                const oldItem = (pcba.items || []).find((i) => i.id === r.oldPcbaItemId);
+                return newItem?.pcbaType || r.pcbaType || oldItem?.pcbaType || "-";
+              },
             },
             {
               key: "chinaStatus",
@@ -10651,6 +10739,7 @@ export default function App() {
         rmaId: formData.rmaId,
         oldPcbaItemId: oldItem.id,
         newPcbaItemId: newPcbaItem.id,
+        pcbaType: newPcbaItem.pcbaType,
         replacedBy: engineerName,
         replacedAt: new Date().toISOString(),
       };
@@ -10949,8 +11038,17 @@ export default function App() {
         });
       }
 
+      const targetNewPcbaId = updatedData.newPcbaItemId || rep.newPcbaItemId;
+      const targetNewItem = (updatedItems || []).find((i) => i.id === targetNewPcbaId);
+
       const updatedReplacements = (pcba.replacements || []).map((r) =>
-        r.id === repId ? { ...r, ...updatedData } : r
+        r.id === repId
+          ? {
+              ...r,
+              ...updatedData,
+              pcbaType: targetNewItem?.pcbaType || r.pcbaType,
+            }
+          : r
       );
 
       const newPcba = {

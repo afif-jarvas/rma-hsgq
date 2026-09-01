@@ -20,6 +20,7 @@ export const REPLACEMENT_COLUMNS = [
   { key: "replacementNo", header: "No. Replacement" },
   { key: "rmaTicketNo", header: "Tiket RMA" },
   { key: "oldSerialNo", header: "PCBA Lama" },
+  { key: "pcbaType", header: "Tipe PCBA" },
   { key: "chinaStatus", header: "Status Kirim China" },
   { key: "newSerialNo", header: "PCBA Baru" },
   { key: "replacedBy", header: "Diproses Oleh" },
