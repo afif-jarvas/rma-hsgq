@@ -106,1352 +106,21 @@ const T = {
 const mono = "'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace";
 const sans = "'Inter', -apple-system, 'Segoe UI', sans-serif";
 
-const LANGUAGES = [
-  { code: "id", label: "Indonesia" },
-  { code: "en", label: "English" },
-  { code: "zh", label: "中文" },
-];
-
-const I18N = {
-  id: {
-    home: "Home",
-    rmaLog: "RMA Log Book",
-    waLog: "WhatsApp Log",
-    unitHistory: "Unit History",
-    weeklyReport: "Weekly Report",
-    settings: "Pengaturan",
-    pcbaInventory: "PCBA Inventory",
-    homeTitle: "Home",
-    homeSubtitle: "Ringkasan monitoring operasional RMA & WhatsApp support",
-    totalDevices: "Total Devices",
-    lastLoginTime: "Last Login Time",
-    totalRma: "Total RMA",
-    rmaOpen: "RMA Open",
-    rmaClosed: "RMA Closed",
-    rmaOverdue: "RMA Overdue",
-    avgTat: "Rata-rata TAT (hari)",
-    totalWa: "Total Case WhatsApp",
-    engineerLoad: "Beban Kasus per Engineer",
-    statusDistribution: "Device Status",
-    productCount: "Device Count",
-    warrantyChart: "RMA per Warranty",
-    cases: "Cases",
-    count: "Count",
-    firestoreConnected: "Firestore Tersambung",
-    localMode: "Mode Lokal",
-    language: "Bahasa",
-    theme: "Theme",
-    openMenu: "Menu",
-    loadingData: "Memuat data...",
-    firebaseWarning:
-      "Firebase belum dikonfigurasi di src/firebase.js — data disimpan sementara di localStorage browser ini saja.",
-    cancel: "Batal",
-    userCenter: "User Center",
-    profile: "Profile",
-    editAccountInfo: "Edit informasi akun",
-    appearance: "Tampilan",
-    light: "Terang",
-    dark: "Gelap",
-    system: "Sistem",
-    logout: "Keluar",
-    manageProfile: "Kelola profile",
-    nickName: "Nama Panggilan",
-    yourName: "Nama kamu",
-    email: "Email",
-    phone: "Telepon",
-    phonePlaceholder: "08xxxxxxxxxx",
-    company: "Perusahaan",
-    companyPlaceholder: "PT HSGQ Indonesia",
-    address: "Alamat",
-    addressPlaceholder: "Alamat",
-    selectAppearance: "Pilih tampilan aplikasi",
-    saveChanges: "Simpan Perubahan",
-    saving: "Menyimpan...",
-    profileUpdated: "Profile berhasil diperbarui.",
-    profileUpdateFailed: "Gagal menyimpan profile.",
-    nameRequired: "Nama tidak boleh kosong.",
-    // Settings
-    settingsEngineer: "Engineer",
-    settingsStatusRma: "Status RMA (alur utama)",
-    settingsStatusWa: "Status WhatsApp",
-    settingsFinalResults: "Hasil Akhir",
-    settingsWaitingReasons: "Alasan Menunggu",
-    settingsWarrantyStatuses: "Status Warranty",
-    settingsQcResults: "Hasil QC",
-    settingsShippingMethod: "Metode Pengiriman",
-    settingsPcbaTypes: "Tipe PCBA",
-    settingsSuppliers: "Supplier",
-    settingsWarehouseLocations: "Lokasi Gudang",
-    settingsPcbaReceivedBy: "PCBA Received By",
-    settingsMinStockDefault: "Minimum Stok Default (unit)",
-    // PCBA Inventory
-    pcbaStock: "Stok",
-    pcbaReplacement: "Replacement",
-    pcbaSendToChina: "Kirim PCBA Bad ke China",
-    pcbaTransactions: "Transaksi",
-    pcbaReceiveNew: "Terima PCBA Baru",
-    pcbaLowStock: "Stok Good di bawah minimum ({min} unit) untuk tipe: {types}",
-    pcbaStatusGood: "Good",
-    pcbaStatusBad: "Bad",
-    pcbaStatusUnderRepair: "Under Repair",
-    pcbaStatusReplacement: "Replacement",
-    pcbaStatusScrap: "Scrap",
-    pcbaSerialNo: "No. Serial PCBA",
-    pcbaType: "Tipe PCBA",
-    pcbaProduct: "Produk Terkait",
-    pcbaSupplier: "Supplier",
-    pcbaWarehouseLocation: "Lokasi Gudang",
-    pcbaNotes: "Catatan",
-    pcbaReplaceOld: "PCBA Lama",
-    pcbaReplaceNew: "PCBA Baru",
-    pcbaSelectOld: "Pilih PCBA lama",
-    pcbaSelectNew: "Pilih PCBA baru (Good)",
-    pcbaSendToChinaItem: "PCBA Bad untuk Dikirim ke China",
-    pcbaSelectItem: "Pilih PCBA",
-    pcbaAction: "Aksi",
-    pcbaOldSerial: "Serial Lama",
-    pcbaNewSerial: "Serial Baru",
-    // Unit History
-    unitHistorySearchPlaceholder: "Filter SN, MAC, customer, case...",
-    unitHistoryHint: "Cari SN/MAC untuk melihat apakah unit ini pernah punya riwayat RMA atau case WhatsApp sebelumnya — berguna sebelum bikin tiket baru untuk unit yang sama.",
-    unitHistoryNotFound: 'Tidak ditemukan riwayat untuk "{q}". Unit ini baru pertama kali masuk sistem.',
-    unitHistoryPriorWarning: "⚠ Unit ini pernah memiliki {n} riwayat sebelumnya.",
-    unitHistoryPartialMatch: "Kecocokan sebagian",
-    // Weekly Report
-    weeklyReportFromDate: "Dari Tanggal",
-    weeklyReportToDate: "Sampai Tanggal",
-    weeklyReportLast7Days: "7 Hari Terakhir",
-    weeklyReportExportPdf: "Export PDF",
-    weeklyReportEmptyRange: "Tidak ada case pada rentang tanggal ini.",
-    weeklyReportPopupBlocked: "Popup browser diblokir. Izinkan popup untuk export PDF.",
-    add: "Tambah",
-    addItemPlaceholder: "Tambah item...",
-    searchPlaceholder: "Cari...",
-    copy: "Salin",
-    copied: "Tersalin",
-    copyFailed: "Gagal menyalin",
-    editAction: "Edit",
-    deleteAction: "Hapus",
-    waMessageAction: "Pesan WA",
-    resetFilter: "Reset Filter",
-    colTicket: "Ticket",
-    colCase: "Case",
-    colStatus: "Status",
-    colEngineer: "Engineer",
-    colProduct: "Produk",
-    errCustomerPhoneRequired: "Nomor HP Customer wajib diisi.",
-    errDeviceTypeRequired: "Type Perangkat wajib diisi.",
-    errSnRequired: "SN wajib diisi.",
-    errMacRequired: "MAC wajib diisi.",
-    weeklyReportTitle: "RINGKASAN MINGGUAN - TECHNICAL SUPPORT",
-    weeklyReportPeriod: "Periode",
-    weeklyReportActivitySummary: "Ringkasan Kegiatan",
-    weeklyReportMonitoring: "Monitoring OLT dan ONU",
-    weeklyReportTroubleshooting: "Troubleshooting Issue Customer",
-    weeklyReportSupport: "Technical Support HSGQ Jakarta",
-    weeklyReportIssueSection: "Kendala & Penanganan",
-    weeklyReportDateLabel: "Tanggal",
-    weeklyReportCustomerLabel: "Customer / Perusahaan",
-    weeklyReportTypeLabel: "Tipe Perangkat",
-    weeklyReportProblemLabel: "Kendala",
-    weeklyReportAnalysisLabel: "Analisa",
-    weeklyReportSolutionLabel: "Solusi",
-    weeklyReportStatusLabel: "Status",
-    weeklyReportSolvedOn: "Selesai pada {date}",
-    weeklyReportFollowUp: "Follow up / monitoring",
-    statusCompleted: "Selesai",
-    statusCustomerReceived: "Diterima Customer",
-    statusOnProgress: "Sedang Diperbaiki",
-    statusOnChecking: "Sedang Dicek",
-    statusWaiting: "Menunggu",
-    pcbaStatusRepaired: "Repaired",
-    pcbaSubtitle: "Manajemen inventaris dan perbaikan PCBA",
-    colCompany: "Perusahaan",
-    colPhone: "No. HP",
-    colInitialProblem: "Kendala Awal",
-    colFinalAnalysis: "Analisa Akhir",
-    colSolvedDate: "Tgl Solved",
-    colCaseAge: "Umur (Hari)",
-    colDetail: "Detail",
-    viewDetail: "Lihat Detail",
-    pcbaEmptyStock: "Belum ada PCBA di stok. Klik 'Terima PCBA Baru' untuk mulai.",
-    pcbaEmptyReplacement: "Belum ada replacement PCBA.",
-    pcbaEmptySendToChina: "Belum ada data pengiriman PCBA Bad ke China. Klik 'Kirim PCBA Bad ke China' untuk mencatat.",
-    pcbaEmptyTransactions: "Belum ada transaksi stok. Transaksi tercatat otomatis (append-only, tidak bisa diedit/dihapus).",
-    pcbaNewReplacement: "Replacement Baru",
-    pcbaNoReplacement: "No. Replacement",
-    pcbaSendToChinaTitle: "KIRIM PCBA BAD KE CHINA",
-    pcbaNoTransaction: "No. Transaksi",
-    pcbaReceiveNewTitle: "TERIMA PCBA BARU (GOODS RECEIPT)",
-    pcbaReplacementTitle: "REPLACEMENT PCBA",
-    pcbaDeleteConfirmTitle: "KONFIRMASI HAPUS PCBA",
-    pcbaStockHistory: "Riwayat Transaksi Stok ({n})",
-    pcbaChinaShipmentHistory: "Riwayat Kirim ke China ({n})",
-    close: "Tutup",
-    analysis: "Analisis",
-    action: "Tindakan",
-    pcbaSaveStockIn: "Simpan Stok Masuk",
-    pcbaReceivedDate: "Tanggal Penerimaan",
-    pcbaReceivedBy: "Penerima PCBA",
-    pcbaDeleteConfirmMsg: "Data PCBA akan dihapus dan tindakan ini tidak dapat dibatalkan.",
-    pcbaDeleteReferencedMsg: "PCBA ini sudah memiliki riwayat replacement atau pengiriman dan tidak dapat dihapus untuk menjaga integritas data audit.",
-    pcbaTypeOverview: "Ringkasan Tipe PCBA",
-    pcbaNoTypesConfigured: "Belum ada Tipe PCBA terkonfigurasi.",
-    pcbaTotalStock: "Total Stok",
-    pcbaDeleteFailed: "Gagal menghapus PCBA. Silakan coba lagi.",
-    pcbaDupeSerial: "No. Serial PCBA ini sudah terdaftar di stok.",
-    pcbaErrReceivedDateRequired: "Tanggal Penerimaan wajib diisi.",
-    pcbaErrReceivedByRequired: "Penerima PCBA wajib diisi.",
-    pcbaColReceivedDate: "Tanggal Penerimaan",
-    pcbaColReceivedBy: "Penerima",
-    pcbaRelatedRma: "RMA Terkait",
-    pcbaSearchRmaPlaceholder: "Cari nomor RMA (misal: 20260813)...",
-    pcbaSelectRmaPlaceholder: "— Pilih RMA Terkait —",
-    pcbaNoRmaFound: "RMA tidak ditemukan",
-    pcbaUnlinkedRma: "— Tidak terkait RMA —",
-    pcbaSnNotFoundInRma: "SN PCBA tidak ditemukan pada RMA terkait.",
-    pcbaSelectRmaFirstPlaceholder: "Pilih RMA terkait terlebih dahulu...",
-    pcbaNewGoodStock: "PCBA Baru (stok Good)",
-    pcbaOldSerialLabel: "No. Serial PCBA Lama (yang dilepas dari unit)",
-    pcbaProcessReplacement: "Proses Replacement",
-    pcbaSelectBadItem: "Pilih dari Daftar PCBA Bad",
-    pcbaNoBadItemsAvailable: "Tidak ada PCBA dengan status Bad di stok saat ini.",
-    editReplacementTitle: "EDIT REPLACEMENT PCBA",
-    editChinaShipmentTitle: "EDIT PENGIRIMAN KE CHINA",
-    colChinaStatus: "Status Kirim China",
-    statusSent: "Sent",
-    statusNotSent: "Belum Dikirim",
-    toastPcbaSentToChina: "PCBA Bad berhasil dicatat untuk dikirim ke China.",
-    toastShipmentDeleted: "Data pengiriman ke China dibatalkan dan status PCBA kembali ke Bad.",
-    toastPcbaUpdated: "Data PCBA berhasil diperbarui.",
-    toastPcbaDeleted: "Item PCBA berhasil dihapus.",
-    toastReplacementUpdated: "Data replacement berhasil diperbarui.",
-    toastChinaShipmentUpdated: "Data pengiriman ke China berhasil diperbarui.",
-    toastTransactionDeleted: "Transaksi berhasil dihapus.",
-    deleteTransactionTitle: "KONFIRMASI HAPUS TRANSAKSI",
-    deleteTransactionMsg: "Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.",
-    deleteReplacementTitle: "KONFIRMASI HAPUS REPLACEMENT",
-    deleteReplacementMsg: "Apakah Anda yakin ingin menghapus data replacement ini? Status PCBA baru akan dikembalikan menjadi Good.",
-    toastReplacementDeleted: "Data replacement berhasil dihapus.",
-    deleteChinaShipmentTitle: "KONFIRMASI BATALKAN PENGIRIMAN",
-    deleteChinaShipmentMsg: "Apakah Anda yakin ingin membatalkan/menghapus data pengiriman ini? Status PCBA terkait akan dikembalikan menjadi Bad.",
-    pcbaImportExcel: "Import Excel",
-    pcbaImportModalTitle: "IMPORT PCBA DARI EXCEL",
-    pcbaImportHint: "File Excel harus memiliki kolom: 'PCBA Serial No.', 'PCBA Type', dan 'Date'.",
-    pcbaImportValidCount: "PCBA valid siap diimport",
-    pcbaImportButton: "Import PCBA",
-    toastPcbaImportSuccess: "Import berhasil. {count} PCBA berhasil ditambahkan ke inventory.",
-    userManagement: "User Management",
-    userManagementSubtitle: "Kelola akun pengguna, role hak akses, dan status akun",
-    accessDeniedTitle: "403 AKSES DITOLAK",
-    accessDeniedMsg: "Anda tidak memiliki izin (Permission Denied) untuk mengakses halaman ini.",
-    forbiddenAction: "Tindakan ditolak: Anda tidak memiliki izin untuk operasi ini.",
-    toastWaDeleted: "Case WhatsApp {no} berhasil dihapus.",
-    toastWaSaved: "Case WhatsApp berhasil disimpan.",
-    waSaveFailed: "Gagal menyimpan case. Coba lagi.",
-    toastRmaDeleted: "Tiket RMA {no} berhasil dihapus.",
-    deleteWaTitle: "HAPUS CASE WHATSAPP",
-    deleteRmaTitle: "HAPUS TIKET RMA",
-    deleteConfirmText: "Apakah Anda yakin ingin menghapus {type} berikut?",
-    waCase: "case WhatsApp",
-    rmaTicket: "tiket RMA",
-    waImportTotalDetected: "Total terdeteksi: {n} baris",
-    waImportDupeHandlingTitle: "Penanganan Duplikat:",
-    waImportDupeSkipNote: "({n} record duplikat dilewati)",
-    waImportDupeNewNote: "(generate Nomor Case baru)",
-    rmaInfoTicket: "Informasi Tiket",
-    rmaInfoReceiving: "Receiving",
-    rmaInfoPhysical: "Kondisi Fisik",
-    rmaUnitPhotos: "Foto Unit Perangkat",
-    rmaLabelPhotos: "Foto Label SN / MAC",
-    rmaCustomerComplaint: "Keluhan Customer",
-    rmaPhysicalDamageNotes: "Catatan Kerusakan Fisik",
-    colCustomer: "Customer",
-    colWarranty: "Warranty",
-    colReceived: "Masuk",
-    colEta: "ETA",
-    colType: "Type",
-    colDate: "Tanggal",
-    colComm: "Komunikasi",
-    rmaPageTitle: "RMA Log Book",
-    rmaPageSubtitle:
-      "Daftar tiket RMA — Receiving, Diagnosis, Waiting, Warranty, QC, Shipping",
-    rmaNewTicket: "Tiket Baru",
-    rmaSearchPlaceholder: "Cari tiket, customer, SN, MAC...",
-    rmaOverdueOnly: "Overdue saja",
-    rmaSortBy: "Urutkan",
-    rmaSortNewest: "Terbaru (Masuk)",
-    rmaSortOldest: "Terlama (Masuk)",
-    rmaSortLastUpdated: "Status Terbaru",
-    rmaSortOldestUpdated: "Status Terlama",
-    rmaShowing: "Menampilkan {shown} dari {total} tiket",
-    rmaEmptyList:
-      "Belum ada tiket RMA yang cocok dengan filter. Klik 'Tiket Baru' untuk mulai.",
-    rmaModalNewTitle: "TIKET RMA BARU",
-    rmaModalEditPrefix: "EDIT",
-    waPageTitle: "WhatsApp Log Book",
-    waPageSubtitle: "Daftar case kendala via WhatsApp + riwayat komunikasi",
-    waNewCase: "Case Baru",
-    waSearchPlaceholder: "Cari case, customer, SN, MAC...",
-    waEmptyList: "Belum ada case WhatsApp. Klik 'Case Baru' untuk mulai.",
-    waModalNewTitle: "CASE WHATSAPP BARU",
-    waMsgModalTitle: "PESAN KONFIRMASI WHATSAPP",
-    unitHistoryPageSubtitle:
-      "Quick search riwayat unit berdasarkan SN/MAC lintas RMA & WhatsApp Case",
-    reportPageSubtitle: "Ringkasan mingguan otomatis dari RMA + WhatsApp log",
-    reportFromDate: "Dari Tanggal",
-    reportToDate: "Sampai Tanggal",
-    reportLast7Days: "7 Hari Terakhir",
-    reportExportPdf: "Export PDF",
-    reportEmptyRange: "Tidak ada case pada rentang tanggal ini.",
-    reportPopupBlocked:
-      "Popup browser diblokir. Izinkan popup untuk export PDF.",
-    settingsPageSubtitle: "Kelola daftar Engineer, status, dan opsi lainnya",
-    tabOverview: "Overview",
-    tabReceiving: "Receiving",
-    tabDiagnosis: "Diagnosis",
-    tabWaiting: "Waiting",
-    tabWarranty: "Warranty",
-    tabQcShipping: "QC/Shipping",
-    tabTimeline: "Timeline",
-    rmaTicketNo: "No. Ticket",
-    rmaStatus: "Status",
-    rmaEngineer: "Engineer",
-    rmaProductType: "Produk / Type",
-    rmaSn: "SN",
-    rmaMac: "MAC",
-    rmaCustomerName: "Nama Customer",
-    rmaCompany: "Perusahaan",
-    rmaCustomerPhone: "No. HP Customer",
-    rmaPriorMatchPrefix: "Unit ini pernah muncul",
-    rmaPriorMatchTimesSuffix: "x sebelumnya:",
-    rmaPriorMatchSuffix: '. Cek tab "Unit History" untuk detail lengkap.',
-    rmaReceivedDate: "Tanggal Masuk",
-    rmaReceivedTime: "Jam Diterima",
-    rmaReceivedBy: "Diterima Oleh",
-    rmaEta: "Estimasi Selesai (ETA)",
-    rmaEtaHint: "Default masuk + 3 hari",
-    rmaDoNumber: "No. DO / Surat Jalan Customer",
-    rmaCourierName: "Nama Pengirim / Kurir",
-    rmaUnitQty: "Jumlah Unit",
-    rmaPhysicalCondition: "Kondisi Fisik Saat Diterima",
-    rmaAccessories: "Kelengkapan / Accessories",
-    rmaReceivingNotes: "Catatan Receiving",
-    rmaPhotoHint:
-      "Foto unit/label SN/MAC belum bisa diunggah di versi web ini — perlu backend penyimpanan file sungguhan (Tahap 3+).",
-    rmaInitialProblem: "Kendala Awal",
-    rmaSymptom: "Gejala",
-    rmaCheckingResult: "Hasil Pengecekan",
-    rmaRootCause: "Root Cause",
-    rmaActionTaken: "Tindakan",
-    rmaFinalResult: "Hasil Akhir",
-    rmaWaitingHint:
-      'Isi bagian ini hanya jika status RMA sedang "Menunggu" — dipakai untuk menghitung berapa lama tiket tertahan karena pihak tertentu.',
-    rmaWaitingReason: "Alasan Menunggu",
-    rmaWaitingParty: "Pihak yang Ditunggu",
-    rmaWaitingStart: "Mulai Menunggu",
-    rmaWaitingEnd: "Selesai Menunggu",
-    rmaWaitingNote: "Catatan Waiting",
-    rmaWaitingDuration: "Lama menunggu:",
-    rmaDays: "hari",
-    rmaStillOngoing: "(masih berjalan)",
-    rmaWarrantyStatus: "Status Warranty",
-    rmaWarrantyDecision: "Keputusan Warranty",
-    rmaWarrantyStart: "Warranty Start",
-    rmaWarrantyEnd: "Warranty End",
-    rmaWarrantyReason: "Alasan Keputusan Warranty",
-    rmaQcTesting: "QC / TESTING",
-    rmaQcTester: "QC / Tester",
-    rmaQcDate: "Tanggal QC",
-    rmaQcResult: "Hasil Akhir",
-    rmaQcNotes: "Catatan QC",
-    rmaQcFailHint:
-      'QC Fail — status sebaiknya dikembalikan ke "Sedang Diperbaiki" di tab Overview.',
-    rmaShippingSection: "SHIPPING",
-    rmaShippingMethod: "Metode Pengiriman",
-    rmaTrackingNo: "No. Resi / Surat Jalan",
-    rmaShippedDate: "Tanggal Dikirim (Shipped)",
-    rmaCustomerReceivedDate: "Tanggal Diterima Customer",
-    rmaClosedDate: "Tanggal Ditutup (Closed)",
-    rmaNotes: "Keterangan",
-    rmaNoHistory: "Belum ada riwayat.",
-    rmaCreatedPrefix: "Dibuat:",
-    rmaSaveTicket: "Simpan Tiket",
-    waCaseNo: "No. Case",
-    waCaseDate: "Tanggal Case",
-    waEngineerTag: "Engineer / Tagging",
-    waStatus: "Status",
-    waCustomerName: "Nama Customer",
-    waCompany: "Perusahaan",
-    waCustomerPhone: "No. HP Customer",
-    waDeviceType: "Type Perangkat",
-    waSn: "SN",
-    waMac: "MAC",
-    waSolvedDate: "Tanggal Solved",
-    waInitialProblem: "Kendala Awal",
-    waFinalAnalysis: "Analisa Akhir",
-    waCommHistory: "Riwayat Komunikasi",
-    waAdd: "Tambah",
-    waSummaryPlaceholder: "Ringkasan komunikasi",
-    waResultPlaceholder: "Hasil",
-    waNoCommHistory:
-      "Belum ada riwayat komunikasi — berguna kalau 1 case ditangani beberapa engineer.",
-    waNotes: "Keterangan",
-    waSaveCase: "Simpan Case",
-    rmaExportExcel: "Export Excel",
-    rmaImportExcel: "Import Excel",
-    rmaImportModalTitle: "IMPORT RMA DARI EXCEL",
-    rmaImportSelectFile: "Pilih file .xlsx / .xls",
-    rmaImportHint: "File harus menggunakan format export dari aplikasi ini. Kolom wajib: Ticket No, Status, Engineer, Product, Customer Name, dan SN atau MAC.",
-    rmaImportValidating: "Memvalidasi...",
-    rmaImportHeaderError: "Header tidak cocok",
-    rmaImportRowErrors: "Baris bermasalah",
-    rmaImportDuplicates: "Duplikat (dilewati)",
-    rmaImportValidRows: "Baris valid siap diimport",
-    rmaImportConfirm: "Import {n} Tiket",
-    rmaImportSuccess: "Berhasil mengimport {n} tiket baru.",
-    rmaImportRowLabel: "Baris",
-    waExportExcel: "Export Excel",
-    waImportExcel: "Import Excel",
-    waImportModalTitle: "IMPORT WHATSAPP LOG DARI EXCEL",
-    waImportSelectFile: "Pilih file .xlsx / .xls",
-    waImportHint: "File harus menggunakan format Excel standar (LOGBOOKWhatsAPP.xlsx). Kolom wajib: Nama Customer dan Kendala Awal.",
-    waImportValidating: "Memvalidasi...",
-    waImportHeaderError: "Header tidak cocok",
-    waImportRowErrors: "Baris bermasalah",
-    waImportDuplicates: "Duplikat terdeteksi",
-    waImportValidRows: "Baris valid siap diimport",
-    waImportConfirm: "Import {n} Case",
-    waImportSuccess: "Berhasil mengimport {n} case WhatsApp baru.",
-    waImportRowLabel: "Baris",
-    waImportDupeSkip: "Dilewati",
-    waImportDupeImportNew: "Import duplikat sebagai case baru",
-    waExportAll: "Export Semua Record ({n})",
-    waExportFiltered: "Export Record Difilter ({n})",
-    fromDate: "Dari Tanggal",
-    toDate: "Sampai Tanggal",
-    applyFilter: "Terapkan",
-    resetDate: "Reset Tanggal",
-    today: "Hari Ini",
-    last7Days: "7 Hari Terakhir",
-    last30Days: "30 Hari Terakhir",
-    thisMonth: "Bulan Ini",
-    lastMonth: "Bulan Lalu",
-    thisYear: "Tahun Ini",
-    totalWaCases: "Total Case",
-    noDataForDateRange: "Tidak ada data pada rentang tanggal yang dipilih.",
-    presetSelect: "Pilih Preset",
-    customRange: "Custom (Bebas)",
-    colChannel: "Channel",
-    colProblem: "Kendala / Analisa",
-    unitHistoryShowing: "Menampilkan {shown} dari {total} riwayat unit",
-    noDataToExport: "Tidak ada data untuk diexport.",
-    colShipped: "Tgl Dikirim",
-    colDiagnosis: "Diagnosis (Kendala Awal)",
-    colFinalResult: "Hasil Akhir",
-    totalUnitHistory: "Total Riwayat Unit",
-    totalUnitHistoryHeading: "TOTAL RIWAYAT UNIT",
-    sectionRma: "RMA",
-    sectionWa: "WHATSAPP",
-    totalRmaBadge: "Total RMA",
-    totalWaBadge: "Total WhatsApp",
-  },
-  en: {
-    home: "Home",
-    rmaLog: "RMA Log Book",
-    waLog: "WhatsApp Log",
-    unitHistory: "Unit History",
-    weeklyReport: "Weekly Report",
-    settings: "Settings",
-    pcbaInventory: "PCBA Inventory",
-    homeTitle: "Home",
-    homeSubtitle: "Operational monitoring summary for RMA & WhatsApp support",
-    totalDevices: "Total Devices",
-    lastLoginTime: "Last Login Time",
-    totalRma: "Total RMA",
-    rmaOpen: "RMA Open",
-    rmaClosed: "RMA Closed",
-    rmaOverdue: "RMA Overdue",
-    avgTat: "Average TAT (days)",
-    totalWa: "Total WhatsApp Cases",
-    engineerLoad: "Case Load by Engineer",
-    statusDistribution: "Device Status",
-    productCount: "Device Count",
-    warrantyChart: "RMA by Warranty",
-    cases: "Cases",
-    count: "Count",
-    firestoreConnected: "Firestore Connected",
-    localMode: "Local Mode",
-    language: "Language",
-    theme: "Theme",
-    openMenu: "Menu",
-    loadingData: "Loading data...",
-    firebaseWarning:
-      "Firebase is not configured yet in src/firebase.js — data is temporarily stored in this browser's localStorage only.",
-    cancel: "Cancel",
-    userCenter: "User Center",
-    profile: "Profile",
-    editAccountInfo: "Edit account info",
-    appearance: "Appearance",
-    light: "Light",
-    dark: "Dark",
-    system: "System",
-    logout: "Logout",
-    manageProfile: "Manage profile",
-    nickName: "Nick Name",
-    yourName: "Your name",
-    email: "Email",
-    phone: "Phone",
-    phonePlaceholder: "08xxxxxxxxxx",
-    company: "Company",
-    companyPlaceholder: "PT HSGQ Indonesia",
-    address: "Address",
-    addressPlaceholder: "Address",
-    selectAppearance: "Select app appearance",
-    saveChanges: "Save Changes",
-    saving: "Saving...",
-    profileUpdated: "Profile updated successfully.",
-    profileUpdateFailed: "Failed to save profile.",
-    nameRequired: "Name cannot be empty.",
-    add: "Add",
-    addItemPlaceholder: "Add item...",
-    searchPlaceholder: "Search...",
-    copy: "Copy",
-    copied: "Copied",
-    copyFailed: "Failed to copy",
-    editAction: "Edit",
-    deleteAction: "Delete",
-    waMessageAction: "WA Message",
-    resetFilter: "Reset Filter",
-    colTicket: "Ticket",
-    colCase: "Case",
-    colStatus: "Status",
-    colEngineer: "Engineer",
-    colProduct: "Product",
-    errCustomerPhoneRequired: "Customer phone number is required.",
-    errDeviceTypeRequired: "Device type is required.",
-    errSnRequired: "SN is required.",
-    errMacRequired: "MAC is required.",
-    weeklyReportTitle: "WEEKLY SUMMARY - TECHNICAL SUPPORT",
-    weeklyReportPeriod: "Period",
-    weeklyReportActivitySummary: "Activity Summary",
-    weeklyReportMonitoring: "OLT and ONU Monitoring",
-    weeklyReportTroubleshooting: "Customer Issue Troubleshooting",
-    weeklyReportSupport: "HSGQ Jakarta Technical Support",
-    weeklyReportIssueSection: "Issue & Troubleshooting",
-    weeklyReportDateLabel: "Date",
-    weeklyReportCustomerLabel: "Customer / Company",
-    weeklyReportTypeLabel: "Device Type",
-    weeklyReportProblemLabel: "Problem / Issue",
-    weeklyReportAnalysisLabel: "Analysis",
-    weeklyReportSolutionLabel: "Solution",
-    weeklyReportStatusLabel: "Status",
-    weeklyReportSolvedOn: "Completed on {date}",
-    weeklyReportFollowUp: "Follow up / monitoring",
-    statusCompleted: "Completed",
-    statusCustomerReceived: "Customer Received",
-    statusOnProgress: "On Progress",
-    statusOnChecking: "On Checking",
-    statusWaiting: "Waiting",
-    pcbaStatusRepaired: "Repaired",
-    pcbaSubtitle: "PCBA inventory management and repair tracking",
-    colCompany: "Company",
-    colPhone: "Phone No.",
-    colInitialProblem: "Initial Problem",
-    colFinalAnalysis: "Final Analysis",
-    colSolvedDate: "Solved Date",
-    colCaseAge: "Age (Days)",
-    colDetail: "Detail",
-    viewDetail: "View Detail",
-    pcbaEmptyStock: "No PCBA in stock. Click 'Receive New PCBA' to begin.",
-    pcbaEmptyReplacement: "No PCBA replacements.",
-    pcbaEmptySendToChina: "No Bad PCBA shipments to China. Click 'Send Bad PCBA to China' to record.",
-    pcbaEmptyTransactions: "No stock transactions. Transactions are logged automatically (append-only, cannot be edited/deleted).",
-    pcbaNewReplacement: "New Replacement",
-    pcbaNoReplacement: "Replacement No.",
-    pcbaSendToChinaTitle: "SEND BAD PCBA TO CHINA",
-    pcbaNoTransaction: "Transaction No.",
-    pcbaReceiveNewTitle: "RECEIVE NEW PCBA (GOODS RECEIPT)",
-    pcbaReplacementTitle: "REPLACEMENT PCBA",
-    pcbaDeleteConfirmTitle: "CONFIRM DELETE PCBA",
-    pcbaStockHistory: "Stock Transaction History ({n})",
-    pcbaChinaShipmentHistory: "Shipment to China History ({n})",
-    close: "Close",
-    analysis: "Analysis",
-    action: "Action",
-    pcbaSaveStockIn: "Save Stock In",
-    pcbaReceivedDate: "Received Date",
-    pcbaReceivedBy: "Received By",
-    pcbaDeleteConfirmMsg: "This PCBA record will be permanently deleted.",
-    pcbaDeleteReferencedMsg: "This PCBA has replacement or shipment history and cannot be deleted to preserve audit integrity.",
-    pcbaDeleteFailed: "Failed to delete PCBA. Please try again.",
-    pcbaDupeSerial: "This PCBA serial number already exists in stock.",
-    pcbaErrReceivedDateRequired: "Received Date is required.",
-    pcbaErrReceivedByRequired: "Received By is required.",
-    pcbaColReceivedDate: "Received Date",
-    pcbaColReceivedBy: "Received By",
-    pcbaRelatedRma: "Related RMA",
-    pcbaSearchRmaPlaceholder: "Search RMA number (e.g. 20260813)...",
-    pcbaSelectRmaPlaceholder: "— Select Related RMA —",
-    pcbaNoRmaFound: "No RMA found",
-    pcbaUnlinkedRma: "— Not linked to RMA —",
-    pcbaSnNotFoundInRma: "PCBA SN not found in related RMA.",
-    pcbaSelectRmaFirstPlaceholder: "Select related RMA first...",
-    pcbaNewGoodStock: "New PCBA (Good stock)",
-    pcbaOldSerialLabel: "Old PCBA Serial No. (removed from unit)",
-    pcbaProcessReplacement: "Process Replacement",
-    pcbaSelectBadItem: "Select from Bad PCBA List",
-    pcbaNoBadItemsAvailable: "No PCBA with Bad status available in stock.",
-    editReplacementTitle: "EDIT PCBA REPLACEMENT",
-    editChinaShipmentTitle: "EDIT SHIPMENT TO CHINA",
-    colChinaStatus: "China Status",
-    statusSent: "Sent",
-    statusNotSent: "Not Sent",
-    toastPcbaSentToChina: "Bad PCBA successfully recorded as sent to China.",
-    toastShipmentDeleted: "Shipment to China cancelled and PCBA status restored to Bad.",
-    toastPcbaUpdated: "PCBA data updated successfully.",
-    toastPcbaDeleted: "PCBA item deleted successfully.",
-    toastReplacementUpdated: "Replacement record updated successfully.",
-    toastChinaShipmentUpdated: "China shipment data updated successfully.",
-    pcbaTypeOverview: "PCBA Type Overview",
-    pcbaNoTypesConfigured: "No PCBA types configured.",
-    pcbaTotalStock: "Total Stock",
-    toastTransactionDeleted: "Transaction deleted successfully.",
-    deleteTransactionTitle: "CONFIRM DELETE TRANSACTION",
-    deleteTransactionMsg: "Are you sure you want to delete this transaction? This action cannot be undone.",
-    deleteReplacementTitle: "CONFIRM DELETE REPLACEMENT",
-    deleteReplacementMsg: "Are you sure you want to delete this replacement record? The new PCBA status will be restored to Good.",
-    toastReplacementDeleted: "Replacement record deleted successfully.",
-    deleteChinaShipmentTitle: "CONFIRM CANCEL SHIPMENT",
-    deleteChinaShipmentMsg: "Are you sure you want to cancel this shipment? The PCBA status will revert to Bad.",
-    pcbaImportExcel: "Import Excel",
-    pcbaImportModalTitle: "IMPORT PCBA FROM EXCEL",
-    pcbaImportHint: "Excel file must contain columns: 'PCBA Serial No.', 'PCBA Type', and 'Date'.",
-    pcbaImportValidCount: "valid PCBA ready to import",
-    pcbaImportButton: "Import PCBA",
-    toastPcbaImportSuccess: "Import successful. {count} PCBA added to inventory.",
-    userManagement: "User Management",
-    userManagementSubtitle: "Manage user accounts, RBAC roles, and account statuses",
-    accessDeniedTitle: "403 ACCESS DENIED",
-    accessDeniedMsg: "You do not have permission to access this page.",
-    forbiddenAction: "Forbidden: You do not have permission for this operation.",
-    toastWaDeleted: "WhatsApp case {no} deleted successfully.",
-    toastWaSaved: "WhatsApp case saved successfully.",
-    waSaveFailed: "Failed to save case. Try again.",
-    toastRmaDeleted: "RMA ticket {no} deleted successfully.",
-    deleteWaTitle: "DELETE WHATSAPP CASE",
-    deleteRmaTitle: "DELETE RMA TICKET",
-    deleteConfirmText: "Are you sure you want to delete the following {type}?",
-    waCase: "WhatsApp case",
-    rmaTicket: "RMA ticket",
-    waImportTotalDetected: "Total detected: {n} rows",
-    waImportDupeHandlingTitle: "Duplicate Handling:",
-    waImportDupeSkipNote: "({n} duplicate records skipped)",
-    waImportDupeNewNote: "(generate new Case Number)",
-    rmaInfoTicket: "Ticket Information",
-    rmaInfoReceiving: "Receiving",
-    rmaInfoPhysical: "Physical Condition",
-    rmaUnitPhotos: "Device Unit Photos",
-    rmaLabelPhotos: "SN / MAC Label Photos",
-    rmaCustomerComplaint: "Customer Complaint",
-    rmaPhysicalDamageNotes: "Physical Damage Notes",
-    colCustomer: "Customer",
-    colWarranty: "Warranty",
-    colReceived: "Received",
-    colEta: "ETA",
-    colType: "Type",
-    colDate: "Date",
-    colComm: "Communication",
-    rmaPageTitle: "RMA Log Book",
-    rmaPageSubtitle:
-      "List of RMA tickets — Receiving, Diagnosis, Waiting, Warranty, QC, Shipping",
-    rmaNewTicket: "New Ticket",
-    rmaSearchPlaceholder: "Search ticket, customer, SN, MAC...",
-    rmaOverdueOnly: "Overdue only",
-    rmaSortBy: "Sort by",
-    rmaSortNewest: "Newest (Received)",
-    rmaSortOldest: "Oldest (Received)",
-    rmaSortLastUpdated: "Last Status Update",
-    rmaSortOldestUpdated: "Oldest Status Update",
-    rmaShowing: "Showing {shown} of {total} tickets",
-    rmaEmptyList:
-      "No RMA tickets match the filter yet. Click 'New Ticket' to start.",
-    rmaModalNewTitle: "NEW RMA TICKET",
-    rmaModalEditPrefix: "EDIT",
-    waPageTitle: "WhatsApp Log Book",
-    waPageSubtitle: "List of WhatsApp support cases + communication history",
-    waNewCase: "New Case",
-    waSearchPlaceholder: "Search case, customer, SN, MAC...",
-    waEmptyList: "No WhatsApp cases yet. Click 'New Case' to start.",
-    waModalNewTitle: "NEW WHATSAPP CASE",
-    waMsgModalTitle: "WHATSAPP CONFIRMATION MESSAGE",
-    unitHistoryPageSubtitle:
-      "Quick search unit history by SN/MAC across RMA & WhatsApp Cases",
-    unitHistorySearchPlaceholder: "Filter SN, MAC, customer, case...",
-    unitHistoryHint:
-      "Search by SN/MAC to see if this unit already has RMA or WhatsApp case history — useful before creating a new ticket for the same unit.",
-    unitHistoryNotFound:
-      'No history found for "{q}". This unit is new to the system.',
-    unitHistoryPriorWarning:
-      "⚠ This unit already has {n} previous history entries.",
-    unitHistoryPartialMatch: "Partial match",
-    reportPageSubtitle: "Automatic weekly summary from RMA + WhatsApp log",
-    reportFromDate: "From Date",
-    reportToDate: "To Date",
-    reportLast7Days: "Last 7 Days",
-    reportExportPdf: "Export PDF",
-    reportEmptyRange: "No cases in this date range.",
-    reportPopupBlocked: "Browser popup blocked. Allow popups to export PDF.",
-    settingsPageSubtitle: "Manage Engineer list, statuses, and other options",
-    settingsEngineer: "Engineer",
-    settingsStatusRma: "RMA Status (main flow)",
-    settingsStatusWa: "WhatsApp Status",
-    settingsFinalResults: "Final Result",
-    settingsWaitingReasons: "Waiting Reason",
-    settingsWarrantyStatuses: "Warranty Status",
-    settingsQcResults: "QC Result",
-    settingsShippingMethod: "Shipping Method",
-    settingsPcbaTypes: "PCBA Type",
-    settingsSuppliers: "Supplier",
-    settingsWarehouseLocations: "Warehouse Location",
-    settingsPcbaReceivedBy: "PCBA Received By",
-    settingsMinStockDefault: "Default Minimum Stock (unit)",
-    // PCBA Inventory
-    pcbaStock: "Stock",
-    pcbaReplacement: "Replacement",
-    pcbaSendToChina: "Send Bad PCBA to China",
-    pcbaTransactions: "Transactions",
-    pcbaReceiveNew: "Receive New PCBA",
-    pcbaLowStock: "Good stock below minimum ({min} units) for types: {types}",
-    pcbaStatusGood: "Good",
-    pcbaStatusBad: "Bad",
-    pcbaStatusUnderRepair: "Under Repair",
-    pcbaStatusReplacement: "Replacement",
-    pcbaStatusScrap: "Scrap",
-    pcbaSerialNo: "PCBA Serial No.",
-    pcbaType: "PCBA Type",
-    pcbaProduct: "Related Product",
-    pcbaSupplier: "Supplier",
-    pcbaWarehouseLocation: "Warehouse Location",
-    pcbaNotes: "Notes",
-    pcbaReplaceOld: "Old PCBA",
-    pcbaReplaceNew: "New PCBA",
-    pcbaSelectOld: "Select old PCBA",
-    pcbaSelectNew: "Select new PCBA (Good)",
-    pcbaSendToChinaItem: "Bad PCBA for Shipment to China",
-    pcbaSelectItem: "Select PCBA",
-    pcbaAction: "Action",
-    pcbaOldSerial: "Old Serial",
-    pcbaNewSerial: "New Serial",
-    // Weekly Report
-    weeklyReportFromDate: "From Date",
-    weeklyReportToDate: "To Date",
-    weeklyReportLast7Days: "Last 7 Days",
-    weeklyReportExportPdf: "Export PDF",
-    weeklyReportEmptyRange: "No cases in this date range.",
-    weeklyReportPopupBlocked: "Browser popup blocked. Allow popups to export PDF.",
-    tabReceiving: "Receiving",
-    tabDiagnosis: "Diagnosis",
-    tabWaiting: "Waiting",
-    tabWarranty: "Warranty",
-    tabQcShipping: "QC/Shipping",
-    tabTimeline: "Timeline",
-    rmaTicketNo: "Ticket No.",
-    rmaStatus: "Status",
-    rmaEngineer: "Engineer",
-    rmaProductType: "Product / Type",
-    rmaSn: "SN",
-    rmaMac: "MAC",
-    rmaCustomerName: "Customer Name",
-    rmaCompany: "Company",
-    rmaCustomerPhone: "Customer Phone",
-    rmaPriorMatchPrefix: "This unit has appeared",
-    rmaPriorMatchTimesSuffix: "x before:",
-    rmaPriorMatchSuffix: '. Check the "Unit History" tab for full details.',
-    rmaReceivedDate: "Received Date",
-    rmaReceivedTime: "Time Received",
-    rmaReceivedBy: "Received By",
-    rmaEta: "Estimated Completion (ETA)",
-    rmaEtaHint: "Defaults to received date + 3 days",
-    rmaDoNumber: "Customer DO / Delivery Note No.",
-    rmaCourierName: "Sender / Courier Name",
-    rmaUnitQty: "Unit Quantity",
-    rmaPhysicalCondition: "Physical Condition on Receipt",
-    rmaAccessories: "Accessories Included",
-    rmaReceivingNotes: "Receiving Notes",
-    rmaPhotoHint:
-      "Unit/SN/MAC label photos can't be uploaded in this web version yet — requires a real file storage backend (Phase 3+).",
-    rmaInitialProblem: "Initial Problem",
-    rmaSymptom: "Symptom",
-    rmaCheckingResult: "Checking Result",
-    rmaRootCause: "Root Cause",
-    rmaActionTaken: "Action Taken",
-    rmaFinalResult: "Final Result",
-    rmaWaitingHint:
-      'Fill this section only if the RMA status is "Waiting" — used to calculate how long the ticket has been held up by a certain party.',
-    rmaWaitingReason: "Waiting Reason",
-    rmaWaitingParty: "Party Being Waited On",
-    rmaWaitingStart: "Waiting Start",
-    rmaWaitingEnd: "Waiting End",
-    rmaWaitingNote: "Waiting Notes",
-    rmaWaitingDuration: "Waiting duration:",
-    rmaDays: "days",
-    rmaStillOngoing: "(still ongoing)",
-    rmaWarrantyStatus: "Warranty Status",
-    rmaWarrantyDecision: "Warranty Decision",
-    rmaWarrantyStart: "Warranty Start",
-    rmaWarrantyEnd: "Warranty End",
-    rmaWarrantyReason: "Warranty Decision Reason",
-    rmaQcTesting: "QC / TESTING",
-    rmaQcTester: "QC / Tester",
-    rmaQcDate: "QC Date",
-    rmaQcResult: "QC Result",
-    rmaQcNotes: "QC Notes",
-    rmaQcFailHint:
-      'QC Fail — status should be returned to "Under Repair" on the Overview tab.',
-    rmaShippingSection: "SHIPPING",
-    rmaShippingMethod: "Shipping Method",
-    rmaTrackingNo: "Tracking No. / Delivery Note",
-    rmaShippedDate: "Shipped Date",
-    rmaCustomerReceivedDate: "Customer Received Date",
-    rmaClosedDate: "Closed Date",
-    rmaNotes: "Notes",
-    rmaNoHistory: "No history yet.",
-    rmaCreatedPrefix: "Created:",
-    rmaSaveTicket: "Save Ticket",
-    waCaseNo: "Case No.",
-    waCaseDate: "Case Date",
-    waEngineerTag: "Engineer / Tagging",
-    waStatus: "Status",
-    waCustomerName: "Customer Name",
-    waCompany: "Company",
-    waCustomerPhone: "Customer Phone",
-    waDeviceType: "Device Type",
-    waSn: "SN",
-    waMac: "MAC",
-    waSolvedDate: "Solved Date",
-    waInitialProblem: "Initial Problem",
-    waFinalAnalysis: "Final Analysis",
-    waCommHistory: "Communication History",
-    waAdd: "Add",
-    waSummaryPlaceholder: "Communication summary",
-    waResultPlaceholder: "Result",
-    waNoCommHistory:
-      "No communication history yet — useful when a case is handled by multiple engineers.",
-    waNotes: "Notes",
-    waSaveCase: "Save Case",
-    rmaExportExcel: "Export Excel",
-    rmaImportExcel: "Import Excel",
-    rmaImportModalTitle: "IMPORT RMA FROM EXCEL",
-    rmaImportSelectFile: "Select .xlsx / .xls file",
-    rmaImportHint: "File must use the export format from this application. Required columns: Ticket No, Status, Engineer, Product, Customer Name, and SN or MAC.",
-    rmaImportValidating: "Validating...",
-    rmaImportHeaderError: "Header mismatch",
-    rmaImportRowErrors: "Invalid rows",
-    rmaImportDuplicates: "Duplicates (skipped)",
-    rmaImportValidRows: "Valid rows ready to import",
-    rmaImportConfirm: "Import {n} Tickets",
-    rmaImportSuccess: "Successfully imported {n} new tickets.",
-    rmaImportRowLabel: "Row",
-    waExportExcel: "Export Excel",
-    waImportExcel: "Import Excel",
-    waImportModalTitle: "IMPORT WHATSAPP LOG FROM EXCEL",
-    waImportSelectFile: "Select .xlsx / .xls file",
-    waImportHint: "File must use the standard Excel format (LOGBOOKWhatsAPP.xlsx). Required columns: Customer Name and Initial Problem.",
-    waImportValidating: "Validating...",
-    waImportHeaderError: "Header mismatch",
-    waImportRowErrors: "Invalid rows",
-    waImportDuplicates: "Duplicates detected",
-    waImportValidRows: "Valid rows ready to import",
-    waImportConfirm: "Import {n} Cases",
-    waImportSuccess: "Successfully imported {n} new WhatsApp cases.",
-    waImportRowLabel: "Row",
-    waImportDupeSkip: "Skipped",
-    waImportDupeImportNew: "Import duplicates as new cases",
-    waExportAll: "Export All Records ({n})",
-    waExportFiltered: "Export Filtered Records ({n})",
-    fromDate: "From Date",
-    toDate: "To Date",
-    applyFilter: "Apply",
-    resetDate: "Reset Date",
-    today: "Today",
-    last7Days: "Last 7 Days",
-    last30Days: "Last 30 Days",
-    thisMonth: "This Month",
-    lastMonth: "Last Month",
-    thisYear: "This Year",
-    totalWaCases: "Total Cases",
-    noDataForDateRange: "No data found for the selected date range",
-    presetSelect: "Select Preset",
-    customRange: "Custom Range",
-    colChannel: "Channel",
-    colProblem: "Issue / Analysis",
-    unitHistoryShowing: "Showing {shown} of {total} unit history records",
-    noDataToExport: "No data to export.",
-    colShipped: "Shipped Date",
-    colDiagnosis: "Diagnosis (Initial Problem)",
-    colFinalResult: "Final Result",
-    totalUnitHistory: "Total Unit History",
-    totalUnitHistoryHeading: "TOTAL UNIT HISTORY",
-    sectionRma: "RMA",
-    sectionWa: "WHATSAPP",
-    totalRmaBadge: "Total RMA",
-    totalWaBadge: "Total WhatsApp",
-  },
-  zh: {
-    home: "主页",
-    rmaLog: "RMA 记录",
-    waLog: "WhatsApp 记录",
-    unitHistory: "设备历史",
-    weeklyReport: "周报",
-    settings: "设置",
-    pcbaInventory: "PCBA 库存",
-    homeTitle: "主页",
-    homeSubtitle: "RMA 与 WhatsApp 支持运营监控摘要",
-    totalDevices: "设备总数",
-    lastLoginTime: "上次登录时间",
-    totalRma: "RMA 总数",
-    rmaOpen: "未结 RMA",
-    rmaClosed: "已结 RMA",
-    rmaOverdue: "逾期 RMA",
-    avgTat: "平均处理天数",
-    totalWa: "WhatsApp 案例总数",
-    engineerLoad: "工程师案例量",
-    statusDistribution: "设备状态",
-    productCount: "设备数量",
-    warrantyChart: "保修 RMA 分布",
-    cases: "案例",
-    count: "数量",
-    firestoreConnected: "Firestore 已连接",
-    localMode: "本地模式",
-    language: "语言",
-    theme: "主题",
-    openMenu: "菜单",
-    loadingData: "正在加载数据...",
-    firebaseWarning:
-      "尚未在 src/firebase.js 中配置 Firebase — 数据暂时仅保存在此浏览器的 localStorage 中。",
-    cancel: "取消",
-    userCenter: "用户中心",
-    profile: "个人资料",
-    editAccountInfo: "编辑账户信息",
-    appearance: "外观",
-    light: "浅色",
-    dark: "深色",
-    system: "跟随系统",
-    logout: "退出登录",
-    manageProfile: "管理个人资料",
-    nickName: "昵称",
-    yourName: "您的姓名",
-    email: "邮箱",
-    phone: "电话",
-    phonePlaceholder: "08xxxxxxxxxx",
-    company: "公司",
-    companyPlaceholder: "PT HSGQ Indonesia",
-    address: "地址",
-    addressPlaceholder: "地址",
-    selectAppearance: "选择应用外观",
-    saveChanges: "保存更改",
-    saving: "保存中...",
-    profileUpdated: "个人资料已更新。",
-    profileUpdateFailed: "保存个人资料失败。",
-    nameRequired: "姓名不能为空。",
-    add: "添加",
-    addItemPlaceholder: "添加项目...",
-    searchPlaceholder: "搜索...",
-    copy: "复制",
-    copied: "已复制",
-    copyFailed: "复制失败",
-    editAction: "编辑",
-    deleteAction: "删除",
-    waMessageAction: "WA 消息",
-    resetFilter: "重置筛选",
-    colTicket: "工单号",
-    colCase: "案例编号",
-    colStatus: "状态",
-    colEngineer: "工程师",
-    colProduct: "产品",
-    errCustomerPhoneRequired: "客户电话号码为必填项。",
-    errDeviceTypeRequired: "设备型号为必填项。",
-    errSnRequired: "SN 为必填项。",
-    errMacRequired: "MAC 为必填项。",
-    weeklyReportTitle: "每周摘要 - 技术支持",
-    weeklyReportPeriod: "时间段",
-    weeklyReportActivitySummary: "活动摘要",
-    weeklyReportMonitoring: "OLT 和 ONU 监控",
-    weeklyReportTroubleshooting: "客户故障排查",
-    weeklyReportSupport: "HSGQ 雅加达技术支持",
-    weeklyReportIssueSection: "问题与排查",
-    weeklyReportDateLabel: "日期",
-    weeklyReportCustomerLabel: "客户 / 公司",
-    weeklyReportTypeLabel: "设备型号",
-    weeklyReportProblemLabel: "问题",
-    weeklyReportAnalysisLabel: "分析",
-    weeklyReportSolutionLabel: "解决方案",
-    weeklyReportStatusLabel: "状态",
-    weeklyReportSolvedOn: "完成于 {date}",
-    weeklyReportFollowUp: "跟进 / 监控",
-    statusCompleted: "已完成",
-    statusCustomerReceived: "客户已收货",
-    statusOnProgress: "处理中",
-    statusOnChecking: "检测中",
-    statusWaiting: "等待中",
-    pcbaStatusRepaired: "已修复",
-    pcbaSubtitle: "PCBA 库存管理与维修跟踪",
-    colCompany: "公司",
-    colPhone: "电话号码",
-    colInitialProblem: "初始故障描述",
-    colFinalAnalysis: "最终分析",
-    colSolvedDate: "解决日期",
-    colCaseAge: "时长 (天)",
-    colDetail: "详情",
-    viewDetail: "查看详情",
-    pcbaEmptyStock: "库存中暂无 PCBA。点击「接收新 PCBA」开始。",
-    pcbaEmptyReplacement: "暂无 PCBA 替换记录。",
-    pcbaEmptySendToChina: "暂无寄送至中国的不良 PCBA 记录。点击「寄送不良 PCBA 至中国」开始记录。",
-    pcbaEmptyTransactions: "暂无库存交易记录。交易将自动记录（仅追加，不可编辑/删除）。",
-    pcbaNewReplacement: "新替换",
-    pcbaNoReplacement: "替换编号",
-    pcbaSendToChinaTitle: "寄送不良 PCBA 至中国",
-    pcbaNoTransaction: "交易编号",
-    pcbaReceiveNewTitle: "接收新 PCBA (入库)",
-    pcbaReplacementTitle: "PCBA 替换",
-    pcbaDeleteConfirmTitle: "确认删除 PCBA",
-    pcbaStockHistory: "库存交易历史 ({n})",
-    pcbaChinaShipmentHistory: "寄送中国历史 ({n})",
-    close: "关闭",
-    analysis: "分析",
-    action: "处理措施",
-    pcbaSaveStockIn: "保存入库",
-    pcbaReceivedDate: "接收日期",
-    pcbaReceivedBy: "接收人",
-    pcbaDeleteConfirmMsg: "此 PCBA 记录将被永久删除。",
-    pcbaDeleteReferencedMsg: "此 PCBA 已有交易/寄送记录，无法永久删除。",
-    pcbaDeleteFailed: "删除 PCBA 失败，请重试。",
-    pcbaDupeSerial: "此 PCBA 序列号在库存中已存在。",
-    pcbaErrReceivedDateRequired: "接收日期为必填项。",
-    pcbaErrReceivedByRequired: "接收人为必填项。",
-    pcbaColReceivedDate: "接收日期",
-    pcbaColReceivedBy: "接收人",
-    pcbaRelatedRma: "相关 RMA",
-    pcbaSearchRmaPlaceholder: "搜索工单号 (例如: 20260813)...",
-    pcbaSelectRmaPlaceholder: "— 选择关联工单 —",
-    pcbaNoRmaFound: "未找到相关工单",
-    pcbaUnlinkedRma: "— 未关联工单 —",
-    pcbaSnNotFoundInRma: "相关工单中未找到 PCBA 序列号。",
-    pcbaSelectRmaFirstPlaceholder: "请先选择关联工单...",
-    pcbaNewGoodStock: "新 PCBA (良品库存)",
-    pcbaOldSerialLabel: "旧 PCBA 序列号 (拆卸于设备)",
-    pcbaProcessReplacement: "处理替换",
-    pcbaSelectBadItem: "从不良品列表中选择",
-    pcbaNoBadItemsAvailable: "库存中暂无不良品状态的 PCBA。",
-    editReplacementTitle: "编辑 PCBA 替换",
-    editChinaShipmentTitle: "编辑寄送中国记录",
-    colChinaStatus: "寄送中国状态",
-    statusSent: "已寄送",
-    statusNotSent: "未寄送",
-    toastPcbaSentToChina: "不良 PCBA 已成功记录寄送至中国。",
-    toastShipmentDeleted: "寄送中国记录已取消，PCBA 状态已恢复为不良品。",
-    toastPcbaUpdated: "PCBA 数据更新成功。",
-    toastPcbaDeleted: "PCBA 项目删除成功。",
-    toastReplacementUpdated: "替换记录更新成功。",
-    toastChinaShipmentUpdated: "寄送中国记录更新成功。",
-    pcbaTypeOverview: "PCBA 类型概览",
-    pcbaNoTypesConfigured: "尚未配置 PCBA 类型。",
-    pcbaTotalStock: "库存总数",
-    toastTransactionDeleted: "交易成功删除。",
-    deleteTransactionTitle: "确认删除交易",
-    deleteTransactionMsg: "您确定要删除此交易吗？此操作无法撤销。",
-    deleteReplacementTitle: "确认删除替换",
-    deleteReplacementMsg: "您确定要删除此替换记录吗？新 PCBA 状态将恢复为良品。",
-    toastReplacementDeleted: "替换记录成功删除。",
-    deleteChinaShipmentTitle: "确认取消寄送",
-    deleteChinaShipmentMsg: "您确定要取消此寄送记录吗？相关 PCBA 状态将恢复为不良品。",
-    pcbaImportExcel: "从 Excel 导入",
-    pcbaImportModalTitle: "从 EXCEL 导入 PCBA",
-    pcbaImportHint: "Excel 文件必须包含列：'PCBA Serial No.'、'PCBA Type' 和 'Date'。",
-    pcbaImportValidCount: "个有效 PCBA 准备导入",
-    pcbaImportButton: "导入 PCBA",
-    toastPcbaImportSuccess: "导入成功。已将 {count} 个 PCBA 添加到库存。",
-    userManagement: "用户管理",
-    userManagementSubtitle: "管理用户账户、权限角色及账户状态",
-    accessDeniedTitle: "403 访问被拒绝",
-    accessDeniedMsg: "您没有权限访问此页面。",
-    forbiddenAction: "禁止操作：您没有执行此操作的权限。",
-    toastWaDeleted: "WhatsApp 案例 {no} 删除成功。",
-    toastWaSaved: "案例保存成功。",
-    waSaveFailed: "案例保存失败。请重试。",
-    toastRmaDeleted: "RMA 工单 {no} 删除成功。",
-    deleteWaTitle: "删除 WHATSAPP 案例",
-    deleteRmaTitle: "删除 RMA 工单",
-    deleteConfirmText: "确定要删除此 {type} 吗？",
-    waCase: "WhatsApp 案例",
-    rmaTicket: "RMA 工单",
-    waImportTotalDetected: "共检测到：{n} 行",
-    waImportDupeHandlingTitle: "重复项处理：",
-    waImportDupeSkipNote: "(跳过 {n} 条重复记录)",
-    waImportDupeNewNote: "(生成新的案例编号)",
-    rmaInfoTicket: "工单信息",
-    rmaInfoReceiving: "接收信息",
-    rmaInfoPhysical: "外观状况",
-    rmaUnitPhotos: "设备外观照片",
-    rmaLabelPhotos: "SN / MAC 标签照片",
-    rmaCustomerComplaint: "客户故障描述",
-    rmaPhysicalDamageNotes: "外观损坏备注",
-    colCustomer: "客户",
-    colWarranty: "保修",
-    colReceived: "接收日期",
-    colEta: "预计完成",
-    colType: "类型",
-    colDate: "日期",
-    colComm: "沟通记录",
-    rmaPageTitle: "RMA 记录",
-    rmaPageSubtitle: "RMA 工单列表 — 接收、诊断、等待、保修、QC、发货",
-    rmaNewTicket: "新工单",
-    rmaSearchPlaceholder: "搜索工单、客户、SN、MAC...",
-    rmaOverdueOnly: "仅显示逾期",
-    rmaSortBy: "排序",
-    rmaSortNewest: "最新（接收日期）",
-    rmaSortOldest: "最早（接收日期）",
-    rmaSortLastUpdated: "最新状态更新",
-    rmaSortOldestUpdated: "最早状态更新",
-    rmaShowing: "显示 {shown} / {total} 张工单",
-    rmaEmptyList: "暂无符合筛选条件的 RMA 工单。点击「新工单」开始。",
-    rmaModalNewTitle: "新建 RMA 工单",
-    rmaModalEditPrefix: "编辑",
-    waPageTitle: "WhatsApp 记录",
-    waPageSubtitle: "WhatsApp 支持案例列表 + 沟通记录",
-    waNewCase: "新案例",
-    waSearchPlaceholder: "搜索案例、客户、SN、MAC...",
-    waEmptyList: "暂无 WhatsApp 案例。点击「新案例」开始。",
-    waModalNewTitle: "新建 WhatsApp 案例",
-    waMsgModalTitle: "WhatsApp 确认消息",
-    unitHistoryPageSubtitle:
-      "按 SN/MAC 快速搜索 RMA 与 WhatsApp 案例中的设备历史",
-    unitHistorySearchPlaceholder: "按 SN、MAC、客户、案例筛选...",
-    unitHistoryHint:
-      "搜索 SN/MAC 以查看该设备是否曾有 RMA 或 WhatsApp 案例记录 — 在为同一设备建立新工单前很有用。",
-    unitHistoryNotFound: '未找到 "{q}" 的历史记录。此设备是首次进入系统。',
-    unitHistoryPriorWarning: "⚠ 此设备此前已有 {n} 条历史记录。",
-    unitHistoryPartialMatch: "部分匹配",
-    reportPageSubtitle: "根据 RMA + WhatsApp 记录自动生成的周报摘要",
-    reportFromDate: "起始日期",
-    reportToDate: "结束日期",
-    reportLast7Days: "最近 7 天",
-    reportExportPdf: "导出 PDF",
-    reportEmptyRange: "该日期范围内没有案例。",
-    reportPopupBlocked: "浏览器弹窗被拦截。请允许弹窗以导出 PDF。",
-    settingsPageSubtitle: "管理工程师名单、状态及其他选项",
-    settingsEngineer: "工程师",
-    settingsStatusRma: "RMA 状态（主流程）",
-    settingsStatusWa: "WhatsApp 状态",
-    settingsFinalResults: "最终结果",
-    settingsWaitingReasons: "等待原因",
-    settingsWarrantyStatuses: "保修状态",
-    settingsQcResults: "QC 结果",
-    settingsShippingMethod: "发货方式",
-    settingsPcbaTypes: "PCBA 类型",
-    settingsSuppliers: "供应商",
-    settingsWarehouseLocations: "仓库位置",
-    settingsPcbaReceivedBy: "PCBA 接收人",
-    settingsMinStockDefault: "默认最低库存（件）",
-    // PCBA Inventory
-    pcbaStock: "库存",
-    pcbaReplacement: "替换",
-    pcbaSendToChina: "寄送不良 PCBA 至中国",
-    pcbaTransactions: "交易",
-    pcbaReceiveNew: "接收新 PCBA",
-    pcbaLowStock: "良品库存低于最小值 ({min} 件) 的类型: {types}",
-    pcbaStatusGood: "良品",
-    pcbaStatusBad: "不良品",
-    pcbaStatusUnderRepair: "维修中",
-    pcbaStatusReplacement: "替换",
-    pcbaStatusScrap: "报废",
-    pcbaSerialNo: "PCBA 序列号",
-    pcbaType: "PCBA 类型",
-    pcbaProduct: "相关产品",
-    pcbaSupplier: "供应商",
-    pcbaWarehouseLocation: "仓库位置",
-    pcbaNotes: "备注",
-    pcbaReplaceOld: "旧 PCBA",
-    pcbaReplaceNew: "新 PCBA",
-    pcbaSelectOld: "选择旧 PCBA",
-    pcbaSelectNew: "选择新 PCBA (良品)",
-    pcbaSendToChinaItem: "寄送至中国的不良 PCBA",
-    pcbaSelectItem: "选择 PCBA",
-    pcbaAction: "操作",
-    pcbaOldSerial: "旧序列号",
-    pcbaNewSerial: "新序列号",
-    // Weekly Report
-    weeklyReportFromDate: "起始日期",
-    weeklyReportToDate: "结束日期",
-    weeklyReportLast7Days: "最近 7 天",
-    weeklyReportExportPdf: "导出 PDF",
-    weeklyReportEmptyRange: "该日期范围内没有案例。",
-    weeklyReportPopupBlocked: "浏览器弹窗被拦截。请允许弹窗以导出 PDF。",
-    tabReceiving: "接收",
-    tabDiagnosis: "诊断",
-    tabWaiting: "等待",
-    tabWarranty: "保修",
-    tabQcShipping: "QC/发货",
-    tabTimeline: "时间线",
-    rmaTicketNo: "工单号",
-    rmaStatus: "状态",
-    rmaEngineer: "工程师",
-    rmaProductType: "产品 / 型号",
-    rmaSn: "SN",
-    rmaMac: "MAC",
-    rmaCustomerName: "客户姓名",
-    rmaCompany: "公司",
-    rmaCustomerPhone: "客户电话",
-    rmaPriorMatchPrefix: "此设备此前出现过",
-    rmaPriorMatchTimesSuffix: "次：",
-    rmaPriorMatchSuffix: '。请查看"设备历史"标签页获取完整详情。',
-    rmaReceivedDate: "接收日期",
-    rmaReceivedTime: "接收时间",
-    rmaReceivedBy: "接收人",
-    rmaEta: "预计完成时间（ETA）",
-    rmaEtaHint: "默认接收日期 + 3 天",
-    rmaDoNumber: "客户送货单号",
-    rmaCourierName: "寄件人 / 快递名称",
-    rmaUnitQty: "设备数量",
-    rmaPhysicalCondition: "接收时的外观状况",
-    rmaAccessories: "配件 / Accessories",
-    rmaReceivingNotes: "接收备注",
-    rmaPhotoHint:
-      "此网页版本尚不支持上传设备/SN/MAC 标签照片 — 需要真实的文件存储后端（第 3 阶段以后）。",
-    rmaInitialProblem: "初始故障描述",
-    rmaSymptom: "现象",
-    rmaCheckingResult: "检测结果",
-    rmaRootCause: "根本原因",
-    rmaActionTaken: "处理措施",
-    rmaFinalResult: "最终结果",
-    rmaWaitingHint:
-      "仅当 RMA 状态为「等待中」时才需填写此部分 — 用于计算工单因某一方而延迟的时长。",
-    rmaWaitingReason: "等待原因",
-    rmaWaitingParty: "等待对象",
-    rmaWaitingStart: "开始等待",
-    rmaWaitingEnd: "结束等待",
-    rmaWaitingNote: "等待备注",
-    rmaWaitingDuration: "等待时长：",
-    rmaDays: "天",
-    rmaStillOngoing: "（仍在进行中）",
-    rmaWarrantyStatus: "保修状态",
-    rmaWarrantyDecision: "保修决定",
-    rmaWarrantyStart: "保修开始",
-    rmaWarrantyEnd: "保修结束",
-    rmaWarrantyReason: "保修决定原因",
-    rmaQcTesting: "QC / 测试",
-    rmaQcTester: "QC / 测试员",
-    rmaQcDate: "QC 日期",
-    rmaQcResult: "QC 结果",
-    rmaQcNotes: "QC 备注",
-    rmaQcFailHint: "QC 未通过 — 建议在概览标签页将状态改回「维修中」。",
-    rmaShippingSection: "发货",
-    rmaShippingMethod: "发货方式",
-    rmaTrackingNo: "运单号 / 送货单号",
-    rmaShippedDate: "发货日期",
-    rmaCustomerReceivedDate: "客户收货日期",
-    rmaClosedDate: "关闭日期",
-    rmaNotes: "备注",
-    rmaNoHistory: "暂无历史记录。",
-    rmaCreatedPrefix: "创建：",
-    rmaSaveTicket: "保存工单",
-    waCaseNo: "案例编号",
-    waCaseDate: "案例日期",
-    waEngineerTag: "工程师 / 标签",
-    waStatus: "状态",
-    waCustomerName: "客户姓名",
-    waCompany: "公司",
-    waCustomerPhone: "客户电话",
-    waDeviceType: "设备型号",
-    waSn: "SN",
-    waMac: "MAC",
-    waSolvedDate: "解决日期",
-    waInitialProblem: "初始故障描述",
-    waFinalAnalysis: "最终分析",
-    waCommHistory: "沟通记录",
-    waAdd: "添加",
-    waSummaryPlaceholder: "沟通摘要",
-    waResultPlaceholder: "结果",
-    waNoCommHistory: "暂无沟通记录 — 适用于一个案例由多位工程师处理的情况。",
-    waNotes: "备注",
-    waSaveCase: "保存案例",
-    rmaExportExcel: "导出 Excel",
-    rmaImportExcel: "导入 Excel",
-    rmaImportModalTitle: "从 EXCEL 导入 RMA",
-    rmaImportSelectFile: "选择 .xlsx / .xls 文件",
-    rmaImportHint: "文件必须使用本应用的导出格式。必填列：Ticket No、Status、Engineer、Product、Customer Name，以及 SN 或 MAC。",
-    rmaImportValidating: "验证中...",
-    rmaImportHeaderError: "列标题不匹配",
-    rmaImportRowErrors: "无效行",
-    rmaImportDuplicates: "重复项（已跳过）",
-    rmaImportValidRows: "有效行，准备导入",
-    rmaImportConfirm: "导入 {n} 张工单",
-    rmaImportSuccess: "成功导入 {n} 张新工单。",
-    rmaImportRowLabel: "行",
-    waExportExcel: "导出 Excel",
-    waImportExcel: "导入 Excel",
-    waImportModalTitle: "从 EXCEL 导入 WHATSAPP 日志",
-    waImportSelectFile: "选择 .xlsx / .xls 文件",
-    waImportHint: "文件必须使用标准 Excel 格式 (LOGBOOKWhatsAPP.xlsx)。必填列：Customer Name 和 Initial Problem。",
-    waImportValidating: "验证中...",
-    waImportHeaderError: "列标题不匹配",
-    waImportRowErrors: "无效行",
-    waImportDuplicates: "检测到重复项",
-    waImportValidRows: "有效行，准备导入",
-    waImportConfirm: "导入 {n} 个案例",
-    waImportSuccess: "成功导入 {n} 个新 WhatsApp 案例。",
-    waImportRowLabel: "行",
-    waImportDupeSkip: "已跳过",
-    waImportDupeImportNew: "将重复项导入为新案例",
-    waExportAll: "导出所有记录 ({n})",
-    waExportFiltered: "导出已筛选记录 ({n})",
-    fromDate: "开始日期",
-    toDate: "结束日期",
-    applyFilter: "应用",
-    resetDate: "重置日期",
-    today: "今天",
-    last7Days: "最近 7 天",
-    last30Days: "最近 30 天",
-    thisMonth: "本月",
-    lastMonth: "上个月",
-    thisYear: "今年",
-    totalWaCases: "案例总数",
-    noDataForDateRange: "所选日期范围内没有数据",
-    presetSelect: "选择预设",
-    customRange: "自定义范围",
-    colChannel: "渠道",
-    colProblem: "故障 / 分析",
-    unitHistoryShowing: "显示 {shown} / {total} 条设备历史记录",
-    noDataToExport: "没有要导出的数据。",
-    colShipped: "发货日期",
-    colDiagnosis: "诊断 (初始问题)",
-    colFinalResult: "最终结果",
-    totalUnitHistory: "设备历史总数",
-    totalUnitHistoryHeading: "设备历史总数",
-    sectionRma: "RMA",
-    sectionWa: "WHATSAPP",
-    totalRmaBadge: "RMA 总数",
-    totalWaBadge: "WhatsApp 总数",
-  },
-};
-
-function getStoredLanguage() {
-  if (typeof window === "undefined") return "id";
-  const saved = localStorage.getItem("hsgq_language");
-  return I18N[saved] ? saved : "id";
-}
+import {
+  I18N,
+  LANGUAGES,
+  getStoredLanguage,
+  setStoredLanguage,
+  getTranslation,
+  getLocalizedOption,
+  getLocalizedStatus,
+  getLocalizedRole,
+} from "./i18n/index.js";
+import { useLanguage } from "./context/LanguageContext.jsx";
 
 /* ============================================================
    STATUS / OVERDUE HELPERS
    ============================================================ */
-// RMA_DONE_NORMALIZED: explicit set of lowercase-trimmed status strings that
-// represent a genuinely completed/closed RMA case.
-// Rules:
-//   - Always lowercase + trimmed for comparison (handles whitespace & casing variance)
-//   - "Selesai" is included: some RMA records use this WA-originated status
-//   - "Closed" and "Customer Received" are the two canonical done statuses
-//   - Do NOT use substring matching — only exact normalized matches
 const RMA_DONE_NORMALIZED = new Set([
   "selesai",
   "closed",
@@ -1577,21 +246,6 @@ const OPTION_DICT = {
   "cja jakarta": { id: "CJA JAKARTA", en: "CJA Jakarta", zh: "CJA 雅加达" },
   "cja surabaya": { id: "CJA SURABAYA", en: "CJA Surabaya", zh: "CJA 泗水" },
 };
-
-function getLocalizedOption(val, t, lang) {
-  if (!val) return "—";
-  const str = String(val).trim();
-  const key = str.toLowerCase();
-  const found = OPTION_DICT[key];
-  if (!found) return str;
-
-  const currentLang = lang || (t?._lang) || localStorage.getItem("hsgq_language") || "id";
-  return found[currentLang] || found.id || str;
-}
-
-function getLocalizedStatus(status, t, lang) {
-  return getLocalizedOption(status, t, lang);
-}
 
 function StatusLed({ status, size = 8, t }) {
   const c = ledColor(status);
@@ -1741,6 +395,23 @@ const fmtDate = (d) => {
   const dt = new Date(str);
   if (isNaN(dt.getTime())) return str;
   return `${pad2(dt.getDate())}/${pad2(dt.getMonth() + 1)}/${dt.getFullYear()}`;
+};
+const fmtDateTime = (d, lang = "id") => {
+  if (!d) return "-";
+  const str = String(d).trim();
+  if (!str || str === "-") return "-";
+  const dt = new Date(str);
+  if (isNaN(dt.getTime())) return "-";
+  const day = pad2(dt.getDate());
+  const month = pad2(dt.getMonth() + 1);
+  const year = dt.getFullYear();
+  const hours = pad2(dt.getHours());
+  const minutes = pad2(dt.getMinutes());
+
+  if (lang === "zh") {
+    return `${year}/${month}/${day} ${hours}:${minutes}`;
+  }
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
 const todayISO = () => {
   const d = new Date();
@@ -2847,6 +1518,7 @@ function DateRangeToolbar({
   hasActiveFilters,
   t,
 }) {
+  const curT = t || I18N.id;
   return (
     <div
       style={{
@@ -2881,7 +1553,7 @@ function DateRangeToolbar({
             onChange={(e) => setOverdueOnly(e.target.checked)}
             style={{ accentColor: T.cyan }}
           />
-          {overdueLabel || t.rmaOverdueOnly || "Overdue saja"}
+          {overdueLabel || curT.overdueOnly || curT.rmaOverdueOnly || "Hanya yang Overdue"}
         </label>
       )}
 
@@ -2898,7 +1570,7 @@ function DateRangeToolbar({
         }}
       >
         <CalendarRange size={14} color={T.ink3} />
-        <span style={{ fontSize: 12, color: T.ink2 }}>{t.fromDate || "Dari"}:</span>
+        <span style={{ fontSize: 12, color: T.ink2 }}>{curT.fromDate || "Dari"}:</span>
         <TextInput
           type="date"
           value={fromDate}
@@ -2909,7 +1581,7 @@ function DateRangeToolbar({
           style={{ padding: "4px 8px", fontSize: 12, width: 130 }}
         />
 
-        <span style={{ fontSize: 12, color: T.ink2 }}>{t.toDate || "Sampai"}:</span>
+        <span style={{ fontSize: 12, color: T.ink2 }}>{curT.toDate || "Sampai"}:</span>
         <TextInput
           type="date"
           value={toDate}
@@ -2931,14 +1603,14 @@ function DateRangeToolbar({
             cursor: "pointer",
           }}
         >
-          <option value="">{t.presetSelect || "Pilih Preset"}</option>
-          <option value="custom">{t.customRange || "Custom (Bebas)"}</option>
-          <option value="today">{t.today || "Hari Ini"}</option>
-          <option value="last7">{t.last7Days || "7 Hari Terakhir"}</option>
-          <option value="last30">{t.last30Days || "30 Hari Terakhir"}</option>
-          <option value="thisMonth">{t.thisMonth || "Bulan Ini"}</option>
-          <option value="lastMonth">{t.lastMonth || "Bulan Lalu"}</option>
-          <option value="thisYear">{t.thisYear || "Tahun Ini"}</option>
+          <option value="">{curT.selectPreset || curT.presetSelect || "Pilih Preset"}</option>
+          <option value="custom">{curT.customRange || "Custom (Bebas)"}</option>
+          <option value="today">{curT.today || "Hari Ini"}</option>
+          <option value="last7">{curT.last7Days || curT.weeklyReportLast7Days || "7 Hari Terakhir"}</option>
+          <option value="last30">{curT.last30Days || "30 Hari Terakhir"}</option>
+          <option value="thisMonth">{curT.thisMonth || "Bulan Ini"}</option>
+          <option value="lastMonth">{curT.lastMonth || "Bulan Lalu"}</option>
+          <option value="thisYear">{curT.thisYear || "Tahun Ini"}</option>
         </select>
 
         {(fromDate || toDate || preset) && (
@@ -2947,14 +1619,14 @@ function DateRangeToolbar({
             onClick={onResetDate}
             style={{ padding: "4px 8px", fontSize: 12 }}
           >
-            {t.resetDate || "Reset Tanggal"}
+            {curT.resetDate || "Reset"}
           </Btn>
         )}
       </div>
 
       {hasActiveFilters && (
         <Btn variant="ghost" onClick={onResetAll}>
-          {t.resetFilter || "Reset Filter"}
+          {curT.resetFilter || "Reset Filter"}
         </Btn>
       )}
     </div>
@@ -3109,21 +1781,21 @@ function PhotoPickerCard({ title, photos = [], onAdd, onRemove, addLabel, captur
 /* ============================================================
    RMA DETAIL PREVIEW MODAL (Read-only)
    ============================================================ */
-function PhotoLightbox({ photo, category, onClose }) {
+function PhotoLightbox({ photo, category, onClose, t }) {
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-
+  if (!photo) return null;
   return (
     <div
       onClick={onClose}
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.88)",
-        zIndex: 200,
+        background: "rgba(0,0,0,0.85)",
+        zIndex: 9999,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -3156,7 +1828,7 @@ function PhotoLightbox({ photo, category, onClose }) {
             fontSize: 13,
           }}
         >
-          ✕ Tutup
+          ✕ {t?.close || "Tutup"}
         </button>
       </div>
     </div>
@@ -3190,7 +1862,7 @@ function RmaDetailModal({ entry, onClose, t }) {
   const PhotoGrid = ({ photos, category }) => (
     <div className="rma-detail-photo-grid">
       {photos.length === 0 ? (
-        <div style={{ fontSize: 12, color: "var(--text-3)", fontStyle: "italic", gridColumn: "1/-1" }}>Tidak ada foto.</div>
+        <div style={{ fontSize: 12, color: "var(--text-3)", fontStyle: "italic", gridColumn: "1/-1" }}>{tt?.noPhotos || t?.noPhotos || "Tidak ada foto."}</div>
       ) : (
         photos.map((p, i) => (
           <div
@@ -3204,7 +1876,7 @@ function RmaDetailModal({ entry, onClose, t }) {
             ) : (
               <div className="placeholder">
                 <span style={{ fontSize: 22 }}>📷</span>
-                <span>Foto tidak tersedia</span>
+                <span>{tt?.photoUnavailable || t?.photoUnavailable || "Foto tidak tersedia"}</span>
               </div>
             )}
             {(p.url || p.previewUrl) && (
@@ -3218,7 +1890,7 @@ function RmaDetailModal({ entry, onClose, t }) {
 
   return (
     <>
-      <Modal title={`DETAIL RMA — ${entry.ticketNo}`} onClose={onClose} width={860}>
+      <Modal title={`${tt.rmaDetailTitle || "DETAIL RMA"} — ${entry.ticketNo}`} onClose={onClose} width={860}>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
 
           <Section title={tt.rmaInfoTicket || "Informasi Tiket"} icon={PackageSearch}>
@@ -3279,6 +1951,7 @@ function RmaDetailModal({ entry, onClose, t }) {
           photo={lightbox.photo}
           category={lightbox.category}
           onClose={() => setLightbox(null)}
+          t={tt}
         />
       )}
     </>
@@ -3307,6 +1980,9 @@ function RmaForm({
   t,
 }) {
   const { user, profile } = useAuth();
+  const { t: ctxT } = useLanguage?.() || {};
+  const tt = ctxT || t || I18N.id;
+
   const currentUserDisplayName =
     profile?.displayName ||
     user?.displayName ||
@@ -3318,12 +1994,12 @@ function RmaForm({
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const TAB_LABELS = {
-    overview: t.tabOverview,
-    receiving: t.tabReceiving,
-    diagnosis: t.tabDiagnosis,
-    waiting: t.tabWaiting,
-    warranty: t.tabWarranty,
-    qc: t.tabQcShipping,
+    overview: tt.tabOverview || "Overview",
+    receiving: tt.tabReceiving || "Receiving",
+    diagnosis: tt.tabDiagnosis || "Diagnosis",
+    waiting: tt.tabWaiting || "Waiting",
+    warranty: tt.tabWarranty || "Warranty",
+    qc: tt.tabQcShipping || "QC/Shipping",
   };
   const [f, setF] = useState(() => {
     if (initial) {
@@ -3420,19 +2096,18 @@ function RmaForm({
 
     // Required field validation
     const required = {
-      ticketNo: t.rmaTicketNo,
-      status: t.rmaStatus,
-      engineer: t.rmaEngineer,
-      product: t.rmaProductType,
-      customerName: t.rmaCustomerName,
+      ticketNo: tt.rmaTicketNo || "No. Ticket",
+      status: tt.colStatus || "Status",
+      engineer: tt.colEngineer || "Engineer",
+      product: tt.colType || "Produk / Type",
+      customerName: tt.colCustomer || "Nama Customer",
     };
     for (const [key, label] of Object.entries(required)) {
       if (!f[key] || !f[key].trim()) {
-        setFormError(`${label} wajib diisi.`);
+        setFormError(`${label} ${tt.errFieldRequired || "wajib diisi."}`);
         return;
       }
     }
-    const tt = t || I18N.id;
 
     if (!f.sn || !f.sn.trim()) {
       setFormError(tt.errSnRequired || "SN wajib diisi.");
@@ -3546,7 +2221,7 @@ function RmaForm({
             marginBottom: -1,
           }}
         >
-          <History size={13} /> {t.tabTimeline}
+          <History size={13} /> {tt.tabTimeline || "Timeline"}
         </button>
       )}
     </div>
@@ -3578,32 +2253,35 @@ function RmaForm({
             className="form-grid-2"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
-            <Field label="No. Ticket">
+            <Field label={tt.rmaTicketNo || "No. Ticket"}>
               <TextInput
                 value={f.ticketNo}
                 onChange={set("ticketNo")}
                 style={{ fontFamily: mono }}
               />
             </Field>
-            <Field label="Status">
+            <Field label={tt.colStatus || "Status"}>
               <Select
                 options={master.statusRMA}
                 value={f.status}
                 onChange={set("status")}
+                t={tt}
               />
             </Field>
-            <Field label="Engineer">
+            <Field label={tt.colEngineer || "Engineer"}>
               <Select
                 options={master.engineers}
                 value={f.engineer}
                 onChange={set("engineer")}
+                t={tt}
+                translateOptions={false}
               />
             </Field>
-            <Field label="Produk / Type">
+            <Field label={tt.colType || "Produk / Type"}>
               <TextInput
                 value={f.product}
                 onChange={set("product")}
-                placeholder="cth. G04ID"
+                placeholder={tt.rmaProductPlaceholder || "cth. G04ID"}
               />
             </Field>
             <Field label="SN">
@@ -3620,16 +2298,16 @@ function RmaForm({
                 style={{ fontFamily: mono }}
               />
             </Field>
-            <Field label="Nama Customer">
+            <Field label={tt.colCustomer || "Nama Customer"}>
               <TextInput
                 value={f.customerName}
                 onChange={set("customerName")}
               />
             </Field>
-            <Field label="Perusahaan">
+            <Field label={tt.colCompany || "Perusahaan"}>
               <TextInput value={f.company} onChange={set("company")} />
             </Field>
-            <Field label="No. HP Customer">
+            <Field label={tt.colPhone || "No. HP Customer"}>
               <TextInput
                 value={f.customerPhone}
                 onChange={set("customerPhone")}
@@ -3638,13 +2316,15 @@ function RmaForm({
           </div>
           {priorMatches.length > 0 && (
             <InlineHint tone="warn">
-              Unit ini pernah muncul {priorMatches.length}x sebelumnya:{" "}
-              {priorMatches
-                .slice(0, 3)
-                .map((h) => `${h.ref} (${h.status})`)
-                .join(", ")}
-              {priorMatches.length > 3 ? ", ..." : ""}. Cek tab "Unit History"
-              untuk detail lengkap.
+              {(tt.rmaPriorMatchWarning || "Unit ini pernah muncul {n}x sebelumnya: {list}. Cek tab 'Riwayat Unit' untuk detail lengkap.")
+                .replace("{n}", priorMatches.length)
+                .replace(
+                  "{list}",
+                  priorMatches
+                    .slice(0, 3)
+                    .map((h) => `${h.ref} (${getLocalizedStatus(h.status, tt)})`)
+                    .join(", ") + (priorMatches.length > 3 ? ", ..." : "")
+                )}
             </InlineHint>
           )}
         </div>
@@ -3654,13 +2334,13 @@ function RmaForm({
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Section 1: Receiving Information */}
           <div className="form-section-title">
-            <ClipboardList size={15} /> Informasi Receiving
+            <ClipboardList size={15} /> {tt.rmaReceivingInfoTitle || "Informasi Receiving"}
           </div>
           <div
             className="form-grid-2"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
-            <Field label="Tanggal Masuk">
+            <Field label={tt.rmaReceivedDate || "Tanggal Masuk"}>
               <TextInput
                 type="date"
                 value={f.receivedDate}
@@ -3674,21 +2354,21 @@ function RmaForm({
                 }}
               />
             </Field>
-            <Field label="Jam Diterima">
+            <Field label={tt.rmaReceivedTime || "Jam Diterima"}>
               <TextInput
                 type="time"
                 value={f.receivedTime}
                 onChange={set("receivedTime")}
               />
             </Field>
-            <Field label="Diterima Oleh">
+            <Field label={tt.rmaReceivedBy || "Diterima Oleh"}>
               <TextInput
                 value={f.receivedBy}
                 onChange={set("receivedBy")}
-                placeholder="Nama penerima unit..."
+                placeholder={tt.rmaReceivedByPlaceholder || "Nama penerima unit..."}
               />
             </Field>
-            <Field label="Estimasi Selesai (ETA)" hint="Dihitung otomatis: Tanggal Masuk + 3 hari">
+            <Field label={tt.rmaEta || "Estimasi Selesai (ETA)"} hint={tt.rmaEtaHint || "Dihitung otomatis: Tanggal Masuk + 3 hari"}>
               <TextInput
                 type="date"
                 value={f.receivedDate ? addDaysISO(f.receivedDate, 3) : (f.eta || "")}
@@ -3700,19 +2380,19 @@ function RmaForm({
 
           {/* Section 2: Delivery / Unit Information */}
           <div className="form-section-title">
-            <Truck size={15} /> Informasi Pengiriman & Unit
+            <Truck size={15} /> {tt.rmaShippingUnitInfoTitle || "Informasi Pengiriman & Unit"}
           </div>
           <div
             className="form-grid-2"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
-            <Field label="No. DO / Surat Jalan Customer">
+            <Field label={tt.rmaDoNumber || "No. DO / Surat Jalan Customer"}>
               <TextInput value={f.doNumber} onChange={set("doNumber")} />
             </Field>
-            <Field label="Nama Pengirim / Kurir">
+            <Field label={tt.rmaCourierName || "Nama Pengirim / Kurir"}>
               <TextInput value={f.courierName} onChange={set("courierName")} />
             </Field>
-            <Field label="Jumlah Unit">
+            <Field label={tt.rmaUnitQty || "Jumlah Unit"}>
               <TextInput
                 type="number"
                 min="1"
@@ -3724,39 +2404,39 @@ function RmaForm({
 
           {/* Section 3: Physical Condition */}
           <div className="form-section-title">
-            <Boxes size={15} /> Kondisi Fisik & Kelengkapan
+            <Boxes size={15} /> {tt.rmaPhysicalConditionTitle || "Kondisi Fisik & Kelengkapan"}
           </div>
-          <Field label="Kondisi Fisik Saat Diterima">
+          <Field label={tt.rmaPhysicalCondition || "Kondisi Fisik Saat Diterima"}>
             <TextArea
               value={f.physicalCondition}
               onChange={set("physicalCondition")}
-              placeholder="cth. lecet minor di casing, tidak ada kerusakan berat"
+              placeholder={tt.rmaPhysicalConditionPlaceholder || "cth. lecet minor di casing, tidak ada kerusakan berat"}
             />
           </Field>
-          <Field label="Kelengkapan / Accessories">
+          <Field label={tt.rmaAccessories || "Kelengkapan / Accessories"}>
             <TextArea
               value={f.accessories}
               onChange={set("accessories")}
-              placeholder="cth. adaptor, kabel LAN, tanpa dus"
+              placeholder={tt.rmaAccessoriesPlaceholder || "cth. adaptor, kabel LAN, tanpa dus"}
             />
           </Field>
 
           {/* Section 4: Pre-Inspection Damage Notes */}
           <div className="form-section-title">
-            <AlertTriangle size={15} /> Kerusakan Fisik Sebelum Pengecekan
+            <AlertTriangle size={15} /> {tt.rmaPreInspectDamageTitle || "Kerusakan Fisik Sebelum Pengecekan"}
           </div>
           <Field
-            label="Catatan Kerusakan Fisik Sebelum Pengecekan"
-            hint="Dokumentasikan kerusakan fisik yang terlihat sebelum unit diperiksa / dibongkar oleh teknisi (cth. port LAN bengkok, casing retak, indikator cairan berubah warna)"
+            label={tt.rmaPhysicalDamageNotes || "Catatan Kerusakan Fisik Sebelum Pengecekan"}
+            hint={tt.rmaPhysicalDamageHint || "Dokumentasikan kerusakan fisik yang terlihat sebelum unit diperiksa / dibongkar oleh teknisi (cth. port LAN bengkok, casing retak, indikator cairan berubah warna)"}
           >
             <TextArea
               value={f.physicalDamageNotes}
               onChange={set("physicalDamageNotes")}
-              placeholder="Catatan rincian kerusakan fisik awal..."
+              placeholder={tt.rmaPhysicalDamagePlaceholder || "Catatan rincian kerusakan fisik awal..."}
             />
           </Field>
 
-          <Field label="Catatan General Receiving">
+          <Field label={tt.rmaReceivingNotes || "Catatan General Receiving"}>
             <TextArea
               value={f.receivingNotes}
               onChange={set("receivingNotes")}
@@ -3765,11 +2445,11 @@ function RmaForm({
 
           {/* Section 5: Unit & Label Photo Attachments */}
           <div className="form-section-title">
-            <ScanSearch size={15} /> Lampiran Foto Unit & Label SN/MAC
+            <ScanSearch size={15} /> {tt.rmaAttachmentsTitle || "Lampiran Foto Unit & Label SN/MAC"}
           </div>
 
           <InlineHint tone="info">
-            Foto yang dipilih akan diupload ke server lokal dan tersimpan metadata-nya di database saat tiket disimpan.
+            {tt.rmaPhotoUploadHint || "Foto yang dipilih akan diupload ke server lokal dan tersimpan metadata-nya di database saat tiket disimpan."}
           </InlineHint>
 
           <div
@@ -3778,7 +2458,7 @@ function RmaForm({
           >
             {/* ---- Foto Unit Card ---- */}
             <PhotoPickerCard
-              title="Foto Unit Perangkat"
+              title={tt.rmaUnitPhotos || "Foto Unit Perangkat"}
               photos={f.unitPhotos || []}
               onAdd={(newItem) =>
                 setF((s) => ({
@@ -3794,13 +2474,13 @@ function RmaForm({
                   unitPhotos: (s.unitPhotos || []).filter((_, i) => i !== idx),
                 }))
               }}
-              addLabel="+ Tambah Foto Unit"
+              addLabel={tt.rmaAddUnitPhoto || "+ Tambah Foto Unit"}
               capture="environment"
             />
 
             {/* ---- Foto Label SN/MAC Card ---- */}
             <PhotoPickerCard
-              title="Foto Label SN / MAC"
+              title={tt.rmaLabelPhotos || "Foto Label SN / MAC"}
               photos={f.labelPhotos || []}
               onAdd={(newItem) =>
                 setF((s) => ({
@@ -3816,7 +2496,7 @@ function RmaForm({
                   labelPhotos: (s.labelPhotos || []).filter((_, i) => i !== idx),
                 }))
               }}
-              addLabel="+ Tambah Foto Label SN / MAC"
+              addLabel={tt.rmaAddLabelPhoto || "+ Tambah Foto Label SN / MAC"}
               capture="environment"
             />
           </div>
@@ -3825,44 +2505,45 @@ function RmaForm({
 
       {tab === "diagnosis" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <Field label="Kendala Awal">
+          <Field label={tt.rmaInitialProblem || "Kendala Awal"}>
             <TextArea
               value={f.initialProblem}
               onChange={set("initialProblem")}
             />
           </Field>
-          <Field label="Gejala">
+          <Field label={tt.rmaSymptom || "Gejala"}>
             <TextArea
               value={f.symptom}
               onChange={set("symptom")}
-              placeholder="cth. PON LED tidak menyala"
+              placeholder={tt.rmaSymptomPlaceholder || "cth. PON LED tidak menyala"}
             />
           </Field>
-          <Field label="Hasil Pengecekan">
+          <Field label={tt.rmaCheckingResult || "Hasil Pengecekan"}>
             <TextArea
               value={f.checkingResult}
               onChange={set("checkingResult")}
             />
           </Field>
-          <Field label="Root Cause">
+          <Field label={tt.rmaRootCause || "Root Cause"}>
             <TextArea
               value={f.rootCause}
               onChange={set("rootCause")}
-              placeholder="cth. kerusakan optical module"
+              placeholder={tt.rmaRootCausePlaceholder || "cth. kerusakan optical module"}
             />
           </Field>
-          <Field label="Tindakan">
+          <Field label={tt.rmaActionTaken || "Tindakan"}>
             <TextArea
               value={f.actionTaken}
               onChange={set("actionTaken")}
-              placeholder="cth. Replacement PCBA"
+              placeholder={tt.rmaActionTakenPlaceholder || "cth. Replacement PCBA"}
             />
           </Field>
-          <Field label="Hasil Akhir">
+          <Field label={tt.rmaFinalResult || "Hasil Akhir"}>
             <Select
               options={finalResultOptions}
               value={f.finalResult}
               onChange={set("finalResult")}
+              t={tt}
             />
           </Field>
         </div>
@@ -3871,35 +2552,35 @@ function RmaForm({
       {tab === "waiting" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <InlineHint>
-            Isi bagian ini hanya jika status RMA sedang "Menunggu" — dipakai
-            untuk menghitung berapa lama tiket tertahan karena pihak tertentu.
+            {tt.rmaWaitingHint || "Isi bagian ini hanya jika status RMA sedang \"Menunggu\" — dipakai untuk menghitung berapa lama tiket tertahan karena pihak tertentu."}
           </InlineHint>
           <div
             className="form-grid-2"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
-            <Field label="Alasan Menunggu">
+            <Field label={tt.rmaWaitingReason || "Alasan Menunggu"}>
               <Select
                 options={master.waitingReasons}
                 value={f.waitingReason}
                 onChange={set("waitingReason")}
+                t={tt}
               />
             </Field>
-            <Field label="Pihak yang Ditunggu">
+            <Field label={tt.rmaWaitingParty || "Pihak yang Ditunggu"}>
               <TextInput
                 value={f.waitingParty}
                 onChange={set("waitingParty")}
-                placeholder="cth. Tim China, Customer"
+                placeholder={tt.rmaWaitingPartyPlaceholder || "cth. Tim China, Customer"}
               />
             </Field>
-            <Field label="Mulai Menunggu">
+            <Field label={tt.rmaWaitingStart || "Mulai Menunggu"}>
               <TextInput
                 type="date"
                 value={f.waitingStart}
                 onChange={set("waitingStart")}
               />
             </Field>
-            <Field label="Selesai Menunggu">
+            <Field label={tt.rmaWaitingEnd || "Selesai Menunggu"}>
               <TextInput
                 type="date"
                 value={f.waitingEnd}
@@ -3907,16 +2588,16 @@ function RmaForm({
               />
             </Field>
           </div>
-          <Field label="Catatan Waiting">
+          <Field label={tt.rmaWaitingNote || "Catatan Waiting"}>
             <TextArea value={f.waitingNote} onChange={set("waitingNote")} />
           </Field>
           {f.waitingStart && (
             <div style={{ fontSize: 12.5, color: T.ink2 }}>
-              Lama menunggu:{" "}
+              {tt.rmaWaitingDurationLabel || "Lama menunggu:"}{" "}
               <b style={{ color: T.cyan, fontFamily: mono }}>
-                {daysBetween(f.waitingStart, f.waitingEnd || todayISO())} hari
+                {daysBetween(f.waitingStart, f.waitingEnd || todayISO())} {tt.days || "hari"}
               </b>
-              {!f.waitingEnd && " (masih berjalan)"}
+              {!f.waitingEnd && (tt.rmaWaitingOngoing || " (masih berjalan)")}
             </div>
           )}
         </div>
@@ -3928,28 +2609,29 @@ function RmaForm({
             className="form-grid-2"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
-            <Field label="Status Warranty">
+            <Field label={tt.rmaWarrantyStatus || "Status Warranty"}>
               <Select
                 options={master.warrantyStatuses}
                 value={f.warrantyStatus}
                 onChange={set("warrantyStatus")}
+                t={tt}
               />
             </Field>
-            <Field label="Keputusan Warranty">
+            <Field label={tt.rmaWarrantyDecision || "Keputusan Warranty"}>
               <TextInput
                 value={f.warrantyDecision}
                 onChange={set("warrantyDecision")}
-                placeholder="cth. Ditanggung, Ditolak"
+                placeholder={tt.rmaWarrantyDecisionPlaceholder || "cth. Ditanggung, Ditolak"}
               />
             </Field>
-            <Field label="Warranty Start">
+            <Field label={tt.rmaWarrantyStart || "Warranty Start"}>
               <TextInput
                 type="date"
                 value={f.warrantyStart}
                 onChange={set("warrantyStart")}
               />
             </Field>
-            <Field label="Warranty End">
+            <Field label={tt.rmaWarrantyEnd || "Warranty End"}>
               <TextInput
                 type="date"
                 value={f.warrantyEnd}
@@ -3957,7 +2639,7 @@ function RmaForm({
               />
             </Field>
           </div>
-          <Field label="Alasan Keputusan Warranty">
+          <Field label={tt.rmaWarrantyReason || "Alasan Keputusan Warranty"}>
             <TextArea
               value={f.warrantyReason}
               onChange={set("warrantyReason")}
@@ -3978,41 +2660,43 @@ function RmaForm({
               gap: 6,
             }}
           >
-            <ClipboardCheck size={14} color={T.cyan} /> QC / TESTING
+            <ClipboardCheck size={14} color={T.cyan} /> {tt.rmaQcSectionTitle || "QC / TESTING"}
           </div>
           <div
             className="form-grid-2"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
-            <Field label="QC / Tester">
+            <Field label={tt.rmaQcTester || "QC / Tester"}>
               <Select
                 options={master.engineers}
                 value={f.qcTester}
                 onChange={set("qcTester")}
+                t={tt}
+                translateOptions={false}
               />
             </Field>
-            <Field label="Tanggal QC">
+            <Field label={tt.rmaQcDate || "Tanggal QC"}>
               <TextInput
                 type="date"
                 value={f.qcDate}
                 onChange={set("qcDate")}
               />
             </Field>
-            <Field label={t.rmaFinalResult || "Hasil Akhir"}>
+            <Field label={tt.rmaFinalResult || "Hasil Akhir"}>
               <Select
                 options={finalResultOptions}
                 value={f.finalResult}
                 onChange={set("finalResult")}
+                t={tt}
               />
             </Field>
           </div>
-          <Field label="Catatan QC">
+          <Field label={tt.rmaQcNotes || "Catatan QC"}>
             <TextArea value={f.qcNotes} onChange={set("qcNotes")} />
           </Field>
           {f.qcResult === "Fail" && (
             <InlineHint tone="warn">
-              QC Fail — status sebaiknya dikembalikan ke "Sedang Diperbaiki" di
-              tab Overview.
+              {tt.rmaQcFailHint || "QC Fail — status sebaiknya dikembalikan ke 'Sedang Diperbaiki' di tab Overview."}
             </InlineHint>
           )}
 
@@ -4027,37 +2711,38 @@ function RmaForm({
               marginTop: 8,
             }}
           >
-            <Truck size={14} color={T.cyan} /> SHIPPING
+            <Truck size={14} color={T.cyan} /> {tt.rmaShippingSectionTitle || "SHIPPING"}
           </div>
           <div
             className="form-grid-2"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
-            <Field label="Metode Pengiriman">
+            <Field label={tt.rmaShippingMethod || "Metode Pengiriman"}>
               <Select
                 options={master.pengiriman}
                 value={f.shipping}
                 onChange={set("shipping")}
+                t={tt}
               />
             </Field>
-            <Field label="No. Resi / Surat Jalan">
+            <Field label={tt.rmaTrackingNo || "No. Resi / Surat Jalan"}>
               <TextInput value={f.trackingNo} onChange={set("trackingNo")} />
             </Field>
-            <Field label="Tanggal Dikirim (Shipped)">
+            <Field label={tt.rmaShippedDate || "Tanggal Dikirim (Shipped)"}>
               <TextInput
                 type="date"
                 value={f.shippedDate}
                 onChange={set("shippedDate")}
               />
             </Field>
-            <Field label="Tanggal Diterima Customer">
+            <Field label={tt.rmaCustomerReceivedDate || "Tanggal Diterima Customer"}>
               <TextInput
                 type="date"
                 value={f.customerReceivedDate}
                 onChange={set("customerReceivedDate")}
               />
             </Field>
-            <Field label="Tanggal Ditutup (Closed)">
+            <Field label={tt.rmaClosedDate || "Tanggal Ditutup (Closed)"}>
               <TextInput
                 type="date"
                 value={f.closedDate}
@@ -4065,7 +2750,7 @@ function RmaForm({
               />
             </Field>
           </div>
-          <Field label="Keterangan">
+          <Field label={tt.rmaNotes || "Keterangan"}>
             <TextArea value={f.notes} onChange={set("notes")} />
           </Field>
         </div>
@@ -4100,10 +2785,21 @@ function RmaForm({
                 />
                 <div style={{ fontSize: 12.5 }}>
                   <div style={{ color: T.ink }}>
-                    {h.from ? `${h.from} → ${h.to}` : `Dibuat: ${h.to}`}
+                    {h.from
+                      ? `${getLocalizedStatus(h.from, tt)} → ${getLocalizedStatus(h.to, tt)}`
+                      : (tt.rmaStatusCreated || "Dibuat: {status}").replace(
+                          "{status}",
+                          getLocalizedStatus(h.to, tt)
+                        )}
                   </div>
                   <div style={{ color: T.ink3, fontSize: 11 }}>
-                    {new Date(h.changedAt).toLocaleString("id-ID")}{" "}
+                    {new Date(h.changedAt).toLocaleString(
+                      (localStorage.getItem("hsgq_language") || "id") === "zh"
+                        ? "zh-CN"
+                        : (localStorage.getItem("hsgq_language") || "id") === "en"
+                        ? "en-US"
+                        : "id-ID"
+                    )}{" "}
                     {h.changedBy ? `· ${h.changedBy}` : ""}{" "}
                     {h.note ? `· ${h.note}` : ""}
                   </div>
@@ -4112,7 +2808,7 @@ function RmaForm({
             ))}
           {(!f.statusHistory || f.statusHistory.length === 0) && (
             <div style={{ color: T.ink3, fontSize: 12.5 }}>
-              Belum ada riwayat.
+              {tt.rmaNoStatusHistory || "Belum ada riwayat."}
             </div>
           )}
         </div>
@@ -4129,11 +2825,11 @@ function RmaForm({
         }}
       >
         <Btn variant="ghost" onClick={onClose} disabled={saving}>
-          Batal
+          {tt.cancel || "Batal"}
         </Btn>
         <Btn variant="solid" onClick={handleSave} disabled={saving}>
           {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
-          Simpan Tiket
+          {tt.saveTicket || "Simpan Tiket"}
         </Btn>
       </div>
     </div>
@@ -4144,6 +2840,9 @@ function RmaForm({
    WA FORM (with communication history)
    ============================================================ */
 function WaForm({ initial, master, existingCaseNos, onSave, onClose, t }) {
+  const { t: ctxT } = useLanguage?.() || {};
+  const tt = ctxT || t || I18N.id;
+
   const [f, setF] = useState(
     initial || {
       id: uid(),
@@ -4166,7 +2865,6 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose, t }) {
   );
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
-  const tt = t || I18N.id;
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
   const addComm = () =>
     setF((s) => ({
@@ -4215,7 +2913,7 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose, t }) {
         className="form-grid-2"
         style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
       >
-        <Field label={tt.waCaseNo || "No. Case"}>
+        <Field label={tt.waCaseNo || "Nomor Case"}>
           <TextInput
             value={f.caseNo}
             onChange={set("caseNo")}
@@ -4229,11 +2927,12 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose, t }) {
             onChange={set("caseDate")}
           />
         </Field>
-        <Field label={tt.waEngineerTag || "Engineer / Tagging"}>
+        <Field label={tt.waEngineerTag || "Engineer Penanggung Jawab"}>
           <Select
             options={master.engineers}
             value={f.engineerTag}
             onChange={set("engineerTag")}
+            t={tt}
           />
         </Field>
         <Field label={tt.colStatus || "Status"}>
@@ -4241,18 +2940,19 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose, t }) {
             options={master.statusWA}
             value={f.status}
             onChange={set("status")}
+            t={tt}
           />
         </Field>
         <Field label={tt.waCustomerName || "Nama Customer"}>
           <TextInput value={f.customerName} onChange={set("customerName")} />
         </Field>
-        <Field label={tt.colCompany || "Perusahaan"}>
+        <Field label={tt.waCompany || tt.colCompany || "Perusahaan"}>
           <TextInput value={f.company} onChange={set("company")} />
         </Field>
-        <Field label={tt.colPhone || "No. HP Customer"}>
+        <Field label={tt.waCustomerPhone || tt.colPhone || "No. HP Customer"}>
           <TextInput value={f.customerPhone} onChange={set("customerPhone")} />
         </Field>
-        <Field label={tt.colType || "Type Perangkat"}>
+        <Field label={tt.waDeviceType || tt.colType || "Tipe"}>
           <TextInput value={f.deviceType} onChange={set("deviceType")} />
         </Field>
         <Field label="SN">
@@ -4269,7 +2969,7 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose, t }) {
             style={{ fontFamily: mono }}
           />
         </Field>
-        <Field label={tt.colSolvedDate || "Tanggal Solved"}>
+        <Field label={tt.waSolvedDate || tt.colSolvedDate || "Tanggal Selesai"}>
           <TextInput
             type="date"
             value={f.solvedDate}
@@ -4277,10 +2977,10 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose, t }) {
           />
         </Field>
       </div>
-      <Field label="Kendala Awal">
+      <Field label={tt.waInitialProblem || "Kendala Awal"}>
         <TextArea value={f.initialProblem} onChange={set("initialProblem")} />
       </Field>
-      <Field label="Analisa Akhir">
+      <Field label={tt.waFinalAnalysis || "Analisa Akhir"}>
         <TextArea value={f.finalAnalysis} onChange={set("finalAnalysis")} />
       </Field>
 
@@ -4302,10 +3002,10 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose, t }) {
               fontFamily: sans,
             }}
           >
-            Riwayat Komunikasi
+            {tt.waCommHistory || "Riwayat Komunikasi"}
           </span>
           <Btn variant="ghost" onClick={addComm}>
-            <Plus size={13} /> Tambah
+            <Plus size={13} /> {tt.waAdd || tt.add || "Tambah"}
           </Btn>
         </div>
         <div className="wa-comm-container" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -4329,19 +3029,21 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose, t }) {
                 options={master.engineers}
                 value={c.handledBy}
                 onChange={(e) => updateComm(c.id, "handledBy", e.target.value)}
+                t={tt}
               />
               <TextInput
-                placeholder="Ringkasan komunikasi"
+                placeholder={tt.waCommSummaryPlaceholder || tt.waSummaryPlaceholder || "Ringkasan komunikasi"}
                 value={c.summary}
                 onChange={(e) => updateComm(c.id, "summary", e.target.value)}
               />
               <TextInput
-                placeholder="Hasil"
+                placeholder={tt.waCommResultPlaceholder || tt.waResultPlaceholder || "Hasil"}
                 value={c.result}
                 onChange={(e) => updateComm(c.id, "result", e.target.value)}
               />
               <button
                 onClick={() => removeComm(c.id)}
+                title={tt.deleteAction || "Hapus"}
                 style={{
                   background: "none",
                   border: "none",
@@ -4356,8 +3058,7 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose, t }) {
           ))}
           {(!f.commHistory || f.commHistory.length === 0) && (
             <div style={{ fontSize: 12, color: T.ink3 }}>
-              Belum ada riwayat komunikasi — berguna kalau 1 case ditangani
-              beberapa engineer.
+              {tt.waNoCommHistory || "Belum ada riwayat komunikasi — berguna jika 1 case ditangani oleh beberapa engineer."}
             </div>
           )}
         </div>
@@ -4381,7 +3082,7 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose, t }) {
         </div>
       )}
 
-      <Field label="Keterangan">
+      <Field label={tt.waNotes || tt.colNotes || "Keterangan"}>
         <TextArea value={f.notes} onChange={set("notes")} />
       </Field>
       <div
@@ -4393,11 +3094,11 @@ function WaForm({ initial, master, existingCaseNos, onSave, onClose, t }) {
         }}
       >
         <Btn variant="ghost" onClick={onClose} disabled={saving}>
-          Batal
+          {tt.cancel || "Batal"}
         </Btn>
         <Btn variant="solid" onClick={handleSave} disabled={saving}>
           {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
-          Simpan Case
+          {tt.waSaveCase || "Simpan Case"}
         </Btn>
       </div>
     </div>
@@ -5094,7 +3795,7 @@ function Dashboard({ rma, wa, t, lastLoginLabel }) {
       </div>
       <div
         style={{
-          fontSize: 26,
+          fontSize: typeof value === "string" && value.length > 8 ? 16 : 26,
           fontFamily: mono,
           color: accent || T.ink,
           marginTop: 6,
@@ -5250,20 +3951,44 @@ function Dashboard({ rma, wa, t, lastLoginLabel }) {
           >
             {t.productCount}
           </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={productCount}>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={productCount} margin={{ top: 4, right: 8, left: 0, bottom: 60 }}>
               <CartesianGrid stroke={T.line} vertical={false} />
               <XAxis
                 dataKey="name"
                 stroke={T.ink3}
-                fontSize={11}
-                tick={{ fill: T.ink3 }}
+                fontSize={10}
+                interval={0}
+                tick={(props) => {
+                  const { x, y, payload } = props;
+                  const label = String(payload.value || "");
+                  const maxLen = 10;
+                  const truncated = label.length > maxLen ? label.slice(0, maxLen) + "…" : label;
+                  return (
+                    <g transform={`translate(${x},${y})`}>
+                      <text
+                        x={0}
+                        y={0}
+                        dy={10}
+                        textAnchor="end"
+                        fill={T.ink3}
+                        fontSize={10}
+                        fontFamily={sans}
+                        transform="rotate(-38)"
+                      >
+                        <title>{label}</title>
+                        {truncated}
+                      </text>
+                    </g>
+                  );
+                }}
               />
               <YAxis
                 stroke={T.ink3}
                 fontSize={11}
                 allowDecimals={false}
                 tick={{ fill: T.ink3 }}
+                width={28}
               />
               <Tooltip
                 contentStyle={{
@@ -5342,7 +4067,8 @@ function Dashboard({ rma, wa, t, lastLoginLabel }) {
    WEEKLY REPORT
    ============================================================ */
 function WeeklyReport({ rma, wa, t }) {
-  const tt = t || I18N.id;
+  const { t: ctxT } = useLanguage?.() || {};
+  const tt = ctxT || t || I18N.id;
   const [preset, setPreset] = useState("last7");
   const [start, setStart] = useState(() => getPresetDates("last7")?.from || dateNDaysAgoISO(6));
   const [end, setEnd] = useState(() => getPresetDates("last7")?.to || todayISO());
@@ -5447,7 +4173,7 @@ ${tt.weeklyReportIssueSection || "Kendala & Penanganan"}:
         const locStatus = getLocalizedStatus(c.status, tt);
 
         return `
-- Case ${i + 1} [${c.channel}] (${c.engineer || "-"})
+- ${tt.weeklyReportCaseLabel || "Case"} ${i + 1} [${c.channel}] (${c.engineer || "-"})
 ${tt.weeklyReportDateLabel || "Tanggal"}: ${fmtDate(c.date)}
 ${tt.weeklyReportCustomerLabel || "Customer / Perusahaan"}: ${c.customer}
 ${tt.weeklyReportTypeLabel || "Tipe Perangkat"}: ${c.type}
@@ -5489,7 +4215,7 @@ ${tt.weeklyReportStatusLabel || "Status"}: ${locStatus}
 
         return `
           <section class="case">
-            <div class="case-title">Case ${i + 1} - ${escapeHtml(c.channel)}</div>
+            <div class="case-title">${escapeHtml(tt.weeklyReportCaseLabel || "Case")} ${i + 1} - ${escapeHtml(c.channel)}</div>
             <div class="grid">
               <div><span>${escapeHtml(tt.weeklyReportDateLabel || "Date")}</span><strong>${escapeHtml(fmtDate(c.date))}</strong></div>
               <div><span>${escapeHtml(tt.colEngineer || "Engineer")}</span><strong>${escapeHtml(c.engineer || "-")}</strong></div>
@@ -5543,11 +4269,11 @@ ${tt.weeklyReportStatusLabel || "Status"}: ${locStatus}
             <div class="header-text">
               <div class="brand">HSGQ Indonesia</div>
               <h1>${escapeHtml(tt.weeklyReportTitle || "Weekly Technical Support Report")}</h1>
-              <div class="period">${escapeHtml(fmtDate(start))} - ${escapeHtml(fmtDate(end))}</div>
+              <div class="period">${escapeHtml(tt.weeklyReportPeriod || "Periode")}: ${escapeHtml(fmtDate(start))} - ${escapeHtml(fmtDate(end))}</div>
             </div>
             <img src="${hsgqLogo}" class="header-logo" alt="HSGQ Logo" />
           </div>
-          ${cases.length ? rows : `<div class="empty">${escapeHtml(tt.reportEmptyRange || "Tidak ada case pada rentang tanggal ini.")}</div>`}
+          ${cases.length ? rows : `<div class="empty">${escapeHtml(tt.weeklyReportEmptyRange || tt.reportEmptyRange || "Tidak ada case pada rentang tanggal ini.")}</div>`}
         </body>
       </html>`);
     win.document.close();
@@ -5564,7 +4290,7 @@ ${tt.weeklyReportStatusLabel || "Status"}: ${locStatus}
           flexWrap: "wrap",
         }}
       >
-        <Field label={tt.weeklyReportFromDate || tt.reportFromDate || "Dari Tanggal"}>
+        <Field label={tt.weeklyReportStartDate || tt.weeklyReportFromDate || tt.reportFromDate || "Dari Tanggal"}>
           <TextInput
             type="date"
             value={start}
@@ -5575,7 +4301,7 @@ ${tt.weeklyReportStatusLabel || "Status"}: ${locStatus}
           />
         </Field>
 
-        <Field label={tt.weeklyReportToDate || tt.reportToDate || "Sampai Tanggal"}>
+        <Field label={tt.weeklyReportEndDate || tt.weeklyReportToDate || tt.reportToDate || "Sampai Tanggal"}>
           <TextInput
             type="date"
             value={end}
@@ -5586,7 +4312,7 @@ ${tt.weeklyReportStatusLabel || "Status"}: ${locStatus}
           />
         </Field>
 
-        <Field label={tt.presetSelect || "Preset Rentang"}>
+        <Field label={tt.presetRange || tt.presetSelect || tt.dateRangePreset || "Preset Rentang"}>
           <select
             value={preset}
             onChange={(e) => applyPreset(e.target.value)}
@@ -5598,10 +4324,10 @@ ${tt.weeklyReportStatusLabel || "Status"}: ${locStatus}
               cursor: "pointer",
             }}
           >
-            <option value="">{tt.presetSelect || "Pilih Preset"}</option>
+            <option value="">{tt.selectPreset || tt.presetSelectOption || "Pilih Preset"}</option>
             <option value="custom">{tt.customRange || "Custom (Bebas)"}</option>
             <option value="today">{tt.today || "Hari Ini"}</option>
-            <option value="last7">{tt.weeklyReportLast7Days || tt.last7Days || "7 Hari Terakhir"}</option>
+            <option value="last7">{tt.last7Days || tt.weeklyReportLast7Days || "7 Hari Terakhir"}</option>
             <option value="last30">{tt.last30Days || "30 Hari Terakhir"}</option>
             <option value="thisMonth">{tt.thisMonth || "Bulan Ini"}</option>
             <option value="lastMonth">{tt.lastMonth || "Bulan Lalu"}</option>
@@ -5611,7 +4337,7 @@ ${tt.weeklyReportStatusLabel || "Status"}: ${locStatus}
 
         {preset !== "last7" && (
           <Btn variant="ghost" onClick={resetDate} style={{ marginBottom: 1 }}>
-            {tt.resetDate || "Reset (7 Hari)"}
+            {tt.resetDate || "Reset"}
           </Btn>
         )}
 
@@ -5663,9 +4389,6 @@ ${tt.weeklyReportStatusLabel || "Status"}: ${locStatus}
 /* ============================================================
    UNIT HISTORY SUMMARY (3-Group Layout: Total / RMA / WhatsApp)
    ============================================================ */
-/* ============================================================
-   UNIT HISTORY SUMMARY (3-Group Layout: Total / RMA / WhatsApp)
-   ============================================================ */
 function UnitHistorySummary({
   baseRows,
   filteredRows,
@@ -5675,6 +4398,9 @@ function UnitHistorySummary({
   master,
   t,
 }) {
+  const { t: ctxT } = useLanguage?.() || {};
+  const curT = ctxT || t || I18N.id;
+
   const rowsForCounting = Array.isArray(baseRows)
     ? baseRows
     : Array.isArray(filteredRows)
@@ -5775,7 +4501,7 @@ function UnitHistorySummary({
             fontFamily: sans,
           }}
         >
-          {t?.totalUnitHistoryHeading || "TOTAL RIWAYAT UNIT"}
+          {curT.totalUnitHistoryHeading || curT.totalUnitHistory || "TOTAL RIWAYAT UNIT"}
         </div>
         <button
           type="button"
@@ -5785,7 +4511,7 @@ function UnitHistorySummary({
             e.stopPropagation();
             onSelectSummary && onSelectSummary(null, null);
           }}
-          title={t?.filterAll || "Klik untuk menampilkan seluruh riwayat unit"}
+          title={curT.filterAll || curT.totalUnitHistory || "Klik untuk menampilkan seluruh riwayat unit"}
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -5802,7 +4528,7 @@ function UnitHistorySummary({
           }}
         >
           <span style={{ color: T.cyan, fontWeight: isTotalAllActive ? 700 : 600 }}>
-            {t?.totalUnitHistoryBadge || "Total Riwayat Unit"}:
+            {curT.totalUnitHistoryBadge || curT.totalUnitHistory || "Total Riwayat Unit"}:
           </span>
           <span style={{ color: T.ink, fontWeight: 700, fontSize: 16 }}>
             {rowsForCounting.length}
@@ -5826,7 +4552,7 @@ function UnitHistorySummary({
             gap: 6,
           }}
         >
-          <span>{t?.sectionRma || "RMA"}</span>
+          <span>{curT.sectionRma || curT.rmaHistory || "RMA"}</span>
         </div>
         <div
           style={{
@@ -5849,7 +4575,7 @@ function UnitHistorySummary({
                   onSelectSummary &&
                     onSelectSummary(isRmaTotalActive ? null : "RMA", null);
                 }}
-                title="Klik untuk memfilter semua kasus RMA"
+                title={curT.filterAllRma || "Klik untuk memfilter semua kasus RMA"}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -5868,7 +4594,7 @@ function UnitHistorySummary({
                 }}
               >
                 <span style={{ color: T.cyan, fontWeight: 600 }}>
-                  {t?.totalRmaBadge || "Total RMA"}:
+                  {curT.totalRmaBadge || curT.totalRma || "Total RMA"}:
                 </span>
                 <span style={{ color: T.ink, fontWeight: 700 }}>
                   {rmaRows.length}
@@ -5881,7 +4607,7 @@ function UnitHistorySummary({
           {rmaStatusList.map((st) => {
             const count = rmaStatusCounts[st] || 0;
             const color = ledColor(st);
-            const localizedLabel = getLocalizedStatus(st, t);
+            const localizedLabel = getLocalizedStatus(st, curT);
             const isActive =
               channelFilter === "RMA" &&
               statusFilter &&
@@ -5898,7 +4624,7 @@ function UnitHistorySummary({
                   onSelectSummary &&
                     onSelectSummary(isActive ? null : "RMA", isActive ? null : st);
                 }}
-                title={`Klik untuk memfilter RMA status: ${localizedLabel}`}
+                title={`${curT.clickToFilter || "Klik untuk filter"}: RMA - ${localizedLabel}`}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -5962,7 +4688,7 @@ function UnitHistorySummary({
               background: T.green,
             }}
           />
-          <span>{t?.sectionWa || "WHATSAPP"}</span>
+          <span>{curT.sectionWa || curT.waHistory || "WHATSAPP"}</span>
         </div>
         <div
           style={{
@@ -5985,7 +4711,7 @@ function UnitHistorySummary({
                   onSelectSummary &&
                     onSelectSummary(isWaTotalActive ? null : "WhatsApp", null);
                 }}
-                title="Klik untuk memfilter semua kasus WhatsApp"
+                title={curT.filterAllWa || "Klik untuk memfilter semua kasus WhatsApp"}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -6004,7 +4730,7 @@ function UnitHistorySummary({
                 }}
               >
                 <span style={{ color: T.green, fontWeight: 600 }}>
-                  {t?.totalWaBadge || "Total WhatsApp"}:
+                  {curT.totalWaBadge || curT.totalWa || "Total WhatsApp"}:
                 </span>
                 <span style={{ color: T.ink, fontWeight: 700 }}>
                   {waRows.length}
@@ -6017,7 +4743,7 @@ function UnitHistorySummary({
           {waStatusList.map((st) => {
             const count = waStatusCounts[st] || 0;
             const color = ledColor(st);
-            const localizedLabel = getLocalizedStatus(st, t);
+            const localizedLabel = getLocalizedStatus(st, curT);
             const isActive =
               channelFilter === "WhatsApp" &&
               statusFilter &&
@@ -6034,7 +4760,7 @@ function UnitHistorySummary({
                   onSelectSummary &&
                     onSelectSummary(isActive ? null : "WhatsApp", isActive ? null : st);
                 }}
-                title={`Klik untuk memfilter WhatsApp status: ${localizedLabel}`}
+                title={`${curT.clickToFilter || "Klik untuk filter"}: WhatsApp - ${localizedLabel}`}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -6081,6 +4807,9 @@ function UnitHistorySummary({
    UNIT HISTORY / QUICK SEARCH SN-MAC
    ============================================================ */
 function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
+  const { t: ctxT } = useLanguage?.() || {};
+  const curT = ctxT || t || I18N.id;
+
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -6181,7 +4910,7 @@ function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
           e.mac,
           e.customer,
           e.issue,
-          getLocalizedStatus(e.status, t),
+          getLocalizedStatus(e.status, curT),
         ]
           .filter(Boolean)
           .join(" ")
@@ -6217,7 +4946,7 @@ function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
     }
 
     return result;
-  }, [combinedRows, search, fromDate, toDate, colFilters, t]);
+  }, [combinedRows, search, fromDate, toDate, colFilters, curT]);
 
   const filteredUnitHistory = useMemo(() => {
     let result = Array.isArray(baseFilteredUnitHistory) ? baseFilteredUnitHistory : [];
@@ -6262,7 +4991,7 @@ function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
   const columns = [
     {
       key: "ref",
-      label: t?.colTicket || "Ticket / Case",
+      label: curT.colTicket || "No. Tiket / Kasus",
       mono: true,
       render: (r) => (
         <span style={{ color: T.cyan, fontWeight: 600 }}>{r.ref}</span>
@@ -6270,7 +4999,7 @@ function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
     },
     {
       key: "channel",
-      label: t?.colChannel || "Channel",
+      label: curT.colChannel || "Channel",
       render: (r) => (
         <span
           style={{
@@ -6288,21 +5017,21 @@ function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
     },
     {
       key: "status",
-      label: t?.colStatus || "Status",
+      label: curT.colStatus || "Status",
       type: "status",
-      render: (r) => <StatusLed status={r.status} t={t} />,
+      render: (r) => <StatusLed status={r.status} t={curT} />,
     },
     {
       key: "product",
-      label: t?.colProduct || "Produk / Type",
+      label: curT.colProduct || "Produk / Type",
     },
     {
       key: "engineer",
-      label: t?.colEngineer || "Engineer",
+      label: curT.colEngineer || "Engineer",
     },
     {
       key: "date",
-      label: t?.colDate || "Tanggal",
+      label: curT.colDate || "Tanggal",
       type: "date",
       filterable: false,
       render: (r) => fmtDate(r.date),
@@ -6339,11 +5068,11 @@ function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
     },
     {
       key: "customer",
-      label: t?.colCustomer || "Customer",
+      label: curT.colCustomer || "Customer",
     },
     {
       key: "issue",
-      label: t?.colProblem || "Kendala / Analisa",
+      label: curT.colProblem || "Kendala / Analisa",
       render: (r) => {
         const text = String(r.issue || "-");
         if (text.length <= 35) return text;
@@ -6363,7 +5092,7 @@ function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
         <IconBtn
           icon={Eye}
           onClick={() => onSelectDetail && onSelectDetail(r.channel, r.raw)}
-          title={t?.viewDetail || "Lihat detail"}
+          title={curT.viewDetail || "Lihat detail"}
         />
       ),
     },
@@ -6375,7 +5104,7 @@ function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
       <DateRangeToolbar
         search={search}
         setSearch={setSearch}
-        searchPlaceholder={t?.unitHistorySearchPlaceholder || "Cari SN, MAC, customer, case, RMA..."}
+        searchPlaceholder={curT.unitHistorySearchPlaceholder || "Cari SN, MAC, Customer, Tiket..."}
         fromDate={fromDate}
         setFromDate={setFromDate}
         toDate={toDate}
@@ -6393,7 +5122,7 @@ function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
           Boolean(channelFilter) ||
           Boolean(statusFilter)
         }
-        t={t}
+        t={curT}
       />
 
       {/* ── 3-Group Summary (Total / RMA / WhatsApp) ── */}
@@ -6407,12 +5136,12 @@ function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
           setStatusFilter(st);
         }}
         master={master}
-        t={t}
+        t={curT}
       />
 
       {search.trim() && filteredUnitHistory.length > 1 && (
         <InlineHint tone="warn">
-          {t?.unitHistoryPriorWarning ? t.unitHistoryPriorWarning.replace("{n}", filteredUnitHistory.length) : `Ditemukan ${filteredUnitHistory.length} riwayat unit.`}
+          {curT.unitHistoryPriorWarning ? curT.unitHistoryPriorWarning.replace("{n}", filteredUnitHistory.length) : `Ditemukan ${filteredUnitHistory.length} riwayat unit.`}
         </InlineHint>
       )}
 
@@ -6424,7 +5153,7 @@ function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
           fontFamily: sans,
         }}
       >
-        {(t?.unitHistoryShowing || "Menampilkan {shown} dari {total} riwayat unit")
+        {(curT.unitHistoryShowing || "Menampilkan {shown} dari {total} riwayat unit")
           .replace("{shown}", filteredUnitHistory.length)
           .replace("{total}", combinedRows.length)}
       </div>
@@ -6435,13 +5164,13 @@ function UnitHistory({ rma = [], wa = [], master, t, onSelectDetail }) {
         rows={filteredUnitHistory}
         colFilters={colFilters}
         onColFilter={onColFilter}
-        t={t}
+        t={curT}
         emptyLabel={
           (fromDate || toDate) && filteredUnitHistory.length === 0
-            ? (t?.noDataForDateRange || "Tidak ada data pada rentang tanggal yang dipilih.")
+            ? (curT.noDataForDateRange || "Tidak ada data pada rentang tanggal yang dipilih.")
             : search.trim() && filteredUnitHistory.length === 0
-            ? (t?.unitHistoryNotFound ? t.unitHistoryNotFound.replace('"{q}"', `"${search}"`) : "Tidak ditemukan riwayat unit.")
-            : "Belum ada riwayat unit."
+            ? (curT.unitHistoryNotFound ? curT.unitHistoryNotFound.replace('"{q}"', `"${search}"`) : "Tidak ditemukan riwayat unit.")
+            : (curT.noUnitHistoryData || "Belum ada riwayat unit.")
         }
         columns={columns}
       />
@@ -6501,7 +5230,7 @@ function TagList({ label, items = [], onChange, t, isViewer = false }) {
           <TextInput
             value={val}
             onChange={(e) => setVal(e.target.value)}
-            placeholder="Tambah item..."
+            placeholder={curT.addItemPlaceholder || "Tambah item..."}
             style={{ flex: 1 }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && val.trim()) {
@@ -6695,8 +5424,7 @@ function GoodsReceiptForm({ master, pcbaItems = [], onSave, onClose, t }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <InlineHint>
-        Stok masuk (goods receipt) langsung berstatus "Good" dan siap dipakai
-        untuk replacement.
+        {t.pcbaGoodsReceiptHint || 'Stok masuk (goods receipt) langsung berstatus "Good" dan siap dipakai untuk replacement.'}
       </InlineHint>
       {err && <InlineHint tone="warn">{err}</InlineHint>}
       <div
@@ -6808,7 +5536,7 @@ function PcbaDetailModal({ item, pcba, rma, onClose, t }) {
   const itemChinaShipments = (pcba.chinaShipments || []).filter((s) => s.pcbaItemId === item.id);
 
   return (
-    <Modal title={`DETAIL PCBA — ${item.serialNo || "-"}`} onClose={onClose} width={640}>
+    <Modal title={`${t.detailPcbaTitle || "DETAIL PCBA"} — ${item.serialNo || "-"}`} onClose={onClose} width={640}>
       <div style={{ display: "flex", flexDirection: "column", gap: 16, maxHeight: "75vh", overflowY: "auto", paddingRight: 4 }}>
         {/* Status Header */}
         <div
@@ -7192,7 +5920,7 @@ function TransactionDetailModal({ transaction, pcba, rma, onClose, t }) {
   const rmaTicket = (rma || []).find((x) => x.id === transaction.rmaId);
 
   return (
-    <Modal title={`DETAIL TRANSAKSI — ${transaction.transactionNo || "-"}`} onClose={onClose} width={560}>
+    <Modal title={`${t.detailTransactionTitle || "DETAIL TRANSAKSI"} — ${transaction.transactionNo || "-"}`} onClose={onClose} width={560}>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 12.5 }}>
           <div>
@@ -7322,7 +6050,7 @@ function ReplacementDetailModal({ replacement, pcba, rma, onClose, t }) {
   ) || oldItem?.status === "Sent" || oldItem?.status === "Sent to China";
 
   return (
-    <Modal title={`DETAIL REPLACEMENT — ${replacement.replacementNo || "-"}`} onClose={onClose} width={560}>
+    <Modal title={`${t.detailReplacementTitle || "DETAIL REPLACEMENT"} — ${replacement.replacementNo || "-"}`} onClose={onClose} width={560}>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 12.5 }}>
           <div>
@@ -7631,15 +6359,15 @@ function EditChinaShipmentModal({ shipment, pcba, onSave, onClose, t }) {
 
         <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ color: T.ink3, fontSize: 11 }}>No. Pengiriman:</div>
+            <div style={{ color: T.ink3, fontSize: 11 }}>{t.pcbaShipmentNo || "No. Pengiriman"}:</div>
             <div style={{ fontWeight: 700, fontFamily: mono, color: T.cyan, fontSize: 13 }}>{shipment.shipmentNo || shipment.id}</div>
           </div>
           <div>
-            <div style={{ color: T.ink3, fontSize: 11 }}>Tipe PCBA:</div>
+            <div style={{ color: T.ink3, fontSize: 11 }}>{t.pcbaType || "Tipe PCBA"}:</div>
             <div style={{ fontWeight: 600, color: T.ink, fontSize: 13 }}>{item?.pcbaType || "-"}</div>
           </div>
           <div>
-            <div style={{ color: T.ink3, fontSize: 11 }}>Status Item:</div>
+            <div style={{ color: T.ink3, fontSize: 11 }}>{t.colStatus || "Status Item"}:</div>
             <div>
               <PcbaBadge status={item?.status || "Sent"} t={t} />
             </div>
@@ -7647,7 +6375,7 @@ function EditChinaShipmentModal({ shipment, pcba, onSave, onClose, t }) {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field label="No. Serial (SN)">
+          <Field label={t.colSerial || "No. Serial (SN)"}>
             <TextInput
               value={serialNumber}
               onChange={(e) => setSerialNumber(e.target.value)}
@@ -7655,7 +6383,7 @@ function EditChinaShipmentModal({ shipment, pcba, onSave, onClose, t }) {
             />
           </Field>
 
-          <Field label="MAC Address">
+          <Field label={t.colMac || "MAC Address"}>
             <TextInput
               value={macAddress}
               onChange={(e) => setMacAddress(e.target.value)}
@@ -7665,7 +6393,7 @@ function EditChinaShipmentModal({ shipment, pcba, onSave, onClose, t }) {
           </Field>
         </div>
 
-        <Field label={t.colDate || "Tanggal Kirim"}>
+        <Field label={t.pcbaSendDate || t.colDate || "Tanggal Kirim"}>
           <TextInput
             type="date"
             value={date}
@@ -7673,12 +6401,12 @@ function EditChinaShipmentModal({ shipment, pcba, onSave, onClose, t }) {
           />
         </Field>
 
-        <Field label={t.pcbaNotes || "Catatan Kerusakan / Keterangan"}>
+        <Field label={t.pcbaDamageNotes || t.pcbaNotes || "Catatan Kerusakan / Keterangan"}>
           <TextArea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            placeholder="Catatan kendala / keterangan pengiriman..."
+            placeholder={t.damageNotesPlaceholder || "Catatan kendala / keterangan pengiriman..."}
           />
         </Field>
 
@@ -7690,8 +6418,8 @@ function EditChinaShipmentModal({ shipment, pcba, onSave, onClose, t }) {
             variant="solid"
             disabled={saving}
             onClick={async () => {
-              if (!serialNumber.trim()) return setErr("No. Serial (SN) wajib diisi.");
-              if (!date) return setErr("Tanggal pengiriman wajib diisi.");
+              if (!serialNumber.trim()) return setErr(t.errSnRequired || "No. Serial (SN) wajib diisi.");
+              if (!date) return setErr(t.errSendDateRequired || "Tanggal pengiriman wajib diisi.");
 
               setSaving(true);
               const ok = await onSave(shipment.id, {
@@ -7706,12 +6434,12 @@ function EditChinaShipmentModal({ shipment, pcba, onSave, onClose, t }) {
               if (ok) {
                 onClose();
               } else {
-                setErr("Gagal menyimpan perubahan pengiriman.");
+                setErr(t.waSaveFailed || "Gagal menyimpan perubahan pengiriman.");
               }
             }}
           >
             {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : null}{" "}
-            {t.saveAction || "Simpan Perubahan"}
+            {t.saveAction || t.saveChanges || "Simpan Perubahan"}
           </Btn>
         </div>
       </div>
@@ -7724,23 +6452,23 @@ function ChinaShipmentDetailModal({ shipment, pcba, onClose, t }) {
   const item = (pcba.items || []).find((i) => i.id === shipment.pcbaItemId);
 
   return (
-    <Modal title={`DETAIL PENGIRIMAN KE CHINA — ${shipment.serialNumber || shipment.serialNo || "-"}`} onClose={onClose} width={580}>
+    <Modal title={`${t.detailChinaShipmentTitle || "DETAIL PENGIRIMAN KE CHINA"} — ${shipment.serialNumber || shipment.serialNo || "-"}`} onClose={onClose} width={580}>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 12.5 }}>
           <div>
-            <div style={{ color: T.ink3 }}>No. Pengiriman:</div>
+            <div style={{ color: T.ink3 }}>{t.pcbaShipmentNo || "No. Pengiriman"}:</div>
             <div style={{ fontWeight: 700, fontFamily: mono, color: T.cyan }}>{shipment.shipmentNo || shipment.id}</div>
           </div>
           <div>
-            <div style={{ color: T.ink3 }}>No. Serial (SN):</div>
+            <div style={{ color: T.ink3 }}>{t.colSerial || "No. Serial (SN)"}:</div>
             <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{shipment.serialNumber || shipment.serialNo || item?.serialNo || "-"}</div>
           </div>
           <div>
-            <div style={{ color: T.ink3 }}>MAC Address:</div>
+            <div style={{ color: T.ink3 }}>{t.colMac || "MAC Address"}:</div>
             <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{shipment.macAddress || shipment.mac || item?.mac || "-"}</div>
           </div>
           <div>
-            <div style={{ color: T.ink3 }}>{t.colDate || "Tanggal Kirim"}:</div>
+            <div style={{ color: T.ink3 }}>{t.pcbaSendDate || t.colDate || "Tanggal Kirim"}:</div>
             <div style={{ fontWeight: 600, color: T.ink }}>{fmtDate(shipment.date || shipment.createdAt)}</div>
           </div>
           <div>
@@ -7757,7 +6485,7 @@ function ChinaShipmentDetailModal({ shipment, pcba, onClose, t }) {
 
         <div>
           <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 4 }}>
-            {t.pcbaNotes || "Catatan Kerusakan / Keterangan"}
+            {t.pcbaDamageNotes || t.pcbaNotes || "Catatan Kerusakan / Keterangan"}
           </div>
           <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: T.ink, whiteSpace: "pre-wrap" }}>
             {shipment.notes && shipment.notes.trim() ? shipment.notes : "-"}
@@ -7788,7 +6516,7 @@ function DeleteChinaShipmentModal({ shipment, pcba, onDelete, onClose, t }) {
     if (ok) {
       onClose();
     } else {
-      setErrorMsg("Gagal membatalkan pengiriman. Silakan coba lagi.");
+      setErrorMsg(t.pcbaDeleteFailed || "Gagal membatalkan pengiriman. Silakan coba lagi.");
     }
   };
 
@@ -7801,19 +6529,19 @@ function DeleteChinaShipmentModal({ shipment, pcba, onDelete, onClose, t }) {
 
         <div style={{ background: T.panel2, border: `1px solid ${T.line}`, borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12.5 }}>
           <div>
-            <div style={{ color: T.ink3 }}>No. Pengiriman:</div>
+            <div style={{ color: T.ink3 }}>{t.pcbaShipmentNo || "No. Pengiriman"}:</div>
             <div style={{ fontWeight: 700, fontFamily: mono, color: T.cyan }}>{shipment.shipmentNo || shipment.id}</div>
           </div>
           <div>
-            <div style={{ color: T.ink3 }}>Serial Number (SN):</div>
+            <div style={{ color: T.ink3 }}>{t.colSerial || "Serial Number (SN)"}:</div>
             <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{shipment.serialNumber || shipment.serialNo || item?.serialNo || "-"}</div>
           </div>
           <div>
-            <div style={{ color: T.ink3 }}>MAC Address:</div>
+            <div style={{ color: T.ink3 }}>{t.colMac || "MAC Address"}:</div>
             <div style={{ fontWeight: 600, fontFamily: mono, color: T.ink }}>{shipment.macAddress || shipment.mac || "-"}</div>
           </div>
           <div>
-            <div style={{ color: T.ink3 }}>Tanggal:</div>
+            <div style={{ color: T.ink3 }}>{t.colDate || "Tanggal"}:</div>
             <div style={{ color: T.ink, fontWeight: 600 }}>{fmtDate(shipment.date || shipment.createdAt)}</div>
           </div>
         </div>
@@ -7868,8 +6596,7 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose, t })
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <InlineHint>
-        Sistem menolak otomatis kalau stok PCBA Good untuk tipe terkait kosong.
-        PCBA lama yang dilepas akan otomatis masuk stok sebagai "Bad".
+        {t.pcbaReplacementHint || "Sistem menolak otomatis kalau stok PCBA Good untuk tipe terkait kosong. PCBA lama yang dilepas akan otomatis masuk stok sebagai 'Bad'."}
       </InlineHint>
       {err && <InlineHint tone="warn">{err}</InlineHint>}
       <Field label={t.pcbaRelatedRma || "RMA Terkait"}>
@@ -7897,12 +6624,11 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose, t })
       </Field>
       {goodItems.length === 0 && (
         <InlineHint tone="warn">
-          Tidak ada stok PCBA berstatus Good sama sekali. Lakukan "Terima PCBA
-          Baru" dulu di tab Stok.
+          {t.pcbaNoGoodStockWarning || "Tidak ada stok PCBA berstatus Good sama sekali. Lakukan 'Terima PCBA Baru' dulu di tab Stok."}
         </InlineHint>
       )}
       <Field
-        label={t.pcbaOldSerialLabel || "No. Serial PCBA Lama (yang dilepas dari unit)"}
+        label={t.pcbaOldSerialLabel || "No. Seri PCBA Lama (yang dilepas dari unit)"}
         hint={
           isSnMissing ? (
             <span style={{ color: T.amber, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
@@ -7947,13 +6673,13 @@ function ReplacementForm({ master, rmaOpenList, goodItems, onSave, onClose, t })
           variant="solid"
           disabled={saving}
           onClick={async () => {
-            if (!f.rmaId) return setErr("Pilih RMA terkait dulu.");
+            if (!f.rmaId) return setErr(t.errRmaRequired || "Pilih RMA terkait dulu.");
             if (!f.newPcbaItemId)
-              return setErr("Pilih PCBA baru (stok Good) dulu.");
+              return setErr(t.errNewPcbaRequired || "Pilih PCBA baru (stok Good) dulu.");
             if (!f.oldSerialNo.trim())
               return setErr(t.pcbaSnNotFoundInRma || "SN PCBA tidak ditemukan pada RMA terkait.");
             if (!f.replacedBy)
-              return setErr("Pilih engineer yang melakukan replacement.");
+              return setErr(t.errEngineerRequired || "Pilih engineer yang melakukan replacement.");
             setSaving(true);
             const res = await onSave(f);
             setSaving(false);
@@ -8019,8 +6745,7 @@ function SendToChinaForm({ pcba, onSave, onClose, t }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <InlineHint>
-        Khusus untuk mencatat PCBA berstatus Bad yang dikirim ke China untuk proses perbaikan.
-        Stok Bad akan otomatis berkurang dan riwayat pengiriman tercatat di sistem.
+        {t.pcbaSendToChinaHint || "Khusus untuk mencatat PCBA berstatus Bad yang dikirim ke China untuk proses perbaikan. Stok Bad akan otomatis berkurang dan riwayat pengiriman tercatat di sistem."}
       </InlineHint>
       {err && <InlineHint tone="warn">{err}</InlineHint>}
 
@@ -8053,7 +6778,7 @@ function SendToChinaForm({ pcba, onSave, onClose, t }) {
         className="form-grid-2"
         style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
       >
-        <Field label="No. Serial (SN)">
+        <Field label={t.colSerial || "No. Serial (SN)"}>
           <TextInput
             value={manualSn}
             onChange={(e) => {
@@ -8066,7 +6791,7 @@ function SendToChinaForm({ pcba, onSave, onClose, t }) {
           />
         </Field>
 
-        <Field label="MAC Address">
+        <Field label={t.colMac || "MAC Address"}>
           <TextInput
             value={macAddress}
             onChange={(e) => setMacAddress(e.target.value)}
@@ -8075,7 +6800,7 @@ function SendToChinaForm({ pcba, onSave, onClose, t }) {
           />
         </Field>
 
-        <Field label={t.colDate || "Tanggal Kirim"}>
+        <Field label={t.pcbaSendDate || t.colDate || "Tanggal Kirim"}>
           <TextInput
             type="date"
             value={date}
@@ -8100,17 +6825,17 @@ function SendToChinaForm({ pcba, onSave, onClose, t }) {
             {selectedItem ? (
               <PcbaBadge status={selectedItem.status} t={t} />
             ) : (
-              <span style={{ color: T.ink3 }}>Belum dipilih</span>
+              <span style={{ color: T.ink3 }}>{t.notSelected || "Belum dipilih"}</span>
             )}
           </div>
         </Field>
       </div>
 
-      <Field label={t.pcbaNotes || "Catatan Kerusakan / Keterangan"}>
+      <Field label={t.pcbaDamageNotes || t.pcbaNotes || "Catatan Kerusakan / Keterangan"}>
         <TextArea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Contoh: PON tidak detect, Power issue, chip terbakar..."
+          placeholder={t.damageNotesPlaceholder || "Contoh: PON tidak detect, Power issue, chip terbakar..."}
           rows={3}
         />
       </Field>
@@ -8125,7 +6850,7 @@ function SendToChinaForm({ pcba, onSave, onClose, t }) {
           onClick={async () => {
             const snTrimmed = manualSn.trim();
             if (!snTrimmed) {
-              return setErr("No. Serial (SN) wajib diisi.");
+              return setErr(t.errSnRequired || "No. Serial (SN) wajib diisi.");
             }
 
             const targetItem = (pcba.items || []).find(
@@ -8133,7 +6858,7 @@ function SendToChinaForm({ pcba, onSave, onClose, t }) {
             );
 
             if (!targetItem) {
-              return setErr(`PCBA dengan SN "${snTrimmed}" tidak ditemukan di inventaris.`);
+              return setErr(t.pcbaNotFoundInInventory || `PCBA dengan SN "${snTrimmed}" tidak ditemukan di inventaris.`);
             }
 
             if (targetItem.status !== "Bad") {
@@ -8143,7 +6868,7 @@ function SendToChinaForm({ pcba, onSave, onClose, t }) {
             }
 
             if (!date) {
-              return setErr("Tanggal pengiriman wajib diisi.");
+              return setErr(t.errSendDateRequired || "Tanggal pengiriman wajib diisi.");
             }
 
             setSaving(true);
@@ -8159,7 +6884,7 @@ function SendToChinaForm({ pcba, onSave, onClose, t }) {
             setSaving(false);
 
             if (res && res.ok === false) {
-              setErr(res.error || "Gagal menyimpan pengiriman.");
+              setErr(res.error || t.waSaveFailed || "Gagal menyimpan pengiriman.");
             }
           }}
         >
@@ -8432,14 +7157,59 @@ function PcbaInventoryTab({
   }, [master?.pcbaTypes, pcba?.items]);
 
   const SUB_TABS = [
-    { id: "stock", label: t.pcbaStock, icon: Boxes },
-    { id: "replacement", label: t.pcbaReplacement, icon: ArrowLeftRight },
-    { id: "chinaShipments", label: t.pcbaSendToChina || "Kirim PCBA Bad ke China", icon: Truck },
-    { id: "transactions", label: t.pcbaTransactions, icon: ClipboardList },
+    { id: "stock", label: t.pcbaStock || "Stok", icon: Boxes },
+    { id: "replacement", label: t.pcbaReplacement || "Replacement", icon: ArrowLeftRight },
+    { id: "chinaShipments", label: t.pcbaSendBadToChina || t.pcbaSendToChina || "Kirim Bad PCBA ke China", icon: Truck },
+    { id: "transactions", label: t.pcbaLog || t.pcbaTransactions || "Log", icon: ClipboardList },
   ];
 
   return (
     <div>
+      {/* PCBA SUBMENU NAVIGATION BAR */}
+      <div
+        className="pcba-submenu-nav"
+        style={{
+          display: "flex",
+          gap: 8,
+          background: T.panel,
+          border: `1px solid ${T.line}`,
+          padding: "6px 8px",
+          borderRadius: 10,
+          marginBottom: 18,
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
+        {SUB_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const active = subTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setSubTab(tab.id)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 16px",
+                borderRadius: 7,
+                background: active ? `${T.cyan}18` : "transparent",
+                border: active ? `1px solid ${T.cyan}55` : "1px solid transparent",
+                color: active ? T.cyan : T.ink2,
+                cursor: "pointer",
+                fontFamily: sans,
+                fontSize: 13,
+                fontWeight: active ? 700 : 500,
+                transition: "all 0.15s ease",
+              }}
+            >
+              <Icon size={16} color={active ? T.cyan : T.ink3} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
       {/* PCBA TYPE OVERVIEW MINI DASHBOARD */}
       <div style={{ marginBottom: 18 }}>
         <div
@@ -8650,7 +7420,7 @@ function PcbaInventoryTab({
             cursor: "pointer",
           }}
         >
-          <option value="">{t.filterType || "Semua Type"}</option>
+          <option value="">{t.allTypes || t.filterType || "Semua Type"}</option>
           {pcbaTypeStats.map((st) => (
             <option key={st.type} value={st.type}>
               {st.type}
@@ -8670,7 +7440,7 @@ function PcbaInventoryTab({
             cursor: "pointer",
           }}
         >
-          <option value="">{t.filterStatus || "Semua Status"}</option>
+          <option value="">{t.allStatuses || t.filterStatus || "Semua Status"}</option>
           {PCBA_STATUSES.map((st) => (
             <option key={st} value={st}>
               {getLocalizedStatus(st, t)}
@@ -8691,7 +7461,7 @@ function PcbaInventoryTab({
               cursor: "pointer",
             }}
           >
-            <option value="">{t.filterSupplier || "Semua Supplier"}</option>
+            <option value="">{t.allSuppliers || t.filterSupplier || "Semua Supplier"}</option>
             {suppliers.map((sup) => (
               <option key={sup} value={sup}>
                 {sup}
@@ -8713,7 +7483,7 @@ function PcbaInventoryTab({
               cursor: "pointer",
             }}
           >
-            <option value="">{t.filterLocation || "Semua Lokasi"}</option>
+            <option value="">{t.allLocations || t.filterLocation || "Semua Lokasi"}</option>
             {locations.map((loc) => (
               <option key={loc} value={loc}>
                 {loc}
@@ -8787,24 +7557,24 @@ function PcbaInventoryTab({
               const isFiltered = Boolean(search || typeFilter || statusFilter || supplierFilter || locationFilter);
               exportPcbaToExcel(exportItems, isFiltered ? `${namePrefix}_Filtered` : namePrefix, customCols, sheetName);
             }}
-            title="Export data (sesuai filter) ke .xlsx"
+            title={t.exportExcelTitle || "Export data (sesuai filter) ke .xlsx"}
           >
-            <FileDown size={14} /> {t.rmaExportExcel || "Export Excel"}
+            <FileDown size={14} /> {t.rmaExportExcel || t.exportExcel || "Export Excel"}
           </Btn>
 
           {!isViewer && subTab === "stock" && (
             <Btn
               variant="ghost"
               onClick={() => setModal({ type: "import" })}
-              title="Import data PCBA dari file Excel"
+              title={t.importExcelTitle || "Import data PCBA dari file Excel"}
             >
-              <FileUp size={14} /> {t.pcbaImportExcel || "Import Excel"}
+              <FileUp size={14} /> {t.pcbaImportExcel || t.importExcel || "Import Excel"}
             </Btn>
           )}
 
           {!isViewer && subTab === "stock" && (
             <Btn variant="solid" onClick={() => setModal({ type: "receipt" })}>
-              <Plus size={14} /> {t.pcbaReceiveNew}
+              <Plus size={14} /> {t.pcbaReceiveNew || "Terima PCBA Baru"}
             </Btn>
           )}
           {!isViewer && subTab === "replacement" && (
@@ -8818,45 +7588,6 @@ function PcbaInventoryTab({
             </Btn>
           )}
         </div>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          gap: 2,
-          borderBottom: `1px solid ${T.line}`,
-          marginBottom: 16,
-        }}
-      >
-        {SUB_TABS.map((tab) => {
-          const Icon = tab.icon;
-          const active = subTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setSubTab(tab.id)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "8px 14px",
-                background: "none",
-                border: "none",
-                borderBottom: active
-                  ? `2px solid ${T.cyan}`
-                  : "2px solid transparent",
-                color: active ? T.cyan : T.ink3,
-                cursor: "pointer",
-                fontFamily: sans,
-                fontSize: 13,
-                fontWeight: 600,
-                marginBottom: -1,
-              }}
-            >
-              <Icon size={14} /> {tab.label}
-            </button>
-          );
-        })}
       </div>
 
       {subTab === "stock" && (
@@ -9899,7 +8630,7 @@ function PcbaImportModal({ existingPcba, master, onImport, onClose, t }) {
                 >
                   <div>
                     <label style={{ fontSize: 11.5, fontWeight: 600, color: T.ink2, display: "block", marginBottom: 4 }}>
-                      Supplier
+                      {t.pcbaSupplier || "Supplier"}
                     </label>
                     <select
                       value={batchOptions.supplier}
@@ -9923,7 +8654,7 @@ function PcbaImportModal({ existingPcba, master, onImport, onClose, t }) {
 
                   <div>
                     <label style={{ fontSize: 11.5, fontWeight: 600, color: T.ink2, display: "block", marginBottom: 4 }}>
-                      Lokasi Gudang
+                      {t.pcbaWarehouseLocation || "Lokasi Gudang"}
                     </label>
                     <select
                       value={batchOptions.warehouseLocation}
@@ -9947,13 +8678,13 @@ function PcbaImportModal({ existingPcba, master, onImport, onClose, t }) {
 
                   <div>
                     <label style={{ fontSize: 11.5, fontWeight: 600, color: T.ink2, display: "block", marginBottom: 4 }}>
-                      Diterima Oleh
+                      {t.pcbaColReceivedBy || t.pcbaReceivedBy || "Diterima Oleh"}
                     </label>
                     <input
                       type="text"
                       value={batchOptions.receivedBy}
                       onChange={(e) => setBatchOptions({ ...batchOptions, receivedBy: e.target.value })}
-                      placeholder="Nama penerima..."
+                      placeholder={t.pcbaReceiverPlaceholder || "Nama penerima..."}
                       style={{
                         width: "100%",
                         height: 32,
@@ -9972,17 +8703,17 @@ function PcbaImportModal({ existingPcba, master, onImport, onClose, t }) {
                 {/* Preview Table */}
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 6 }}>
-                    Preview Data ({parseResult.allRows.length} baris):
+                    {(t.importPreviewData || "Preview Data ({n} baris):").replace("{n}", parseResult.allRows.length)}
                   </div>
                   <div style={{ maxHeight: 220, overflowY: "auto", border: `1px solid ${T.line}`, borderRadius: 8, background: T.panel2 }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, textAlign: "left" }}>
                       <thead>
                         <tr style={{ background: T.panel, borderBottom: `1px solid ${T.line}`, position: "sticky", top: 0, zIndex: 1 }}>
                           <th style={{ padding: "8px 10px", color: T.ink2, fontWeight: 700, width: 40, textAlign: "center" }}>No.</th>
-                          <th style={{ padding: "8px 10px", color: T.ink2, fontWeight: 700 }}>PCBA Serial No.</th>
-                          <th style={{ padding: "8px 10px", color: T.ink2, fontWeight: 700 }}>PCBA Type</th>
-                          <th style={{ padding: "8px 10px", color: T.ink2, fontWeight: 700 }}>Date</th>
-                          <th style={{ padding: "8px 10px", color: T.ink2, fontWeight: 700 }}>Status Validasi</th>
+                          <th style={{ padding: "8px 10px", color: T.ink2, fontWeight: 700 }}>{t.pcbaSerialNo || "PCBA Serial No."}</th>
+                          <th style={{ padding: "8px 10px", color: T.ink2, fontWeight: 700 }}>{t.pcbaType || "PCBA Type"}</th>
+                          <th style={{ padding: "8px 10px", color: T.ink2, fontWeight: 700 }}>{t.colDate || "Date"}</th>
+                          <th style={{ padding: "8px 10px", color: T.ink2, fontWeight: 700 }}>{t.validationStatus || "Status Validasi"}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -9997,7 +8728,7 @@ function PcbaImportModal({ existingPcba, master, onImport, onClose, t }) {
                               <td style={{ padding: "6px 10px", color: T.ink2 }}>{r.receivedDate ? fmtDate(r.receivedDate) : "-"}</td>
                               <td style={{ padding: "6px 10px" }}>
                                 {isValid ? (
-                                  <span style={{ color: T.green, fontWeight: 600, fontSize: 11 }}>✓ Siap Diimport</span>
+                                  <span style={{ color: T.green, fontWeight: 600, fontSize: 11 }}>✓ {t.readyToImport || "Siap Diimport"}</span>
                                 ) : isDup ? (
                                   <span style={{ color: T.amber, fontWeight: 600, fontSize: 11 }} title={r.message}>⚠ {r.message}</span>
                                 ) : (
@@ -10052,6 +8783,7 @@ function DeleteConfirmModal({ confirmState, onConfirm, onClose, t }) {
   const entry = confirmState?.entry;
   const isWa = confirmState?.kind === "wa";
   const refNo = isWa ? entry?.caseNo : entry?.ticketNo;
+  const tt = t || I18N.id;
 
   const handleConfirm = async () => {
     setDeleting(true);
@@ -10063,21 +8795,23 @@ function DeleteConfirmModal({ confirmState, onConfirm, onClose, t }) {
     } else {
       setErrorMsg(
         isWa
-          ? "Gagal menghapus case WhatsApp dari Firestore."
-          : "Gagal menghapus RMA dari Firestore."
+          ? (tt.failedToDeleteWa || "Gagal menghapus case WhatsApp.")
+          : (tt.failedToDeleteRma || "Gagal menghapus tiket RMA.")
       );
     }
   };
 
   return (
     <Modal
-      title={isWa ? (t.deleteWaTitle || "HAPUS CASE WHATSAPP") : (t.deleteRmaTitle || "HAPUS TIKET RMA")}
+      title={isWa ? (tt.deleteWaTitle || "Hapus Case WhatsApp") : (tt.deleteRmaTitle || "Hapus Tiket RMA")}
       onClose={onClose}
       width={420}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <p style={{ fontSize: 13, color: T.ink, margin: 0 }}>
-          {(t.deleteConfirmText || "Apakah Anda yakin ingin menghapus {type} berikut?").replace("{type}", isWa ? (t.waCase || "case WhatsApp") : (t.rmaTicket || "tiket RMA"))}
+          {isWa
+            ? (tt.deleteWaConfirm || "Apakah Anda yakin ingin menghapus case WhatsApp berikut?")
+            : (tt.deleteRmaConfirm || "Apakah Anda yakin ingin menghapus tiket RMA berikut?")}
         </p>
 
         <div
@@ -10097,7 +8831,7 @@ function DeleteConfirmModal({ confirmState, onConfirm, onClose, t }) {
 
         {entry?.customerName && (
           <div style={{ fontSize: 12.5, color: T.ink2 }}>
-            {t.colCustomer || "Customer"}: <strong>{entry.customerName}</strong>{" "}
+            {tt.customer || tt.colCustomer || "Customer"}: <strong>{entry.customerName}</strong>{" "}
             {entry.company ? `(${entry.company})` : ""}
           </div>
         )}
@@ -10106,7 +8840,7 @@ function DeleteConfirmModal({ confirmState, onConfirm, onClose, t }) {
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 6 }}>
           <Btn variant="ghost" onClick={onClose} disabled={deleting}>
-            {t.cancel || "Batal"}
+            {tt.cancel || "Batal"}
           </Btn>
           <Btn
             variant="solid"
@@ -10115,7 +8849,7 @@ function DeleteConfirmModal({ confirmState, onConfirm, onClose, t }) {
             disabled={deleting}
           >
             {deleting && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
-            {t.deleteAction || "Hapus"}
+            {tt.deleteAction || tt.delete || "Hapus"}
           </Btn>
         </div>
       </div>
@@ -10129,11 +8863,12 @@ function WaDetailModal({ entry, onClose, t }) {
   const isSolved = isWaDone(entry.status) || Boolean(entry.solvedDate);
   const caseAge = daysBetween(entry.caseDate, entry.solvedDate || todayISO());
 
+  const locStatus = getLocalizedStatus(entry.status, t);
   // Deterministic summary based on actual stored fields
-  const summaryText = `Customer ${entry.customerName || "-"}${entry.company ? ` (${entry.company})` : ""} melaporkan kendala pada perangkat ${entry.deviceType || "-"}${entry.sn ? ` (SN: ${entry.sn})` : ""}. Case dibuka pada tanggal ${fmtDate(entry.caseDate)} dan ditangani oleh engineer ${entry.engineerTag || "-"}. Status saat ini: ${entry.status || "-"}${isSolved ? ` (selesai dalam ${caseAge} hari)` : ` (aktif selama ${caseAge} hari)`}.`;
+  const summaryText = `${t?.customer || "Customer"} ${entry.customerName || "-"}${entry.company ? ` (${entry.company})` : ""}, ${entry.deviceType || "-"}${entry.sn ? ` (SN: ${entry.sn})` : ""}. ${t?.colDate || "Tanggal"}: ${fmtDate(entry.caseDate)}, ${t?.colEngineer || "Engineer"}: ${entry.engineerTag || "-"}. ${t?.colStatus || "Status"}: ${locStatus}${isSolved ? ` (${t?.statusSelesai || "selesai"} - ${caseAge} ${t?.rmaDays || "hari"})` : ` (${caseAge} ${t?.rmaDays || "hari"})`}.`;
 
   return (
-    <Modal title={`DETAIL CASE — ${entry.caseNo || "-"}`} onClose={onClose} width={620}>
+    <Modal title={`${t?.waDetailTitle || "DETAIL KASUS WHATSAPP"} — ${entry.caseNo || "-"}`} onClose={onClose} width={620}>
       <div
         style={{
           display: "flex",
@@ -10158,16 +8893,16 @@ function WaDetailModal({ entry, onClose, t }) {
         >
           <div style={{ flex: 1, minWidth: 120 }}>
             <div style={{ fontSize: 11, color: T.ink3, textTransform: "uppercase", fontWeight: 600 }}>
-              Status
+              {t?.colStatus || "Status"}
             </div>
             <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
-              <StatusLed status={entry.status} />
-              {isWaOverdue(entry) && <OverdueBadge />}
+              <StatusLed status={entry.status} t={t} />
+              {isWaOverdue(entry) && <OverdueBadge t={t} />}
             </div>
           </div>
           <div style={{ flex: 1, minWidth: 120 }}>
             <div style={{ fontSize: 11, color: T.ink3, textTransform: "uppercase", fontWeight: 600 }}>
-              Tanggal Case
+              {t?.waCaseDate || "Tanggal Case"}
             </div>
             <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginTop: 2 }}>
               {fmtDate(entry.caseDate)}
@@ -10175,7 +8910,7 @@ function WaDetailModal({ entry, onClose, t }) {
           </div>
           <div style={{ flex: 1, minWidth: 120 }}>
             <div style={{ fontSize: 11, color: T.ink3, textTransform: "uppercase", fontWeight: 600 }}>
-              Tanggal Solved
+              {t?.waSolvedDate || "Tanggal Solved"}
             </div>
             <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginTop: 2 }}>
               {fmtDate(entry.solvedDate) || "—"}
@@ -10183,10 +8918,10 @@ function WaDetailModal({ entry, onClose, t }) {
           </div>
           <div style={{ flex: 1, minWidth: 120 }}>
             <div style={{ fontSize: 11, color: T.ink3, textTransform: "uppercase", fontWeight: 600 }}>
-              Umur Case
+              {t?.colCaseAge || "Umur Case"}
             </div>
             <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginTop: 2 }}>
-              {caseAge !== "" ? `${caseAge} Hari` : "—"}
+              {caseAge !== "" ? `${caseAge} ${t?.rmaDays || "Hari"}` : "—"}
             </div>
           </div>
         </div>
@@ -10204,23 +8939,23 @@ function WaDetailModal({ entry, onClose, t }) {
           }}
         >
           <div>
-            <div style={{ fontSize: 11, color: T.ink3 }}>Customer</div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>{t?.waCustomerName || "Customer"}</div>
             <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>
               {entry.customerName || "—"}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: T.ink3 }}>Perusahaan</div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>{t?.waCompany || "Perusahaan"}</div>
             <div style={{ fontSize: 13, color: T.ink }}>{entry.company || "—"}</div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: T.ink3 }}>No. HP</div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>{t?.waCustomerPhone || "No. HP"}</div>
             <div style={{ fontSize: 13, fontFamily: mono, color: T.ink }}>
               {entry.customerPhone || "—"}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: T.ink3 }}>Perangkat</div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>{t?.waDeviceType || "Perangkat"}</div>
             <div style={{ fontSize: 13, color: T.ink }}>{entry.deviceType || "—"}</div>
           </div>
           <div>
@@ -10236,7 +8971,7 @@ function WaDetailModal({ entry, onClose, t }) {
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: T.ink3 }}>Engineer Tag</div>
+            <div style={{ fontSize: 11, color: T.ink3 }}>{t?.waEngineerTag || "Engineer Tag"}</div>
             <div style={{ fontSize: 13, color: T.ink }}>{entry.engineerTag || "—"}</div>
           </div>
         </div>
@@ -10260,7 +8995,7 @@ function WaDetailModal({ entry, onClose, t }) {
               letterSpacing: 0.3,
             }}
           >
-            Ringkasan Case (Summary)
+            {t?.waCaseSummary || "Ringkasan Case (Summary)"}
           </div>
           <div style={{ fontSize: 12.5, color: T.ink, lineHeight: 1.5 }}>
             {summaryText}
@@ -10270,7 +9005,7 @@ function WaDetailModal({ entry, onClose, t }) {
         {/* Full Original Initial Problem */}
         <div>
           <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 6 }}>
-            Kendala Awal (Initial Problem)
+            {t?.waInitialProblem || "Kendala Awal"}
           </div>
           <div
             style={{
@@ -10292,7 +9027,7 @@ function WaDetailModal({ entry, onClose, t }) {
         {entry.finalAnalysis && (
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 6 }}>
-              Analisa Akhir (Final Analysis)
+              {t?.waFinalAnalysis || "Analisa Akhir"}
             </div>
             <div
               style={{
@@ -10315,7 +9050,7 @@ function WaDetailModal({ entry, onClose, t }) {
         {entry.notes && (
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, marginBottom: 6 }}>
-              Keterangan / Notes
+              {t?.waNotes || t?.colNotes || "Keterangan / Notes"}
             </div>
             <div
               style={{
@@ -10335,7 +9070,7 @@ function WaDetailModal({ entry, onClose, t }) {
 
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
           <Btn variant="solid" onClick={onClose}>
-            Tutup
+            {t?.close || "Tutup"}
           </Btn>
         </div>
       </div>
@@ -10349,9 +9084,9 @@ function WaDetailModal({ entry, onClose, t }) {
 export default function App() {
   const { user, profile, role, isAdministrator, isEngineer, isViewer, can, assert } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
+  const { language, setLanguage, languages, t: ctxT } = useLanguage();
   const [tab, setTab] = useState("home");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [language, setLanguage] = useState(getStoredLanguage);
   const [loading, setLoading] = useState(true);
   const [rma, setRma] = useState([]);
   const [wa, setWa] = useState([]);
@@ -11466,12 +10201,12 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [toastMsg]);
 
-  const t = I18N[language] || I18N.id;
-  const lastLoginLabel = user?.metadata?.lastSignInTime
-    ? new Date(user.metadata.lastSignInTime).toLocaleString(
-        language === "zh" ? "zh-CN" : language === "en" ? "en-US" : "id-ID",
-      )
-    : "-";
+  const t = ctxT || getTranslation(language);
+  const rawLoginTime =
+    profile?.previous_login_at ||
+    user?.previous_login_at ||
+    user?.metadata?.lastSignInTime;
+  const lastLoginLabel = rawLoginTime ? fmtDateTime(rawLoginTime, language) : "-";
 
   const NAV = [
     { id: "home", label: t.home, icon: LayoutDashboard },
@@ -11717,17 +10452,6 @@ export default function App() {
                 ))}
               </select>
             </label>
-
-            <div
-              className="hsgq-header-status"
-              style={{
-                background: T.greenDim,
-                color: T.green,
-              }}
-            >
-              <Wifi size={13} />
-              {"SQLite Server Connected"}
-            </div>
 
             <UserCenter t={t} />
           </div>
@@ -12059,7 +10783,7 @@ export default function App() {
                         const isFiltered = Boolean(waFromDate || waToDate || search || waOverdueOnly || Object.keys(waColFilters).length > 0);
                         exportWaToExcel(filteredWa, isFiltered ? "LOGBOOK_WhatsApp_Filtered" : "LOGBOOK_WhatsApp");
                       }}
-                      title="Export data WhatsApp Log (sesuai filter) ke .xlsx"
+                      title={t.exportWaTitle || t.waExportExcel || "Export Excel"}
                     >
                       <FileDown size={14} /> {t.waExportExcel || "Export Excel"}
                     </Btn>
@@ -12068,7 +10792,7 @@ export default function App() {
                         <Btn
                           variant="ghost"
                           onClick={() => setWaImportModal(true)}
-                          title="Import WhatsApp Log dari file .xlsx / .xls"
+                          title={t.importWaTitle || t.waImportExcel || "Import Excel"}
                         >
                           <FileUp size={14} /> {t.waImportExcel || "Import Excel"}
                         </Btn>
@@ -12090,7 +10814,7 @@ export default function App() {
                 searchPlaceholder={t.waSearchPlaceholder}
                 overdueOnly={waOverdueOnly}
                 setOverdueOnly={setWaOverdueOnly}
-                overdueLabel={t.rmaOverdueOnly || "Overdue saja"}
+                overdueLabel={t.waOverdueOnly || t.overdueOnly || t.rmaOverdueOnly}
                 fromDate={waFromDate}
                 setFromDate={setWaFromDate}
                 toDate={waToDate}
@@ -12378,7 +11102,7 @@ export default function App() {
             <>
               <SectionHeader
                 title={t.unitHistory}
-                subtitle={t.unitHistoryPageSubtitle}
+                subtitle={t.unitHistorySubtitle || t.unitHistoryPageSubtitle || "Cari riwayat perbaikan dan log komunikasi berdasarkan SN atau MAC"}
               />
               <UnitHistory
                 rma={rma}
@@ -12396,7 +11120,7 @@ export default function App() {
             <>
               <SectionHeader
                 title={t.weeklyReport}
-                subtitle={t.reportPageSubtitle}
+                subtitle={t.weeklyReportSubtitle || t.reportPageSubtitle || "Rekapitulasi berkala kinerja teknis dan penyelesaian kendala customer"}
               />
               <WeeklyReport rma={rma} wa={wa} t={t} />
             </>

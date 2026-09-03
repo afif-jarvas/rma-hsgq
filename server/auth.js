@@ -55,7 +55,7 @@ export function requireAuth(req, res, next) {
   }
 
   const sessionStmt = db.prepare(`
-    SELECT s.token, s.expires_at, u.id, u.full_name, u.username, u.email, u.role, u.status, u.phone, u.company, u.address, u.theme
+    SELECT s.token, s.expires_at, u.id, u.full_name, u.username, u.email, u.role, u.status, u.phone, u.company, u.address, u.theme, u.created_at, u.last_login_at, u.previous_login_at
     FROM sessions s
     JOIN users u ON s.user_id = u.id
     WHERE s.token = ?
@@ -90,6 +90,9 @@ export function requireAuth(req, res, next) {
     company: session.company || "",
     address: session.address || "",
     theme: session.theme || "system",
+    created_at: session.created_at,
+    last_login_at: session.last_login_at,
+    previous_login_at: session.previous_login_at,
   };
   req.token = token;
 

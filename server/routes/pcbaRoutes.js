@@ -89,10 +89,10 @@ function formatRepair(r) {
 }
 
 /**
- * GET /api/pcba/all
+ * GET /api/pcba and GET /api/pcba/all
  * Retrieve full PCBA inventory dataset bundle
  */
-router.get("/all", requireAuth, (req, res) => {
+function handleGetAllPcba(req, res) {
   try {
     const items = db.prepare("SELECT * FROM pcba_items ORDER BY created_at DESC").all().map(formatPcbaItem);
     const transactions = db.prepare("SELECT * FROM pcba_transactions ORDER BY created_at DESC").all().map(formatTransaction);
@@ -111,10 +111,13 @@ router.get("/all", requireAuth, (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Error GET /api/pcba/all:", err);
+    console.error("Error GET /api/pcba:", err);
     res.status(500).json({ ok: false, error: "Gagal mengambil data PCBA dari database." });
   }
-});
+}
+
+router.get("/all", requireAuth, handleGetAllPcba);
+router.get("/", requireAuth, handleGetAllPcba);
 
 /**
  * POST /api/pcba/receipt

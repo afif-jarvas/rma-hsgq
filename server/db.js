@@ -42,7 +42,8 @@ db.exec(`
     theme TEXT DEFAULT 'system',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
-    last_login_at TEXT
+    last_login_at TEXT,
+    previous_login_at TEXT
   );
 
   CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -258,6 +259,16 @@ try {
   }
 } catch (e) {
   console.warn("RMA column migration notice:", e.message);
+}
+
+// Auto-migration for users previous_login_at column if missing
+try {
+  const userCols = db.pragma("table_info(users)").map((c) => c.name);
+  if (!userCols.includes("previous_login_at")) {
+    db.exec("ALTER TABLE users ADD COLUMN previous_login_at TEXT;");
+  }
+} catch (e) {
+  console.warn("User column migration notice:", e.message);
 }
 
 /**

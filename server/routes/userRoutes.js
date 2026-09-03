@@ -14,7 +14,7 @@ router.use(requireAdmin);
  */
 router.get("/", (req, res) => {
   const usersStmt = db.prepare(`
-    SELECT id, full_name, username, email, role, status, phone, company, address, theme, created_at, updated_at, last_login_at
+    SELECT id, full_name, username, email, role, status, phone, company, address, theme, created_at, updated_at, last_login_at, previous_login_at
     FROM users
     ORDER BY created_at DESC
   `);
@@ -140,7 +140,7 @@ router.post("/", (req, res) => {
  */
 router.get("/:id", (req, res) => {
   const userStmt = db.prepare(`
-    SELECT id, full_name, username, email, role, status, phone, company, address, theme, created_at, updated_at, last_login_at
+    SELECT id, full_name, username, email, role, status, phone, company, address, theme, created_at, updated_at, last_login_at, previous_login_at
     FROM users WHERE id = ?
   `);
   const user = userStmt.get(req.params.id);

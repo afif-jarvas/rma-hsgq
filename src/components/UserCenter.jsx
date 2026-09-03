@@ -5,7 +5,6 @@ import {
   Moon,
   Sun,
   Monitor,
-  Settings,
   X,
   Save,
   Mail,
@@ -13,17 +12,18 @@ import {
   Building2,
   MapPin,
   ChevronDown,
-  Shield,
   KeyRound,
   Lock,
 } from "lucide-react";
 import authApi from "../api/authClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
-export default function UserCenter({ t }) {
-  const { user, profile, setProfile, logout, role, isAdministrator, isEngineer, isViewer } = useAuth();
+export default function UserCenter() {
+  const { user, profile, setProfile, logout, role } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { t, getRole } = useLanguage();
 
   const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -62,7 +62,6 @@ export default function UserCenter({ t }) {
     "User";
 
   const email = user?.email || profile?.email || "-";
-
   const initial = displayName.trim().charAt(0).toUpperCase() || "U";
 
   function updateField(field, value) {
@@ -74,23 +73,19 @@ export default function UserCenter({ t }) {
 
   async function handleSaveProfile(e) {
     e.preventDefault();
-
     setMessage("");
     setError("");
 
     if (!form.displayName.trim()) {
-      setError(t.nameRequired);
+      setError(t.nameRequired || "Nama tidak boleh kosong.");
       return;
     }
 
     const currentUid = user?.id || user?.uid || profile?.id || profile?.uid;
-    if (!currentUid) {
-      return;
-    }
+    if (!currentUid) return;
 
     try {
       setSaving(true);
-
       const updatedProfile = {
         displayName: form.displayName.trim(),
         full_name: form.displayName.trim(),
@@ -104,24 +99,21 @@ export default function UserCenter({ t }) {
 
       try {
         await authApi.updateUser(currentUid, updatedProfile);
-      } catch (_) {
-        // If not admin, backend ignores admin-only fields, profile state still updates
-      }
+      } catch (_) {}
 
       setProfile?.((current) => ({
         ...(current || {}),
         ...updatedProfile,
       }));
 
-      setMessage(t.profileUpdated);
-
+      setMessage(t.profileUpdated || "Profile berhasil diperbarui.");
       setTimeout(() => {
         setProfileOpen(false);
         setMessage("");
       }, 900);
     } catch (err) {
       console.error(err);
-      setError(err?.message || t.profileUpdateFailed);
+      setError(err?.message || t.profileUpdateFailed || "Gagal menyimpan profile.");
     } finally {
       setSaving(false);
     }
@@ -142,15 +134,15 @@ export default function UserCenter({ t }) {
     setError("");
 
     if (!passwordForm.newPassword) {
-      setError("Password baru wajib diisi.");
+      setError(t.authRequired || "Password baru wajib diisi.");
       return;
     }
     if (passwordForm.newPassword.length < 6) {
-      setError("Password baru minimal 6 karakter.");
+      setError(t.passwordTooShort || "Password baru minimal 6 karakter.");
       return;
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setError("Konfirmasi password baru tidak cocok.");
+      setError(t.passwordMismatch || "Konfirmasi password baru tidak cocok.");
       return;
     }
 
@@ -158,29 +150,31 @@ export default function UserCenter({ t }) {
       setSaving(true);
       const res = await authApi.changePassword(null, passwordForm.newPassword);
       if (res && res.ok) {
-        setMessage("Password akun Anda berhasil diperbarui.");
+        setMessage(t.passwordChangedSuccess || "Password akun Anda berhasil diperbarui.");
         setPasswordForm({ newPassword: "", confirmPassword: "" });
         setTimeout(() => {
           setProfileOpen(false);
           setMessage("");
         }, 1200);
       } else {
-        setError(res?.error || "Gagal mengubah password.");
+        setError(res?.error || t.passwordChangeFailed || "Gagal mengubah password.");
       }
     } catch (err) {
       console.error(err);
-      setError(err?.message || "Gagal mengubah password.");
+      setError(err?.message || t.passwordChangeFailed || "Gagal mengubah password.");
     } finally {
       setSaving(false);
     }
   }
 
-  const roleColor = isAdministrator ? "#EF4444" : isEngineer ? "#3B82F6" : "#10B981";
+  const roleDisplay = getRole(role || "Viewer");
+  const isAdm = (role || "").toLowerCase() === "administrator" || (role || "").toLowerCase() === "admin";
+  const isEng = (role || "").toLowerCase() === "engineer" || (role || "").toLowerCase() === "teknisi";
+  const roleColor = isAdm ? "#EF4444" : isEng ? "#3B82F6" : "#10B981";
 
   return (
     <>
       {/* USER BUTTON */}
-
       <button
         type="button"
         className="user-center-trigger"
@@ -205,7 +199,7 @@ export default function UserCenter({ t }) {
                 textTransform: "uppercase",
               }}
             >
-              {role}
+              {roleDisplay}
             </span>
           </small>
         </span>
@@ -213,8 +207,7 @@ export default function UserCenter({ t }) {
         <ChevronDown size={14} className={open ? "user-chevron-open" : ""} />
       </button>
 
-      {/* DROPDOWN */}
-
+      {/* DROPDOWN MENU */}
       {open && (
         <>
           <div className="user-menu-backdrop" onClick={() => setOpen(false)} />
@@ -239,7 +232,7 @@ export default function UserCenter({ t }) {
                       textTransform: "uppercase",
                     }}
                   >
-                    {role}
+                    {roleDisplay}
                   </span>
                 </div>
 
@@ -258,10 +251,8 @@ export default function UserCenter({ t }) {
               }}
             >
               <User size={16} />
-
               <span>
                 <strong>{t.profile}</strong>
-
                 <small>{t.editAccountInfo}</small>
               </span>
             </button>
@@ -275,11 +266,9 @@ export default function UserCenter({ t }) {
               }}
             >
               <KeyRound size={16} />
-
               <span>
-                <strong>Ganti Password</strong>
-
-                <small>Ubah password akun Anda</small>
+                <strong>{t.changePassword}</strong>
+                <small>{t.changePasswordSubtitle}</small>
               </span>
             </button>
 
@@ -289,9 +278,7 @@ export default function UserCenter({ t }) {
               <div className="theme-options">
                 <button
                   type="button"
-                  className={
-                    theme === "light" ? "theme-option active" : "theme-option"
-                  }
+                  className={theme === "light" ? "theme-option active" : "theme-option"}
                   onClick={() => setTheme("light")}
                 >
                   <Sun size={15} />
@@ -300,9 +287,7 @@ export default function UserCenter({ t }) {
 
                 <button
                   type="button"
-                  className={
-                    theme === "dark" ? "theme-option active" : "theme-option"
-                  }
+                  className={theme === "dark" ? "theme-option active" : "theme-option"}
                   onClick={() => setTheme("dark")}
                 >
                   <Moon size={15} />
@@ -311,9 +296,7 @@ export default function UserCenter({ t }) {
 
                 <button
                   type="button"
-                  className={
-                    theme === "system" ? "theme-option active" : "theme-option"
-                  }
+                  className={theme === "system" ? "theme-option active" : "theme-option"}
                   onClick={() => setTheme("system")}
                 >
                   <Monitor size={15} />
@@ -326,7 +309,6 @@ export default function UserCenter({ t }) {
 
             <button className="user-menu-item logout" onClick={handleLogout}>
               <LogOut size={16} />
-
               <span>{t.logout}</span>
             </button>
           </div>
@@ -334,14 +316,13 @@ export default function UserCenter({ t }) {
       )}
 
       {/* PROFILE & PASSWORD MODAL */}
-
       {profileOpen && (
         <div className="profile-overlay" onClick={() => setProfileOpen(false)}>
           <div className="profile-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
             <div className="profile-modal-header">
               <div>
-                <h2>{activeTab === "profile" ? t.userCenter : "Ganti Password Akun"}</h2>
-                <p>{activeTab === "profile" ? t.manageProfile : "Perbarui password untuk akun Anda"}</p>
+                <h2>{activeTab === "profile" ? t.userCenter : t.changePassword}</h2>
+                <p>{activeTab === "profile" ? t.manageProfile : t.changePasswordSubtitle}</p>
               </div>
 
               <button
@@ -368,7 +349,7 @@ export default function UserCenter({ t }) {
                   cursor: "pointer",
                 }}
               >
-                Profil Akun
+                {t.profile}
               </button>
               <button
                 type="button"
@@ -384,7 +365,7 @@ export default function UserCenter({ t }) {
                   cursor: "pointer",
                 }}
               >
-                Ganti Password
+                {t.changePassword}
               </button>
             </div>
 
@@ -409,7 +390,7 @@ export default function UserCenter({ t }) {
                           textTransform: "uppercase",
                         }}
                       >
-                        {role}
+                        {roleDisplay}
                       </span>
                     </div>
 
@@ -423,7 +404,6 @@ export default function UserCenter({ t }) {
                       <User size={14} />
                       {t.nickName}
                     </span>
-
                     <input
                       value={form.displayName}
                       onChange={(e) => updateField("displayName", e.target.value)}
@@ -436,7 +416,6 @@ export default function UserCenter({ t }) {
                       <Mail size={14} />
                       {t.email}
                     </span>
-
                     <input value={email} disabled />
                   </label>
 
@@ -445,7 +424,6 @@ export default function UserCenter({ t }) {
                       <Phone size={14} />
                       {t.phone}
                     </span>
-
                     <input
                       value={form.phone}
                       onChange={(e) => updateField("phone", e.target.value)}
@@ -458,7 +436,6 @@ export default function UserCenter({ t }) {
                       <Building2 size={14} />
                       {t.company}
                     </span>
-
                     <input
                       value={form.company}
                       onChange={(e) => updateField("company", e.target.value)}
@@ -471,7 +448,6 @@ export default function UserCenter({ t }) {
                       <MapPin size={14} />
                       {t.address}
                     </span>
-
                     <textarea
                       value={form.address}
                       onChange={(e) => updateField("address", e.target.value)}
@@ -484,16 +460,13 @@ export default function UserCenter({ t }) {
                 <div className="profile-theme-box">
                   <div>
                     <strong>{t.appearance}</strong>
-
                     <span>{t.selectAppearance}</span>
                   </div>
 
                   <div className="theme-options">
                     <button
                       type="button"
-                      className={
-                        theme === "light" ? "theme-option active" : "theme-option"
-                      }
+                      className={theme === "light" ? "theme-option active" : "theme-option"}
                       onClick={() => setTheme("light")}
                     >
                       <Sun size={15} />
@@ -502,9 +475,7 @@ export default function UserCenter({ t }) {
 
                     <button
                       type="button"
-                      className={
-                        theme === "dark" ? "theme-option active" : "theme-option"
-                      }
+                      className={theme === "dark" ? "theme-option active" : "theme-option"}
                       onClick={() => setTheme("dark")}
                     >
                       <Moon size={15} />
@@ -513,11 +484,7 @@ export default function UserCenter({ t }) {
 
                     <button
                       type="button"
-                      className={
-                        theme === "system"
-                          ? "theme-option active"
-                          : "theme-option"
-                      }
+                      className={theme === "system" ? "theme-option active" : "theme-option"}
                       onClick={() => setTheme("system")}
                     >
                       <Monitor size={15} />
@@ -527,10 +494,7 @@ export default function UserCenter({ t }) {
                 </div>
 
                 {error && <div className="profile-message error">{error}</div>}
-
-                {message && (
-                  <div className="profile-message success">{message}</div>
-                )}
+                {message && <div className="profile-message success">{message}</div>}
 
                 <div className="profile-actions">
                   <button
@@ -547,7 +511,6 @@ export default function UserCenter({ t }) {
                     disabled={saving}
                   >
                     <Save size={15} />
-
                     {saving ? t.saving : t.saveChanges}
                   </button>
                 </div>
@@ -558,13 +521,13 @@ export default function UserCenter({ t }) {
                   <label className="profile-field full">
                     <span>
                       <Lock size={14} />
-                      Password Baru
+                      {t.newPassword}
                     </span>
                     <input
                       type="password"
                       value={passwordForm.newPassword}
                       onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                      placeholder="Minimal 6 karakter"
+                      placeholder={t.newPasswordPlaceholder}
                       style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--line)", background: "var(--panel)" }}
                     />
                   </label>
@@ -572,13 +535,13 @@ export default function UserCenter({ t }) {
                   <label className="profile-field full">
                     <span>
                       <Lock size={14} />
-                      Konfirmasi Password Baru
+                      {t.confirmPassword}
                     </span>
                     <input
                       type="password"
                       value={passwordForm.confirmPassword}
                       onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                      placeholder="Ketik ulang password baru"
+                      placeholder={t.confirmPasswordPlaceholder}
                       style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--line)", background: "var(--panel)" }}
                     />
                   </label>
@@ -602,7 +565,7 @@ export default function UserCenter({ t }) {
                     disabled={saving}
                   >
                     <KeyRound size={15} />
-                    {saving ? "Menyimpan..." : "Ubah Password"}
+                    {saving ? t.saving : t.changePassword}
                   </button>
                 </div>
               </form>

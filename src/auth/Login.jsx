@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import authApi from "../api/authClient.js";
 import { useAuth } from "./AuthContext.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import {
   Eye,
   EyeOff,
@@ -8,8 +9,8 @@ import {
   LogIn,
   Mail,
   Lock,
-  User,
   ShieldCheck,
+  Languages,
 } from "lucide-react";
 
 import hsgqLogo from "../assets/hsgq-logo.png";
@@ -28,6 +29,7 @@ const COLORS = {
 
 export default function Login() {
   const { inactiveError, loginWithUser } = useAuth();
+  const { language, setLanguage, languages, t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -44,7 +46,7 @@ export default function Login() {
 
     const inputVal = email.trim();
     if (!inputVal || !password) {
-      setError("Email/Username dan password wajib diisi.");
+      setError(t.authRequired || "Email/Username dan password wajib diisi.");
       return;
     }
 
@@ -57,11 +59,15 @@ export default function Login() {
           loginWithUser(res.user, res.profile, res.token);
         }
       } else {
-        setError(res?.error || "Email/Username atau password salah.");
+        if (res?.error && res.error.toLowerCase().includes("nonaktif")) {
+          setError(t.accountInactive || "Akun Anda telah dinonaktifkan. Hubungi Administrator.");
+        } else {
+          setError(t.invalidCredentials || "Email/Username atau password salah.");
+        }
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError(err?.message || "Email/Username atau password salah.");
+      setError(t.invalidCredentials || "Email/Username atau password salah.");
     } finally {
       setLoading(false);
     }
@@ -70,26 +76,44 @@ export default function Login() {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
+        {/* TOPBAR LANGUAGE SWITCHER */}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+          <div style={styles.langSelectWrapper}>
+            <Languages size={14} color="#6B7280" />
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              style={styles.langSelect}
+            >
+              {languages.map((item) => (
+                <option key={item.code} value={item.code}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         {/* LOGO & HEADER */}
         <div style={styles.header}>
           <img src={hsgqLogo} alt="HSGQ Logo" style={styles.logo} />
           <div>
-            <h1 style={styles.title}>HSGQ INDONESIA</h1>
-            <p style={styles.subtitle}>RMA & Support Management System</p>
+            <h1 style={styles.title}>{t.appName || "HSGQ INDONESIA"}</h1>
+            <p style={styles.subtitle}>{t.appSubtitle || "RMA & Support Management System"}</p>
           </div>
         </div>
 
         <div style={{ marginTop: 24, marginBottom: 20 }}>
-          <h2 style={styles.heading}>Masuk ke Akun</h2>
+          <h2 style={styles.heading}>{t.loginHeading || "Masuk ke Akun"}</h2>
           <p style={styles.description}>
-            Gunakan email atau username terdaftar untuk mengakses aplikasi.
+            {t.loginDescription || "Gunakan email atau username terdaftar untuk mengakses aplikasi."}
           </p>
         </div>
 
         {/* INACTIVE ACCOUNT ERROR (FROM WATCHDOG / SESSION) */}
         {inactiveError && !error && (
           <div style={{ ...styles.error, marginBottom: 16 }}>
-            {inactiveError}
+            {t.accountInactive || inactiveError}
           </div>
         )}
 
@@ -103,12 +127,12 @@ export default function Login() {
         {/* LOGIN FORM */}
         <form onSubmit={handleLogin} style={styles.form}>
           <label style={styles.label}>
-            <span>Email atau Username</span>
+            <span>{t.emailOrUsername || "Email atau Username"}</span>
             <div style={styles.inputWrapper}>
               <Mail size={16} style={styles.inputIcon} />
               <input
                 type="text"
-                placeholder="nama@hsgq.local atau username"
+                placeholder={t.emailOrUsernamePlaceholder || "nama@hsgq.local atau username"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 style={styles.input}
@@ -119,12 +143,12 @@ export default function Login() {
           </label>
 
           <label style={styles.label}>
-            <span>Password</span>
+            <span>{t.password || "Password"}</span>
             <div style={styles.inputWrapper}>
               <Lock size={16} style={styles.inputIcon} />
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Masukkan password Anda"
+                placeholder={t.passwordPlaceholder || "Masukkan password Anda"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 style={styles.input}
@@ -134,7 +158,7 @@ export default function Login() {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 style={styles.eyeButton}
-                title={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                title={showPassword ? t.hidePassword : t.showPassword}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -155,14 +179,14 @@ export default function Login() {
             ) : (
               <LogIn size={16} />
             )}
-            <span>{loading ? "Memverifikasi..." : "Masuk"}</span>
+            <span>{loading ? (t.loggingIn || "Memverifikasi...") : (t.loginButton || "Masuk")}</span>
           </button>
         </form>
 
         <div style={styles.footer}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             <ShieldCheck size={14} color="#9CA3AF" />
-            <span>Secure Server Authentication &bull; HSGQ Indonesia</span>
+            <span>{t.secureAuthFooter || "Secure Server Authentication • HSGQ Indonesia"}</span>
           </div>
         </div>
       </div>
@@ -189,9 +213,29 @@ const styles = {
     background: "#FFFFFF",
     borderRadius: 12,
     boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)",
-    padding: "36px 32px 28px",
+    padding: "28px 32px 28px",
     boxSizing: "border-box",
     border: "1px solid #E5E7EB",
+  },
+
+  langSelectWrapper: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "4px 8px",
+    borderRadius: 6,
+    background: "#F3F4F6",
+    border: "1px solid #E5E7EB",
+  },
+
+  langSelect: {
+    background: "transparent",
+    border: "none",
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#374151",
+    outline: "none",
+    cursor: "pointer",
   },
 
   header: {

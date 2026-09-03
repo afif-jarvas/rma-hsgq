@@ -1,12 +1,11 @@
 /**
  * src/components/UserManagementTab.jsx
  * User Management Dashboard & Account Administration (Administrator Role Only)
- * Powered by Local SQLite Backend API
+ * Powered by Local SQLite Backend API & 100% Localized
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  Users,
   UserPlus,
   Search,
   RotateCcw,
@@ -15,21 +14,16 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
-  CheckCircle2,
-  XCircle,
   Check,
   X,
   Loader2,
-  Mail,
-  User,
-  Lock,
   KeyRound,
   Eye,
   EyeOff,
-  AlertTriangle,
 } from "lucide-react";
 import authApi from "../api/authClient.js";
-import { ROLES, USER_STATUS, PERMISSIONS, assertAuthorized } from "../auth/rbac.js";
+import { ROLES, PERMISSIONS, assertAuthorized } from "../auth/rbac.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const T = {
   void: "var(--bg)",
@@ -53,23 +47,23 @@ const sans = "var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
 const mono = "var(--font-mono, monospace)";
 
 function RoleBadge({ role }) {
+  const { getRole } = useLanguage();
   const r = (role || "").toLowerCase();
   let bg = `${T.green}20`;
   let color = T.green;
-  let label = "VIEWER";
   let Icon = Shield;
 
   if (r === "administrator" || r === "admin") {
     bg = `${T.red}20`;
     color = T.red;
-    label = "ADMINISTRATOR";
     Icon = ShieldAlert;
   } else if (r === "engineer" || r === "teknisi") {
     bg = `${T.blue}20`;
     color = T.blue;
-    label = "ENGINEER";
     Icon = ShieldCheck;
   }
+
+  const label = getRole(role || "Viewer");
 
   return (
     <span
@@ -94,8 +88,10 @@ function RoleBadge({ role }) {
 }
 
 function StatusBadge({ status }) {
+  const { getOption } = useLanguage();
   const isActive = status === "active" || status === "Active" || !status;
   const color = isActive ? T.green : T.red;
+  const label = getOption(isActive ? "active" : "inactive");
 
   return (
     <span
@@ -113,21 +109,13 @@ function StatusBadge({ status }) {
       }}
     >
       <span style={{ width: 6, height: 6, borderRadius: "50%", background: color }} />
-      {isActive ? "Active" : "Inactive"}
+      {label}
     </span>
   );
 }
 
-function isLastActiveAdmin(userList, targetUid) {
-  const activeAdmins = (userList || []).filter(
-    (u) =>
-      (u.role === "Administrator" || u.role === "administrator") &&
-      (u.status === "active" || u.status === "Active" || !u.status)
-  );
-  return activeAdmins.length <= 1 && activeAdmins.some((u) => u.uid === targetUid || u.id === targetUid);
-}
-
-export default function UserManagementTab({ currentUserProfile, t, setToastMsg }) {
+export default function UserManagementTab({ currentUserProfile, setToastMsg }) {
+  const { t, getRole, getOption } = useLanguage();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -144,11 +132,11 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
       }
     } catch (err) {
       console.error("Gagal memuat daftar user:", err);
-      if (setToastMsg) setToastMsg(err.message || "Gagal memuat daftar user.");
+      if (setToastMsg) setToastMsg(err.message || t.notFound);
     } finally {
       setLoading(false);
     }
-  }, [setToastMsg]);
+  }, [setToastMsg, t.notFound]);
 
   useEffect(() => {
     loadUsers();
@@ -191,7 +179,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari nama, username, email..."
+            placeholder={t.userMgmtSearchPlaceholder || t.searchPlaceholder || "Cari data..."}
             style={{
               width: "100%",
               height: 36,
@@ -222,10 +210,10 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
             fontFamily: sans,
           }}
         >
-          <option value="">Semua Role</option>
-          <option value="Administrator">Administrator</option>
-          <option value="Engineer">Engineer</option>
-          <option value="Viewer">Viewer</option>
+          <option value="">{t.userMgmtAllRoles || (t.all ? `${t.all} ${t.userMgmtRole || "Role"}` : "Semua Role")}</option>
+          <option value="Administrator">{getRole("Administrator")}</option>
+          <option value="Engineer">{getRole("Engineer")}</option>
+          <option value="Viewer">{getRole("Viewer")}</option>
         </select>
 
         <select
@@ -242,15 +230,15 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
             fontFamily: sans,
           }}
         >
-          <option value="">Semua Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="">{t.userMgmtAllStatus || (t.all ? `${t.all} ${t.userMgmtStatus || "Status"}` : "Semua Status")}</option>
+          <option value="active">{getOption("active")}</option>
+          <option value="inactive">{getOption("inactive")}</option>
         </select>
 
         <button
           type="button"
           onClick={loadUsers}
-          title="Refresh Data"
+          title={t.refresh || "Refresh"}
           style={{
             height: 36,
             padding: "0 12px",
@@ -266,7 +254,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
           }}
         >
           <RotateCcw size={14} className={loading ? "spin" : ""} />
-          <span>Refresh</span>
+          <span>{t.refresh || "Refresh"}</span>
         </button>
 
         <button
@@ -289,7 +277,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
           }}
         >
           <UserPlus size={15} />
-          <span>Tambah User Baru</span>
+          <span>{t.userMgmtAddUser || "Tambah Pengguna"}</span>
         </button>
       </div>
 
@@ -306,12 +294,12 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
             <thead>
               <tr style={{ background: T.panel2, borderBottom: `1px solid ${T.line}`, color: T.ink3, fontSize: 11.5, textTransform: "uppercase" }}>
-                <th style={{ padding: "12px 14px", fontWeight: 700 }}>Nama Lengkap</th>
-                <th style={{ padding: "12px 14px", fontWeight: 700 }}>Email / Username</th>
-                <th style={{ padding: "12px 14px", fontWeight: 700 }}>Role</th>
-                <th style={{ padding: "12px 14px", fontWeight: 700 }}>Status</th>
-                <th style={{ padding: "12px 14px", fontWeight: 700 }}>Dibuat Pada</th>
-                <th style={{ padding: "12px 14px", fontWeight: 700, textAlign: "right" }}>Aksi</th>
+                <th style={{ padding: "12px 14px", fontWeight: 700 }}>{t.userMgmtFullName || "Nama Lengkap"}</th>
+                <th style={{ padding: "12px 14px", fontWeight: 700 }}>{t.userMgmtEmail || "Email"} / {t.userMgmtUsername || "Username"}</th>
+                <th style={{ padding: "12px 14px", fontWeight: 700 }}>{t.userMgmtRole || "Role"}</th>
+                <th style={{ padding: "12px 14px", fontWeight: 700 }}>{t.userMgmtStatus || "Status"}</th>
+                <th style={{ padding: "12px 14px", fontWeight: 700 }}>{t.userMgmtCreated || "Dibuat"}</th>
+                <th style={{ padding: "12px 14px", fontWeight: 700, width: 140, minWidth: 140, textAlign: "center" }}>{t.actions || "Aksi"}</th>
               </tr>
             </thead>
             <tbody>
@@ -320,14 +308,14 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
                   <td colSpan={6} style={{ padding: "36px", textAlign: "center", color: T.ink3 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                       <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
-                      <span>Memuat data pengguna...</span>
+                      <span>{t.loading || "Memuat data..."}</span>
                     </div>
                   </td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: "36px", textAlign: "center", color: T.ink3 }}>
-                    Tidak ada akun pengguna yang sesuai dengan filter.
+                    {t.notFound || "Data tidak ditemukan."}
                   </td>
                 </tr>
               ) : (
@@ -349,13 +337,13 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
                         <StatusBadge status={u.status} />
                       </td>
                       <td style={{ padding: "12px 14px", color: T.ink3, fontSize: 12 }}>
-                        {u.created_at ? new Date(u.created_at).toLocaleDateString("id-ID") : "-"}
+                        {u.created_at ? new Date(u.created_at).toLocaleDateString() : "-"}
                       </td>
-                      <td style={{ padding: "12px 14px", textAlign: "right" }}>
+                      <td style={{ padding: "12px 14px", width: 140, minWidth: 140, textAlign: "center" }}>
                         <div style={{ display: "inline-flex", gap: 6 }}>
                           <button
                             type="button"
-                            title="Edit User"
+                            title={t.edit || "Edit"}
                             onClick={() => setModal({ type: "edit", user: u })}
                             style={{
                               padding: "6px",
@@ -371,7 +359,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
 
                           <button
                             type="button"
-                            title="Reset Password"
+                            title={t.userMgmtResetPassword || "Reset Password"}
                             onClick={() => setModal({ type: "resetPassword", user: u })}
                             style={{
                               padding: "6px",
@@ -387,7 +375,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
 
                           <button
                             type="button"
-                            title={isActive ? "Nonaktifkan User" : "Aktifkan User"}
+                            title={isActive ? (t.userMgmtInactive || "Nonaktifkan") : (t.userMgmtActive || "Aktifkan")}
                             onClick={() => setModal({ type: "toggleStatus", user: u })}
                             style={{
                               padding: "6px",
@@ -403,7 +391,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
 
                           <button
                             type="button"
-                            title="Hapus User"
+                            title={t.delete || "Hapus"}
                             onClick={() => setModal({ type: "delete", user: u })}
                             style={{
                               padding: "6px",
@@ -434,7 +422,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
           onSuccess={() => {
             setModal(null);
             loadUsers();
-            if (setToastMsg) setToastMsg("Akun pengguna baru berhasil dibuat.");
+            if (setToastMsg) setToastMsg(t.toastUserSaved || "Akun pengguna baru berhasil dibuat.");
           }}
           currentUserProfile={currentUserProfile}
         />
@@ -448,7 +436,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
           onSuccess={() => {
             setModal(null);
             loadUsers();
-            if (setToastMsg) setToastMsg("Data user berhasil diperbarui.");
+            if (setToastMsg) setToastMsg(t.toastUserSaved || "Data user berhasil diperbarui.");
           }}
           currentUserProfile={currentUserProfile}
         />
@@ -461,7 +449,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
           onSuccess={() => {
             setModal(null);
             loadUsers();
-            if (setToastMsg) setToastMsg(`Password untuk user ${modal.user.displayName || modal.user.full_name || modal.user.email} berhasil direset.`);
+            if (setToastMsg) setToastMsg(t.toastPasswordReset || "Password berhasil direset.");
           }}
           currentUserProfile={currentUserProfile}
         />
@@ -472,16 +460,10 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
           user={modal.user}
           usersList={users}
           onClose={() => setModal(null)}
-          onSuccess={(newStatus) => {
+          onSuccess={() => {
             setModal(null);
             loadUsers();
-            if (setToastMsg) {
-              setToastMsg(
-                newStatus === "active"
-                  ? `User ${modal.user.displayName || modal.user.full_name || modal.user.email} berhasil diaktifkan.`
-                  : `User ${modal.user.displayName || modal.user.full_name || modal.user.email} berhasil dinonaktifkan.`
-              );
-            }
+            if (setToastMsg) setToastMsg(t.toastUserSaved || "Status user berhasil diperbarui.");
           }}
           currentUserProfile={currentUserProfile}
         />
@@ -495,7 +477,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
           onSuccess={() => {
             setModal(null);
             loadUsers();
-            if (setToastMsg) setToastMsg("User berhasil dihapus.");
+            if (setToastMsg) setToastMsg(t.toastUserDeleted || "User berhasil dihapus.");
           }}
           currentUserProfile={currentUserProfile}
         />
@@ -508,6 +490,7 @@ export default function UserManagementTab({ currentUserProfile, t, setToastMsg }
    CREATE USER MODAL
    ============================================================ */
 function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
+  const { t, getRole, getOption } = useLanguage();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -525,11 +508,11 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
     try {
       assertAuthorized(currentUserProfile, PERMISSIONS.USER_CREATE, "membuat user baru");
 
-      if (!name.trim()) return setErr("Nama lengkap wajib diisi.");
-      if (!email.trim()) return setErr("Email wajib diisi.");
-      if (!password) return setErr("Password wajib diisi.");
-      if (password.length < 6) return setErr("Password minimal 6 karakter.");
-      if (password !== confirmPassword) return setErr("Konfirmasi password tidak cocok.");
+      if (!name.trim()) return setErr(t.nameRequired || "Nama lengkap wajib diisi.");
+      if (!email.trim()) return setErr(t.authRequired || "Email wajib diisi.");
+      if (!password) return setErr(t.authRequired || "Password wajib diisi.");
+      if (password.length < 6) return setErr(t.passwordTooShort || "Password minimal 6 karakter.");
+      if (password !== confirmPassword) return setErr(t.passwordMismatch || "Konfirmasi password tidak cocok.");
 
       setLoading(true);
       const res = await authApi.createUser({
@@ -545,7 +528,7 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
       if (res && res.ok) {
         onSuccess();
       } else {
-        setErr(res?.error || "Gagal membuat user baru.");
+        setErr(res?.error || t.profileUpdateFailed || "Gagal membuat user baru.");
       }
     } catch (error) {
       setLoading(false);
@@ -558,8 +541,8 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
       <div className="profile-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 480 }}>
         <div className="profile-modal-header">
           <div>
-            <h2>Tambah Akun Pengguna</h2>
-            <p>Buat akun baru untuk Administrator, Engineer, atau Viewer</p>
+            <h2>{t.userMgmtAddUser || "Tambah Pengguna"}</h2>
+            <p>{t.userMgmtSubtitle || "Kelola akun pengguna dan hak akses"}</p>
           </div>
           <button className="modal-close-button" onClick={onClose}>
             ✕
@@ -574,63 +557,63 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
-            Nama Lengkap
+            {t.userMgmtFullName || "Nama Lengkap"}
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Contoh: Budi Santoso"
+              placeholder={t.yourName || "Nama lengkap..."}
               style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
             />
           </label>
 
           <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
-            Email
+            {t.userMgmtEmail || "Email"}
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="nama@hsgq.com"
+              placeholder="user@hsgq.local"
               style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
             />
           </label>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
-              Role
+              {t.userMgmtRole || "Role"}
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
               >
-                <option value={ROLES.ADMINISTRATOR}>Administrator (Full Access)</option>
-                <option value={ROLES.ENGINEER}>Engineer (Operational CRUD)</option>
-                <option value={ROLES.VIEWER}>Viewer (Read Only)</option>
+                <option value={ROLES.ADMINISTRATOR}>{getRole("Administrator")}</option>
+                <option value={ROLES.ENGINEER}>{getRole("Engineer")}</option>
+                <option value={ROLES.VIEWER}>{getRole("Viewer")}</option>
               </select>
             </label>
 
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
-              Status
+              {t.userMgmtStatus || "Status"}
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="active">{getOption("active")}</option>
+                <option value="inactive">{getOption("inactive")}</option>
               </select>
             </label>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
-              Password
+              {t.password || "Password"}
               <div style={{ position: "relative" }}>
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min 6 karakter"
+                  placeholder={t.passwordPlaceholder || "Min 6 karakter"}
                   style={{ width: "100%", padding: "8px 30px 8px 12px", boxSizing: "border-box", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
                 />
                 <button
@@ -644,12 +627,12 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
             </label>
 
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
-              Konfirmasi Password
+              {t.confirmPassword || "Konfirmasi Password"}
               <input
                 type={showPassword ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Ulangi password"
+                placeholder={t.confirmPasswordPlaceholder || "Ulangi password"}
                 style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
               />
             </label>
@@ -662,7 +645,7 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
               disabled={loading}
               style={{ padding: "8px 16px", borderRadius: 6, border: `1px solid ${T.line}`, background: "transparent", color: T.ink, cursor: "pointer" }}
             >
-              Batal
+              {t.cancel || "Batal"}
             </button>
             <button
               type="submit"
@@ -670,7 +653,7 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
               style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 6, border: "none", background: T.cyan, color: "#000", fontWeight: 700, cursor: "pointer" }}
             >
               {loading && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
-              Buat Akun
+              {t.userMgmtCreateAccount || t.create || "Buat Akun"}
             </button>
           </div>
         </form>
@@ -682,7 +665,8 @@ function CreateUserModal({ onClose, onSuccess, currentUserProfile }) {
 /* ============================================================
    EDIT USER MODAL
    ============================================================ */
-function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile }) {
+function EditUserModal({ user, onClose, onSuccess, currentUserProfile }) {
+  const { t, getRole, getOption } = useLanguage();
   const targetUid = user.id || user.uid;
   const [name, setName] = useState(user.full_name || user.displayName || user.name || "");
   const [role, setRole] = useState(user.role || ROLES.VIEWER);
@@ -709,7 +693,7 @@ function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile
       if (res && res.ok) {
         onSuccess();
       } else {
-        setErr(res?.error || "Gagal memperbarui user.");
+        setErr(res?.error || t.profileUpdateFailed || "Gagal memperbarui user.");
       }
     } catch (error) {
       setLoading(false);
@@ -722,7 +706,7 @@ function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile
       <div className="profile-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 460 }}>
         <div className="profile-modal-header">
           <div>
-            <h2>Edit Akun Pengguna</h2>
+            <h2>{t.userMgmtEditUser || "Edit Pengguna"}</h2>
             <p>{user.email}</p>
           </div>
           <button className="modal-close-button" onClick={onClose}>
@@ -738,7 +722,7 @@ function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
-            Nama Lengkap
+            {t.userMgmtFullName || "Nama Lengkap"}
             <input
               type="text"
               value={name}
@@ -748,7 +732,7 @@ function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile
           </label>
 
           <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
-            Email (Read Only)
+            {t.userMgmtEmail || "Email"} ({t.readOnly || "Read Only"})
             <input
               type="text"
               value={user.email || "-"}
@@ -759,27 +743,27 @@ function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
-              Role
+              {t.userMgmtRole || "Role"}
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
               >
-                <option value={ROLES.ADMINISTRATOR}>Administrator</option>
-                <option value={ROLES.ENGINEER}>Engineer</option>
-                <option value={ROLES.VIEWER}>Viewer</option>
+                <option value={ROLES.ADMINISTRATOR}>{getRole("Administrator")}</option>
+                <option value={ROLES.ENGINEER}>{getRole("Engineer")}</option>
+                <option value={ROLES.VIEWER}>{getRole("Viewer")}</option>
               </select>
             </label>
 
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
-              Status
+              {t.userMgmtStatus || "Status"}
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="active">{getOption("active")}</option>
+                <option value="inactive">{getOption("inactive")}</option>
               </select>
             </label>
           </div>
@@ -791,7 +775,7 @@ function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile
               disabled={loading}
               style={{ padding: "8px 16px", borderRadius: 6, border: `1px solid ${T.line}`, background: "transparent", color: T.ink, cursor: "pointer" }}
             >
-              Batal
+              {t.cancel || "Batal"}
             </button>
             <button
               type="submit"
@@ -799,7 +783,7 @@ function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile
               style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 6, border: "none", background: T.cyan, color: "#000", fontWeight: 700, cursor: "pointer" }}
             >
               {loading && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
-              Simpan Perubahan
+              {t.saveChanges || "Simpan Perubahan"}
             </button>
           </div>
         </form>
@@ -811,7 +795,8 @@ function EditUserModal({ user, usersList, onClose, onSuccess, currentUserProfile
 /* ============================================================
    DELETE USER MODAL
    ============================================================ */
-function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfile }) {
+function DeleteUserModal({ user, onClose, onSuccess, currentUserProfile }) {
+  const { t } = useLanguage();
   const targetUid = user.id || user.uid;
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -834,6 +819,9 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
       setErr(error.message);
     }
   };
+
+  const userName = user.full_name || user.displayName || user.name || user.email || "-";
+  const deletePrompt = (t.userMgmtConfirmDeleteMsg || "Apakah Anda yakin ingin menghapus akun pengguna {name}? Tindakan ini tidak dapat dibatalkan.").replace("{name}", userName);
 
   return (
     <div className="profile-overlay" onClick={onClose}>
@@ -875,10 +863,10 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
             </div>
             <div>
               <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: T.ink, lineHeight: 1.3 }}>
-                Hapus Akun
+                {t.userMgmtConfirmDeleteTitle || "Hapus Akun"}
               </h2>
               <p style={{ margin: "2px 0 0", fontSize: 12, color: T.red, fontWeight: 500 }}>
-                Tindakan ini tidak dapat dibatalkan
+                {t.deleteConfirmMessage || "Tindakan ini tidak dapat dibatalkan"}
               </p>
             </div>
           </div>
@@ -905,7 +893,7 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
         {/* PROMPT & USER SUMMARY CARD */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ fontSize: 13, color: T.ink2 }}>
-            Apakah Anda yakin ingin menghapus akun ini?
+            {deletePrompt}
           </div>
 
           <div
@@ -931,7 +919,7 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
                   textOverflow: "ellipsis",
                 }}
               >
-                {user.full_name || user.displayName || user.name || "-"}
+                {userName}
               </div>
               <div
                 style={{
@@ -988,7 +976,7 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
               cursor: "pointer",
             }}
           >
-            Batal
+            {t.cancel || "Batal"}
           </button>
           <button
             type="button"
@@ -1014,7 +1002,7 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
             ) : (
               <Trash2 size={14} />
             )}
-            Hapus Akun
+            {t.delete || "Hapus"}
           </button>
         </div>
       </div>
@@ -1025,7 +1013,8 @@ function DeleteUserModal({ user, usersList, onClose, onSuccess, currentUserProfi
 /* ============================================================
    TOGGLE STATUS MODAL (NONAKTIFKAN / AKTIFKAN USER)
    ============================================================ */
-function ToggleStatusModal({ user, usersList, onClose, onSuccess, currentUserProfile }) {
+function ToggleStatusModal({ user, onClose, onSuccess, currentUserProfile }) {
+  const { t, getOption } = useLanguage();
   const targetUid = user.id || user.uid;
   const isCurrentActive = user.status === "active" || user.status === "Active" || !user.status;
   const [loading, setLoading] = useState(false);
@@ -1052,12 +1041,15 @@ function ToggleStatusModal({ user, usersList, onClose, onSuccess, currentUserPro
     }
   };
 
+  const title = isCurrentActive ? (t.userMgmtInactive || "Nonaktifkan Akun") : (t.userMgmtActive || "Aktifkan Akun");
+  const userName = user.full_name || user.displayName || user.name || user.email;
+
   return (
     <div className="profile-overlay" onClick={onClose}>
       <div className="profile-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440 }}>
         <div className="profile-modal-header">
           <div>
-            <h2>{isCurrentActive ? "Nonaktifkan Akun" : "Aktifkan Akun"}</h2>
+            <h2>{title}</h2>
             <p>{user.email}</p>
           </div>
           <button className="modal-close-button" onClick={onClose}>
@@ -1072,15 +1064,9 @@ function ToggleStatusModal({ user, usersList, onClose, onSuccess, currentUserPro
         )}
 
         <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.5, marginBottom: 14 }}>
-          {isCurrentActive ? (
-            <>
-              Apakah Anda yakin ingin menonaktifkan user <strong>{user.full_name || user.displayName || user.name || user.email}</strong>? User tidak akan dapat masuk ke sistem hingga diaktifkan kembali.
-            </>
-          ) : (
-            <>
-              Apakah Anda yakin ingin mengaktifkan user <strong>{user.full_name || user.displayName || user.name || user.email}</strong>? User akan dapat kembali masuk dan menggunakan sistem.
-            </>
-          )}
+          {isCurrentActive
+            ? (t.userMgmtConfirmDeactivateMsg || "Konfirmasi menonaktifkan akun {name}?").replace("{name}", userName)
+            : (t.userMgmtConfirmActivateMsg || "Konfirmasi mengaktifkan kembali akun {name}?").replace("{name}", userName)}
         </div>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
@@ -1090,7 +1076,7 @@ function ToggleStatusModal({ user, usersList, onClose, onSuccess, currentUserPro
             disabled={loading}
             style={{ padding: "8px 16px", borderRadius: 6, border: `1px solid ${T.line}`, background: "transparent", color: T.ink, cursor: "pointer" }}
           >
-            Batal
+            {t.cancel || "Batal"}
           </button>
           <button
             type="button"
@@ -1110,7 +1096,7 @@ function ToggleStatusModal({ user, usersList, onClose, onSuccess, currentUserPro
             }}
           >
             {loading && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
-            {isCurrentActive ? "Nonaktifkan User" : "Aktifkan User"}
+            {title}
           </button>
         </div>
       </div>
@@ -1122,6 +1108,7 @@ function ToggleStatusModal({ user, usersList, onClose, onSuccess, currentUserPro
    RESET PASSWORD MODAL
    ============================================================ */
 function ResetPasswordModal({ user, onClose, onSuccess, currentUserProfile }) {
+  const { t } = useLanguage();
   const targetUid = user.id || user.uid;
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -1136,9 +1123,9 @@ function ResetPasswordModal({ user, onClose, onSuccess, currentUserProfile }) {
     try {
       assertAuthorized(currentUserProfile, PERMISSIONS.USER_RESET_PASSWORD, "mereset password user");
 
-      if (!newPassword) return setErr("Password baru wajib diisi.");
-      if (newPassword.length < 6) return setErr("Password baru minimal 6 karakter.");
-      if (newPassword !== confirmPassword) return setErr("Konfirmasi password tidak cocok.");
+      if (!newPassword) return setErr(t.authRequired || "Password baru wajib diisi.");
+      if (newPassword.length < 6) return setErr(t.passwordTooShort || "Password baru minimal 6 karakter.");
+      if (newPassword !== confirmPassword) return setErr(t.passwordMismatch || "Konfirmasi password tidak cocok.");
 
       setLoading(true);
       const res = await authApi.resetPassword(targetUid, newPassword);
@@ -1146,7 +1133,7 @@ function ResetPasswordModal({ user, onClose, onSuccess, currentUserProfile }) {
       if (res && res.ok) {
         onSuccess();
       } else {
-        setErr(res?.error || "Gagal mereset password.");
+        setErr(res?.error || t.passwordChangeFailed || "Gagal mereset password.");
       }
     } catch (error) {
       setLoading(false);
@@ -1159,8 +1146,8 @@ function ResetPasswordModal({ user, onClose, onSuccess, currentUserProfile }) {
       <div className="profile-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440 }}>
         <div className="profile-modal-header">
           <div>
-            <h2>Reset Password User</h2>
-            <p>Atur password baru untuk akun <strong>{user.email || user.username}</strong></p>
+            <h2>{t.userMgmtResetPassword || "Reset Password User"}</h2>
+            <p>{user.email || user.username}</p>
           </div>
           <button className="modal-close-button" onClick={onClose}>
             ✕
@@ -1175,13 +1162,13 @@ function ResetPasswordModal({ user, onClose, onSuccess, currentUserProfile }) {
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
-            Password Baru
+            {t.newPassword || "Password Baru"}
             <div style={{ position: "relative" }}>
               <input
                 type={showPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Minimal 6 karakter"
+                placeholder={t.newPasswordPlaceholder || "Minimal 6 karakter"}
                 style={{ width: "100%", padding: "8px 30px 8px 12px", boxSizing: "border-box", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
               />
               <button
@@ -1195,12 +1182,12 @@ function ResetPasswordModal({ user, onClose, onSuccess, currentUserProfile }) {
           </label>
 
           <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 600 }}>
-            Konfirmasi Password Baru
+            {t.confirmPassword || "Konfirmasi Password Baru"}
             <input
               type={showPassword ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Ketik ulang password baru"
+              placeholder={t.confirmPasswordPlaceholder || "Ketik ulang password baru"}
               style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${T.line}`, background: T.panel, color: T.ink }}
             />
           </label>
@@ -1212,7 +1199,7 @@ function ResetPasswordModal({ user, onClose, onSuccess, currentUserProfile }) {
               disabled={loading}
               style={{ padding: "8px 16px", borderRadius: 6, border: `1px solid ${T.line}`, background: "transparent", color: T.ink, cursor: "pointer" }}
             >
-              Batal
+              {t.cancel || "Batal"}
             </button>
             <button
               type="submit"
@@ -1220,7 +1207,7 @@ function ResetPasswordModal({ user, onClose, onSuccess, currentUserProfile }) {
               style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 6, border: "none", background: T.amber, color: "#000", fontWeight: 700, cursor: "pointer" }}
             >
               {loading && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
-              Reset Password
+              {t.userMgmtResetPassword || "Reset Password"}
             </button>
           </div>
         </form>

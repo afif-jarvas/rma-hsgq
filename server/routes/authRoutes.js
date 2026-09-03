@@ -42,9 +42,10 @@ router.post("/login", (req, res) => {
   // Generate session token
   const { token, expiresAt } = createSession(user.id);
 
-  // Update last login
+  // Update last login and previous login
+  const previousLogin = user.last_login_at || null;
   const now = new Date().toISOString();
-  db.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").run(now, user.id);
+  db.prepare("UPDATE users SET previous_login_at = ?, last_login_at = ? WHERE id = ?").run(previousLogin, now, user.id);
 
   const profile = {
     id: user.id,
@@ -62,6 +63,7 @@ router.post("/login", (req, res) => {
     theme: user.theme || "system",
     created_at: user.created_at,
     last_login_at: now,
+    previous_login_at: previousLogin,
   };
 
   res.json({

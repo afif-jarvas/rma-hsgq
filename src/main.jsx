@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./auth/AuthContext.jsx";
 import Login from "./auth/Login.jsx";
 
 import { ThemeProvider } from "./context/ThemeContext.jsx";
+import { LanguageProvider } from "./context/LanguageContext.jsx";
 
 import "./global.css";
 
@@ -35,7 +36,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
       <ThemeProvider>
-        <ProtectedApp />
+        <LanguageProvider>
+          <ProtectedApp />
+        </LanguageProvider>
       </ThemeProvider>
     </AuthProvider>
   </React.StrictMode>,
