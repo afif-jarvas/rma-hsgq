@@ -3,7 +3,7 @@
  * Safely backs up server/data/users.db to server/data/backups/users-backup-<timestamp>.db
  */
 
-import Database from "better-sqlite3";
+import Database from "libsql";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";

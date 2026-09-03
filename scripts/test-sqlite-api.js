@@ -3,7 +3,7 @@
  * Comprehensive integration test for all modules in SQLite app.db
  */
 
-import Database from "better-sqlite3";
+import Database from "libsql";
 import path from "path";
 import { fileURLToPath } from "url";
 

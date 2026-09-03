@@ -6,7 +6,6 @@ import App from "./App.jsx";
 import { AuthProvider, useAuth } from "./auth/AuthContext.jsx";
 
 import Login from "./auth/Login.jsx";
-import ChangePassword from "./auth/ChangePassword.jsx";
 
 import { ThemeProvider } from "./context/ThemeContext.jsx";
 import { LanguageProvider } from "./context/LanguageContext.jsx";
@@ -14,7 +13,7 @@ import { LanguageProvider } from "./context/LanguageContext.jsx";
 import "./global.css";
 
 function ProtectedApp() {
-  const { user, profile, loading } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -28,12 +27,6 @@ function ProtectedApp() {
 
   if (!user) {
     return <Login />;
-  }
-
-  // ENFORCE CHANGE PASSWORD:
-  // User with mustChangePassword = true CANNOT enter dashboard or main menu.
-  if (profile?.mustChangePassword === true) {
-    return <ChangePassword />;
   }
 
   return <App />;

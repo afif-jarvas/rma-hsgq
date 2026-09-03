@@ -1,24 +1,16 @@
 import React, { useState } from "react";
-
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-  updateProfile,
-} from "firebase/auth";
-
-import { auth, saveUserProfile, isUsingFirebase, findUserByUsernameOrEmail } from "../firebase.js";
-
+import authApi from "../api/authClient.js";
+import { useAuth } from "./AuthContext.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import {
   Eye,
   EyeOff,
   Loader2,
   LogIn,
-  UserPlus,
   Mail,
   Lock,
-  User,
-  ArrowLeft,
+  ShieldCheck,
+  Languages,
 } from "lucide-react";
 
 import hsgqLogo from "../assets/hsgq-logo.png";
@@ -35,511 +27,168 @@ const COLORS = {
   success: "#16A34A",
 };
 
-function getFirebaseErrorMessage(error) {
-  if (!error?.code) {
-    return "Terjadi kesalahan. Silakan coba lagi.";
-  }
-
-  switch (error.code) {
-    case "auth/invalid-email":
-      return "Format email tidak valid.";
-
-    case "auth/user-not-found":
-      return "Akun dengan email tersebut tidak ditemukan.";
-
-    case "auth/wrong-password":
-    case "auth/invalid-credential":
-      return "Email atau password salah.";
-
-    case "auth/email-already-in-use":
-      return "Email tersebut sudah terdaftar.";
-
-    case "auth/weak-password":
-      return "Password terlalu lemah. Gunakan minimal 6 karakter.";
-
-    case "auth/too-many-requests":
-      return "Terlalu banyak percobaan. Coba lagi beberapa saat.";
-
-    case "auth/network-request-failed":
-      return "Koneksi internet bermasalah.";
-
-    default:
-      return error.message || "Terjadi kesalahan.";
-  }
-}
-
 export default function Login() {
-  const [mode, setMode] = useState("login");
-
-  const [name, setName] = useState("");
-
+  const { inactiveError, loginWithUser } = useAuth();
+  const { language, setLanguage, languages, t } = useLanguage();
   const [email, setEmail] = useState("");
-
   const [password, setPassword] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
-
   const [loading, setLoading] = useState(false);
-
-  const [message, setMessage] = useState("");
-
   const [error, setError] = useState("");
 
   function resetMessages() {
-    setMessage("");
     setError("");
   }
 
   async function handleLogin(event) {
     event.preventDefault();
-
     resetMessages();
 
-    if (!email.trim() || !password) {
-      setError("Email atau username dan password wajib diisi.");
-
-      return;
-    }
-
-    if (!auth || !isUsingFirebase) {
-      setError(
-        "Firebase belum dikonfigurasi. Isi firebaseConfig terlebih dahulu.",
-      );
-
+    const inputVal = email.trim();
+    if (!inputVal || !password) {
+      setError(t.authRequired || "Email/Username dan password wajib diisi.");
       return;
     }
 
     try {
       setLoading(true);
+      const res = await authApi.login(inputVal, password);
 
-      let targetEmail = email.trim();
-      if (!targetEmail.includes("@")) {
-        const found = await findUserByUsernameOrEmail(targetEmail);
-        if (found?.email) {
-          targetEmail = found.email;
+      if (res && res.ok) {
+        if (typeof loginWithUser === "function") {
+          loginWithUser(res.user, res.profile, res.token);
+        }
+      } else {
+        if (res?.error && res.error.toLowerCase().includes("nonaktif")) {
+          setError(t.accountInactive || "Akun Anda telah dinonaktifkan. Hubungi Administrator.");
         } else {
-          targetEmail = `${targetEmail.toLowerCase()}@hsgq.local`;
+          setError(t.invalidCredentials || "Email/Username atau password salah.");
         }
       }
-
-      await signInWithEmailAndPassword(auth, targetEmail, password);
     } catch (err) {
-      console.error(err);
-
-      setError(getFirebaseErrorMessage(err));
+      console.error("Login error:", err);
+      setError(t.invalidCredentials || "Email/Username atau password salah.");
     } finally {
       setLoading(false);
     }
-  }
-
-  async function handleRegister(event) {
-    event.preventDefault();
-
-    resetMessages();
-
-    if (!name.trim()) {
-      setError("Nama wajib diisi.");
-
-      return;
-    }
-
-    if (!email.trim()) {
-      setError("Email wajib diisi.");
-
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password minimal terdiri dari 6 karakter.");
-
-      return;
-    }
-
-    if (!auth || !isUsingFirebase) {
-      setError(
-        "Firebase belum dikonfigurasi. Isi firebaseConfig terlebih dahulu.",
-      );
-
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const credential = await createUserWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password,
-      );
-
-      /*
-      Simpan nama ke Firebase Authentication.
-      */
-
-      await updateProfile(credential.user, {
-        displayName: name.trim(),
-      });
-
-      /*
-      Simpan profile lengkap ke Firestore.
-      */
-
-      await saveUserProfile(credential.user.uid, {
-        displayName: name.trim(),
-        email: email.trim(),
-        phone: "",
-        company: "",
-        address: "",
-        theme: "system",
-        createdAt: new Date().toISOString(),
-      });
-
-      /*
-      onAuthStateChanged akan menangani
-      perpindahan ke aplikasi.
-      */
-    } catch (err) {
-      console.error(err);
-
-      setError(getFirebaseErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleForgotPassword(event) {
-    event.preventDefault();
-
-    resetMessages();
-
-    if (!email.trim()) {
-      setError("Masukkan email terlebih dahulu.");
-
-      return;
-    }
-
-    if (!auth || !isUsingFirebase) {
-      setError("Firebase belum dikonfigurasi.");
-
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      await sendPasswordResetEmail(auth, email.trim());
-
-      setMessage(
-        "Email untuk reset password sudah dikirim. Silakan cek inbox.",
-      );
-    } catch (err) {
-      console.error(err);
-
-      setError(getFirebaseErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function changeMode(newMode) {
-    resetMessages();
-
-    setMode(newMode);
   }
 
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        {/* LOGO / HEADER */}
-
-        <div style={styles.logoWrapper}>
-          <img
-            src={hsgqLogo}
-            alt="HSGQ"
-            style={{
-              height: 60,
-              width: "auto",
-              objectFit: "contain",
-            }}
-          />
-
-          <div>
-            <div style={styles.brand}>HSGQ RMA</div>
-
-            <div style={styles.subtitle}>RMA & Case Log Book</div>
+        {/* TOPBAR LANGUAGE SWITCHER */}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+          <div style={styles.langSelectWrapper}>
+            <Languages size={14} color="#6B7280" />
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              style={styles.langSelect}
+            >
+              {languages.map((item) => (
+                <option key={item.code} value={item.code}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        {/* LOGIN */}
+        {/* LOGO & HEADER */}
+        <div style={styles.header}>
+          <img src={hsgqLogo} alt="HSGQ Logo" style={styles.logo} />
+          <div>
+            <h1 style={styles.title}>{t.appName || "HSGQ INDONESIA"}</h1>
+            <p style={styles.subtitle}>{t.appSubtitle || "RMA & Support Management System"}</p>
+          </div>
+        </div>
 
-        {mode === "login" && (
-          <>
-            <div style={styles.heading}>Welcome Back</div>
+        <div style={{ marginTop: 24, marginBottom: 20 }}>
+          <h2 style={styles.heading}>{t.loginHeading || "Masuk ke Akun"}</h2>
+          <p style={styles.description}>
+            {t.loginDescription || "Gunakan email atau username terdaftar untuk mengakses aplikasi."}
+          </p>
+        </div>
 
-            <div style={styles.description}>
-              Sign in untuk melanjutkan ke HSGQ RMA.
-            </div>
-
-            <form onSubmit={handleLogin} style={styles.form}>
-              <label style={styles.label}>
-                Email / Username
-                <div style={styles.inputWrapper}>
-                  <Mail size={17} style={styles.inputIcon} />
-
-                  <input
-                    type="text"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Email atau username"
-                    autoComplete="username"
-                    style={styles.input}
-                  />
-                </div>
-              </label>
-
-              <label style={styles.label}>
-                Password
-                <div style={styles.inputWrapper}>
-                  <Lock size={17} style={styles.inputIcon} />
-
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password"
-                    autoComplete="current-password"
-                    style={styles.input}
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={styles.eyeButton}
-                  >
-                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                  </button>
-                </div>
-              </label>
-
-              {error && <div style={styles.error}>{error}</div>}
-
-              {message && <div style={styles.success}>{message}</div>}
-
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  ...styles.primaryButton,
-                  opacity: loading ? 0.7 : 1,
-                }}
-              >
-                {loading ? (
-                  <Loader2 size={18} style={styles.spin} />
-                ) : (
-                  <LogIn size={18} />
-                )}
-
-                {loading ? "Signing in..." : "Sign In"}
-              </button>
-            </form>
-
-            <button
-              type="button"
-              onClick={() => changeMode("forgot")}
-              style={styles.linkButton}
-            >
-              Forgot password?
-            </button>
-
-            <div style={styles.separator}>
-              <span />
-              <small>OR</small>
-              <span />
-            </div>
-
-            <div style={styles.bottomText}>Belum punya akun?</div>
-
-            <button
-              type="button"
-              onClick={() => changeMode("register")}
-              style={styles.secondaryButton}
-            >
-              <UserPlus size={17} />
-              Create Account
-            </button>
-          </>
+        {/* INACTIVE ACCOUNT ERROR (FROM WATCHDOG / SESSION) */}
+        {inactiveError && !error && (
+          <div style={{ ...styles.error, marginBottom: 16 }}>
+            {t.accountInactive || inactiveError}
+          </div>
         )}
 
-        {/* REGISTER */}
-
-        {mode === "register" && (
-          <>
-            <button
-              type="button"
-              onClick={() => changeMode("login")}
-              style={styles.backButton}
-            >
-              <ArrowLeft size={16} />
-              Back to Login
-            </button>
-
-            <div style={styles.heading}>Create Account</div>
-
-            <div style={styles.description}>
-              Buat akun untuk menggunakan HSGQ RMA.
-            </div>
-
-            <form onSubmit={handleRegister} style={styles.form}>
-              <label style={styles.label}>
-                Name
-                <div style={styles.inputWrapper}>
-                  <User size={17} style={styles.inputIcon} />
-
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Nama lengkap"
-                    autoComplete="name"
-                    style={styles.input}
-                  />
-                </div>
-              </label>
-
-              <label style={styles.label}>
-                Email
-                <div style={styles.inputWrapper}>
-                  <Mail size={17} style={styles.inputIcon} />
-
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="nama@email.com"
-                    autoComplete="email"
-                    style={styles.input}
-                  />
-                </div>
-              </label>
-
-              <label style={styles.label}>
-                Password
-                <div style={styles.inputWrapper}>
-                  <Lock size={17} style={styles.inputIcon} />
-
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Minimal 6 karakter"
-                    autoComplete="new-password"
-                    style={styles.input}
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={styles.eyeButton}
-                  >
-                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                  </button>
-                </div>
-              </label>
-
-              {error && <div style={styles.error}>{error}</div>}
-
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  ...styles.primaryButton,
-                  opacity: loading ? 0.7 : 1,
-                }}
-              >
-                {loading ? (
-                  <Loader2 size={18} style={styles.spin} />
-                ) : (
-                  <UserPlus size={18} />
-                )}
-
-                {loading ? "Creating..." : "Create Account"}
-              </button>
-            </form>
-
-            <div style={styles.bottomText}>Sudah punya akun?</div>
-
-            <button
-              type="button"
-              onClick={() => changeMode("login")}
-              style={styles.secondaryButton}
-            >
-              Sign In
-            </button>
-          </>
+        {/* ERROR MESSAGE */}
+        {error && (
+          <div style={{ ...styles.error, marginBottom: 16 }}>
+            {error}
+          </div>
         )}
 
-        {/* FORGOT PASSWORD */}
-
-        {mode === "forgot" && (
-          <>
-            <button
-              type="button"
-              onClick={() => changeMode("login")}
-              style={styles.backButton}
-            >
-              <ArrowLeft size={16} />
-              Back to Login
-            </button>
-
-            <div style={styles.heading}>Reset Password</div>
-
-            <div style={styles.description}>
-              Masukkan email akunmu. Kami akan mengirimkan link untuk membuat
-              password baru.
+        {/* LOGIN FORM */}
+        <form onSubmit={handleLogin} style={styles.form}>
+          <label style={styles.label}>
+            <span>{t.emailOrUsername || "Email atau Username"}</span>
+            <div style={styles.inputWrapper}>
+              <Mail size={16} style={styles.inputIcon} />
+              <input
+                type="text"
+                placeholder={t.emailOrUsernamePlaceholder || "nama@hsgq.local atau username"}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={styles.input}
+                autoComplete="username"
+                autoFocus
+              />
             </div>
+          </label>
 
-            <form onSubmit={handleForgotPassword} style={styles.form}>
-              <label style={styles.label}>
-                Email
-                <div style={styles.inputWrapper}>
-                  <Mail size={17} style={styles.inputIcon} />
-
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="nama@email.com"
-                    autoComplete="email"
-                    style={styles.input}
-                  />
-                </div>
-              </label>
-
-              {error && <div style={styles.error}>{error}</div>}
-
-              {message && <div style={styles.success}>{message}</div>}
-
+          <label style={styles.label}>
+            <span>{t.password || "Password"}</span>
+            <div style={styles.inputWrapper}>
+              <Lock size={16} style={styles.inputIcon} />
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder={t.passwordPlaceholder || "Masukkan password Anda"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={styles.input}
+                autoComplete="current-password"
+              />
               <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  ...styles.primaryButton,
-                  opacity: loading ? 0.7 : 1,
-                }}
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={styles.eyeButton}
+                title={showPassword ? t.hidePassword : t.showPassword}
               >
-                {loading ? (
-                  <Loader2 size={18} style={styles.spin} />
-                ) : (
-                  <Mail size={18} />
-                )}
-
-                {loading ? "Sending..." : "Send Reset Link"}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
-            </form>
-          </>
-        )}
+            </div>
+          </label>
 
-        <div style={styles.footer}>HSGQ RMA Cloud</div>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              ...styles.primaryButton,
+              opacity: loading ? 0.7 : 1,
+              marginTop: 6,
+            }}
+          >
+            {loading ? (
+              <Loader2 size={16} style={styles.spin} />
+            ) : (
+              <LogIn size={16} />
+            )}
+            <span>{loading ? (t.loggingIn || "Memverifikasi...") : (t.loginButton || "Masuk")}</span>
+          </button>
+        </form>
+
+        <div style={styles.footer}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            <ShieldCheck size={14} color="#9CA3AF" />
+            <span>{t.secureAuthFooter || "Secure Server Authentication • HSGQ Indonesia"}</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -548,35 +197,63 @@ export default function Login() {
 const styles = {
   page: {
     minHeight: "100vh",
-    width: "100%",
+    width: "100vw",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: COLORS.bg,
+    background: "#F0F2F5",
     padding: "24px 16px",
     boxSizing: "border-box",
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
   },
 
   card: {
     width: "100%",
-    maxWidth: 430,
-    background: COLORS.panel,
-    border: `1px solid ${COLORS.border}`,
-    borderRadius: 14,
-    padding: "32px",
+    maxWidth: 440,
+    background: "#FFFFFF",
+    borderRadius: 12,
+    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)",
+    padding: "28px 32px 28px",
     boxSizing: "border-box",
-    boxShadow: "0 12px 35px rgba(0, 0, 0, 0.08)",
+    border: "1px solid #E5E7EB",
   },
 
-  logoWrapper: {
+  langSelectWrapper: {
     display: "flex",
     alignItems: "center",
-    gap: 12,
-    marginBottom: 32,
+    gap: 6,
+    padding: "4px 8px",
+    borderRadius: 6,
+    background: "#F3F4F6",
+    border: "1px solid #E5E7EB",
   },
 
-  brand: {
+  langSelect: {
+    background: "transparent",
+    border: "none",
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#374151",
+    outline: "none",
+    cursor: "pointer",
+  },
+
+  header: {
+    display: "flex",
+    alignItems: "center",
+    gap: 14,
+    paddingBottom: 20,
+    borderBottom: "1px solid #F3F4F6",
+  },
+
+  logo: {
+    width: 44,
+    height: 44,
+    objectFit: "contain",
+  },
+
+  title: {
+    margin: 0,
     fontSize: 16,
     fontWeight: 800,
     color: COLORS.text,
@@ -584,35 +261,36 @@ const styles = {
   },
 
   subtitle: {
-    marginTop: 3,
+    margin: "3px 0 0",
     fontSize: 12,
     color: COLORS.text2,
   },
 
   heading: {
-    fontSize: 24,
+    margin: 0,
+    fontSize: 22,
     fontWeight: 750,
     color: COLORS.text,
-    marginBottom: 7,
+    marginBottom: 6,
   },
 
   description: {
+    margin: 0,
     fontSize: 13,
-    lineHeight: 1.6,
+    lineHeight: 1.5,
     color: COLORS.text2,
-    marginBottom: 24,
   },
 
   form: {
     display: "flex",
     flexDirection: "column",
-    gap: 17,
+    gap: 16,
   },
 
   label: {
     display: "flex",
     flexDirection: "column",
-    gap: 7,
+    gap: 6,
     fontSize: 12,
     fontWeight: 650,
     color: COLORS.text,
@@ -634,15 +312,16 @@ const styles = {
 
   input: {
     width: "100%",
-    height: 44,
+    height: 42,
     boxSizing: "border-box",
     border: `1px solid ${COLORS.border}`,
     borderRadius: 8,
-    padding: "0 40px",
+    padding: "0 38px 0 38px",
     outline: "none",
-    fontSize: 14,
+    fontSize: 13.5,
     color: COLORS.text,
     background: "#FFFFFF",
+    transition: "border-color 0.15s ease",
   },
 
   eyeButton: {
@@ -674,87 +353,26 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-  },
-
-  secondaryButton: {
-    width: "100%",
-    height: 42,
-    border: `1px solid ${COLORS.border}`,
-    borderRadius: 8,
-    background: "#FFFFFF",
-    color: COLORS.text,
-    fontSize: 13,
-    fontWeight: 650,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-
-  linkButton: {
-    border: "none",
-    background: "transparent",
-    color: COLORS.blue,
-    fontSize: 12,
-    cursor: "pointer",
-    padding: "12px 0 0",
-    width: "100%",
-  },
-
-  separator: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    margin: "8px 0 2px",
-  },
-
-  bottomText: {
-    textAlign: "center",
-    color: COLORS.text2,
-    fontSize: 12,
-  },
-
-  backButton: {
-    border: "none",
-    background: "transparent",
-    padding: 0,
-    marginBottom: 20,
-    color: COLORS.blue,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: 5,
-    fontSize: 12,
+    transition: "background 0.15s ease",
   },
 
   error: {
-    padding: "10px 12px",
-    borderRadius: 7,
+    padding: "10px 14px",
+    borderRadius: 8,
     background: "#FEF2F2",
     border: "1px solid #FECACA",
     color: COLORS.danger,
-    fontSize: 12,
-    lineHeight: 1.5,
-  },
-
-  success: {
-    padding: "10px 12px",
-    borderRadius: 7,
-    background: "#F0FDF4",
-    border: "1px solid #BBF7D0",
-    color: COLORS.success,
-    fontSize: 12,
+    fontSize: 12.5,
     lineHeight: 1.5,
   },
 
   footer: {
     textAlign: "center",
-    marginTop: 28,
-    paddingTop: 18,
-    borderTop: `1px solid #E5E7EB`,
+    marginTop: 24,
+    paddingTop: 16,
+    borderTop: `1px solid #F3F4F6`,
     color: "#9CA3AF",
-    fontSize: 11,
+    fontSize: 11.5,
   },
 
   spin: {

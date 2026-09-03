@@ -3,7 +3,7 @@
  * Verification of persistent Tgl Dikirim (shipped_date) and deterministic ETA
  */
 
-import Database from "better-sqlite3";
+import Database from "libsql";
 import path from "path";
 import { fileURLToPath } from "url";
 

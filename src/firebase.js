@@ -1,10 +1,15 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import {
   getAuth,
   setPersistence,
   browserLocalPersistence,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updatePassword,
+  updateProfile,
   sendPasswordResetEmail,
+  signOut as authSignOut,
 } from "firebase/auth";
 import {
   getStorage,
@@ -12,6 +17,7 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
+import { hashPassword } from "./auth/rbac.js";
 
 /*
 ============================================================
@@ -20,12 +26,12 @@ import {
 */
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
+  apiKey: "AIzaSyCj35siCrdarl87a7gjujWQjXXRMAOqGks",
+  authDomain: "hsgq-rma.firebaseapp.com",
+  projectId: "hsgq-rma",
+  storageBucket: "hsgq-rma.firebasestorage.app",
+  messagingSenderId: "638280186408",
+  appId: "1:638280186408:web:9c2d03b3394c7d53f9131d",
 };
 
 /*
@@ -34,21 +40,18 @@ const firebaseConfig = {
 ============================================================
 */
 
-export const isUsingFirebase = Boolean(
-  firebaseConfig.apiKey &&
-  firebaseConfig.projectId &&
-  !Object.values(firebaseConfig).some((value) =>
-    String(value).includes("GANTI") || String(value).includes("your_"),
-  ),
+export const isUsingFirebase = !Object.values(firebaseConfig).some((value) =>
+  String(value).includes("GANTI"),
 );
 
 let app = null;
 let db = null;
 let auth = null;
 let storage = null;
+let secondaryAuth = null;
 
 if (isUsingFirebase) {
-  app = initializeApp(firebaseConfig);
+  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
   db = getFirestore(app);
 
@@ -58,6 +61,16 @@ if (isUsingFirebase) {
   setPersistence(auth, browserLocalPersistence).catch((error) => {
     console.error("Firebase persistence gagal:", error);
   });
+
+  // Secondary app instance for Admin to create users without losing Admin session
+  try {
+    const secondaryApp =
+      getApps().find((a) => a.name === "SecondaryAdminApp") ||
+      initializeApp(firebaseConfig, "SecondaryAdminApp");
+    secondaryAuth = getAuth(secondaryApp);
+  } catch (err) {
+    console.warn("Secondary app init warning:", err);
+  }
 } else {
   console.warn(
     "[HSGQ RMA] Firebase belum dikonfigurasi. " +
@@ -65,7 +78,7 @@ if (isUsingFirebase) {
   );
 }
 
-export { db, auth, storage };
+export { db, auth, storage, secondaryAuth };
 
 /*
 ============================================================
@@ -73,19 +86,6 @@ export { db, auth, storage };
 ============================================================
 */
 
-/**
- * Upload a single image File to Firebase Storage.
- *
- * Path: rma_photos/{ticketNo}/{category}/{uniqueFileName}
- *
- * Returns metadata object safe to persist in Firestore:
- *   { id, name, url, size, uploadedAt }
- *
- * Throws on failure so the caller can handle the error and
- * keep the ticket in a valid state.
- *
- * NEVER stores Base64, blob, or File objects in Firestore.
- */
 export async function uploadRmaPhoto(file, ticketNo, category, id) {
   if (!storage) {
     throw new Error(
@@ -170,287 +170,266 @@ export async function storeSet(key, value) {
 
 /*
 ============================================================
- USER PROFILE & USER MANAGEMENT
+ USER PROFILE & RBAC MANAGEMENT
 ============================================================
 */
 
+const USERS_KEY = "users_v1";
+
+export async function getUsersList() {
+  const users = await storeGet(USERS_KEY, []);
+  return Array.isArray(users) ? users : [];
+}
+
+export async function saveUsersList(users) {
+  return storeSet(USERS_KEY, users);
+}
 
 export async function getUserProfile(uid) {
-  if (!uid) {
-    return null;
-  }
+  if (!uid) return null;
 
-  // 1. Try from Firestore if available
+  // 1. Check in users_v1 dataset
+  const usersList = await getUsersList();
+  const foundInList = usersList.find((u) => u.uid === uid || u.id === uid);
+
+  // 2. Try Firestore direct doc
+  let docProfile = null;
   if (db) {
     try {
       const snap = await getDoc(doc(db, "users", uid));
       if (snap.exists()) {
-        const data = snap.data();
-        try {
-          localStorage.setItem(`hsgq_user_profile_${uid}`, JSON.stringify(data));
-        } catch (e) {}
-        return data;
+        docProfile = snap.data();
       }
     } catch (error) {
-      console.warn("Firestore getUserProfile error, using fallback:", error);
+      console.error("Gagal mengambil profile user doc:", error);
     }
   }
 
-  // 2. Fallback to localStorage cache
-  try {
-    const cached = localStorage.getItem(`hsgq_user_profile_${uid}`);
-    if (cached) {
-      return JSON.parse(cached);
+  // If user does not exist in usersList AND does not exist in Firestore doc, user is deleted/non-existent
+  if (!foundInList && !docProfile) {
+    // Only bootstrap if the entire system is completely fresh (0 users exist anywhere)
+    if (usersList.length === 0) {
+      const bootstrapProfile = {
+        uid,
+        id: uid,
+        displayName: "Administrator",
+        email: "",
+        role: "Administrator",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await saveUserProfile(uid, bootstrapProfile);
+      return bootstrapProfile;
     }
-    // 3. Fallback to hsgq_all_users list
-    const allUsers = JSON.parse(localStorage.getItem("hsgq_all_users") || "[]");
-    const found = allUsers.find((u) => u.uid === uid || u.id === uid);
-    if (found) {
-      return found;
-    }
-  } catch (e) {}
+    return null;
+  }
 
-  return null;
+  const merged = { ...(docProfile || {}), ...(foundInList || {}) };
+  return merged;
 }
 
 export async function saveUserProfile(uid, data) {
-  if (!uid) {
-    return false;
-  }
-
-  // 1. Always update local cache
-  try {
-    const existing = JSON.parse(localStorage.getItem(`hsgq_user_profile_${uid}`) || "{}");
-    const merged = {
-      ...existing,
-      ...data,
-      uid,
-      updatedAt: new Date().toISOString(),
-    };
-    localStorage.setItem(`hsgq_user_profile_${uid}`, JSON.stringify(merged));
-
-    // Update in all_users cache if present
-    const allUsers = JSON.parse(localStorage.getItem("hsgq_all_users") || "[]");
-    const idx = allUsers.findIndex((u) => u.uid === uid || u.id === uid);
-    if (idx >= 0) {
-      allUsers[idx] = { ...allUsers[idx], ...merged };
-    } else {
-      allUsers.push(merged);
-    }
-    localStorage.setItem("hsgq_all_users", JSON.stringify(allUsers));
-  } catch (e) {}
-
-  // 2. Save to Firestore if available
-  if (db) {
-    try {
-      await setDoc(
-        doc(db, "users", uid),
-        {
-          ...data,
-          uid,
-          updatedAt: new Date().toISOString(),
-        },
-        { merge: true },
-      );
-      return true;
-    } catch (error) {
-      console.error("Gagal menyimpan profile user ke Firestore:", error);
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/**
- * Find user by username or email for flexible login
- */
-export async function findUserByUsernameOrEmail(identifier) {
-  const clean = String(identifier || "").trim().toLowerCase();
-  if (!clean) return null;
-
-  const allUsers = await getAllUsers();
-  return allUsers.find(
-    (u) =>
-      (u.email && u.email.toLowerCase() === clean) ||
-      (u.username && u.username.toLowerCase() === clean) ||
-      (u.displayName && u.displayName.toLowerCase() === clean),
-  );
-}
-
-/**
- * Get all users list for Admin Management
- */
-export async function getAllUsers() {
-  let list = [];
-
-  if (db) {
-    try {
-      const { getDocs, collection } = await import("firebase/firestore");
-      const snap = await getDocs(collection(db, "users"));
-      snap.forEach((d) => {
-        list.push({ id: d.id, uid: d.id, ...d.data() });
-      });
-      if (list.length > 0) {
-        try {
-          localStorage.setItem("hsgq_all_users", JSON.stringify(list));
-        } catch (e) {}
-        return list;
-      }
-    } catch (err) {
-      console.warn("Gagal load users dari Firestore:", err);
-    }
-  }
-
-  try {
-    const raw = localStorage.getItem("hsgq_all_users");
-    if (raw) {
-      list = JSON.parse(raw);
-    }
-  } catch (e) {}
-
-  return list;
-}
-
-/**
- * Admin: Create New User with Temporary Password & mustChangePassword flag
- */
-export async function adminCreateUser({
-  name,
-  username,
-  email,
-  role = "Engineer",
-  temporaryPassword,
-  mustChangePassword = true,
-}) {
-  const cleanEmail = email.trim().toLowerCase();
-  const cleanUsername = (username || cleanEmail.split("@")[0]).trim().toLowerCase();
-  const cleanName = name.trim();
-
-  let newUid = "user_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
-
-  // Try creating in Firebase Auth using a secondary app instance without logging out admin
-  if (isUsingFirebase) {
-    try {
-      const { getApps, getApp } = await import("firebase/app");
-      const { createUserWithEmailAndPassword, signOut } = await import("firebase/auth");
-
-      let secondaryApp;
-      if (!getApps().some((a) => a.name === "AdminSecondaryAuth")) {
-        secondaryApp = initializeApp(firebaseConfig, "AdminSecondaryAuth");
-      } else {
-        secondaryApp = getApp("AdminSecondaryAuth");
-      }
-      const secondaryAuth = getAuth(secondaryApp);
-      const cred = await createUserWithEmailAndPassword(
-        secondaryAuth,
-        cleanEmail,
-        temporaryPassword,
-      );
-      newUid = cred.user.uid;
-      await signOut(secondaryAuth);
-    } catch (authErr) {
-      console.warn("Secondary auth user creation notice:", authErr);
-      if (authErr?.code === "auth/email-already-in-use") {
-        throw new Error("Email tersebut sudah terdaftar di sistem.");
-      }
-    }
-  }
-
-  const profileData = {
-    uid: newUid,
-    id: newUid,
-    name: cleanName,
-    displayName: cleanName,
-    username: cleanUsername,
-    email: cleanEmail,
-    role,
-    mustChangePassword: !!mustChangePassword,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  await saveUserProfile(newUid, profileData);
-  return profileData;
-}
-
-/**
- * Admin: Reset User Password & set mustChangePassword to true.
-/**
- * Admin: Reset User Password via Firebase Auth Password Reset Email
- *
- * Sends an official password reset email to the user's registered email address.
- * Updates profile metadata to record when the reset email was triggered.
- */
-export async function adminResetUserPassword(uid, targetEmail = "") {
-  if (!uid) throw new Error("User ID tidak valid.");
-
-  let email = targetEmail;
-  if (!email) {
-    const userProfile = await getUserProfile(uid);
-    email = userProfile?.email;
-  }
-
-  if (!email || !email.includes("@")) {
-    throw new Error("Email user tidak valid atau tidak ditemukan.");
-  }
-
-  if (isUsingFirebase && auth) {
-    try {
-      await sendPasswordResetEmail(auth, email.trim());
-    } catch (err) {
-      console.error("[HSGQ] sendPasswordResetEmail error:", err);
-      throw new Error(
-        err?.code === "auth/user-not-found"
-          ? "Akun email tersebut tidak ditemukan di Firebase Auth."
-          : `Gagal mengirim email reset password: ${err.message}`,
-      );
-    }
-  }
-
-  // Update profile metadata in Firestore/localStorage
-  const profileData = {
-    passwordResetEmailSentAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  await saveUserProfile(uid, profileData);
-  return { success: true, email: email.trim() };
-}
-
-/**
- * Admin: Update User Role
- */
-export async function adminUpdateUserRole(uid, newRole) {
-  if (!uid) throw new Error("User ID tidak valid.");
-  return await saveUserProfile(uid, {
-    role: newRole,
-    updatedAt: new Date().toISOString(),
-  });
-}
-
-/**
- * Admin: Delete User
- */
-export async function adminDeleteUser(uid) {
   if (!uid) return false;
 
+  const cleanData = {
+    ...data,
+    uid,
+    role: data.role || "Viewer",
+    status: data.status || "active",
+    updatedAt: new Date().toISOString(),
+  };
+
+  // 1. Save in Firestore doc
   if (db) {
     try {
-      const { deleteDoc } = await import("firebase/firestore");
-      await deleteDoc(doc(db, "users", uid));
-    } catch (e) {
-      console.warn("Firestore delete user error:", e);
+      await setDoc(doc(db, "users", uid), cleanData, { merge: true });
+    } catch (error) {
+      console.error("Gagal menyimpan profile user doc:", error);
     }
   }
 
+  // 2. Sync into users_v1 list
   try {
-    localStorage.removeItem(`hsgq_user_profile_${uid}`);
-    const allUsers = JSON.parse(localStorage.getItem("hsgq_all_users") || "[]");
-    const filtered = allUsers.filter((u) => u.uid !== uid && u.id !== uid);
-    localStorage.setItem("hsgq_all_users", JSON.stringify(filtered));
-  } catch (e) {}
+    const list = await getUsersList();
+    const exists = list.some((u) => u.uid === uid || u.id === uid);
+    const updatedList = exists
+      ? list.map((u) => (u.uid === uid || u.id === uid ? { ...u, ...cleanData } : u))
+      : [{ ...cleanData, id: uid }, ...list];
+    await saveUsersList(updatedList);
+  } catch (error) {
+    console.error("Gagal sync user ke users_v1:", error);
+  }
 
   return true;
 }
+
+/**
+ * Admin: Create a new user account
+ * Uses secondary Firebase Auth instance so current Admin is not logged out!
+ */
+export async function adminCreateAccount({
+  name,
+  email,
+  username,
+  password,
+  role = "Viewer",
+  status = "active",
+}) {
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanName = name.trim();
+
+  // Check unique email in existing users_v1
+  const existingUsers = await getUsersList();
+  if (existingUsers.some((u) => (u.email || "").toLowerCase() === cleanEmail)) {
+    return { ok: false, error: "Email sudah terdaftar untuk pengguna lain." };
+  }
+
+  let newUid = `usr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+  if (secondaryAuth && isUsingFirebase) {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        secondaryAuth,
+        cleanEmail,
+        password
+      );
+      newUid = userCredential.user.uid;
+
+      await updateProfile(userCredential.user, {
+        displayName: cleanName,
+      });
+
+      // Sign out from secondary auth immediately
+      await authSignOut(secondaryAuth);
+    } catch (err) {
+      console.error("Firebase secondaryAuth create user error:", err);
+      return {
+        ok: false,
+        error:
+          err.code === "auth/email-already-in-use"
+            ? "Email sudah digunakan."
+            : err.message || "Gagal membuat akun di Firebase Authentication.",
+      };
+    }
+  }
+
+  // Hash password securely with salt for integrity/audit
+  const { hash, salt } = await hashPassword(password);
+
+  const newUser = {
+    id: newUid,
+    uid: newUid,
+    displayName: cleanName,
+    name: cleanName,
+    email: cleanEmail,
+    username: (username || cleanEmail.split("@")[0]).trim(),
+    role,
+    status,
+    passwordHash: hash,
+    salt,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lastLoginAt: null,
+  };
+
+  // Persist user record
+  await saveUserProfile(newUid, newUser);
+
+  return { ok: true, user: newUser };
+}
+
+/**
+ * Admin: Update user information (role, status, name, etc.)
+ */
+export async function adminUpdateAccount(uid, updates) {
+  const users = await getUsersList();
+  const target = users.find((u) => u.uid === uid || u.id === uid);
+  if (!target) return { ok: false, error: "User tidak ditemukan." };
+
+  const updatedUser = {
+    ...target,
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await saveUserProfile(uid, updatedUser);
+  return { ok: true, user: updatedUser };
+}
+
+/**
+ * Admin: Reset user password in database
+ */
+export async function adminResetAccountPassword(emailOrUid, newPassword) {
+  const cleanKey = String(emailOrUid || "").trim().toLowerCase();
+  if (!cleanKey || !newPassword) {
+    return { ok: false, error: "Email/UID dan password baru wajib diisi." };
+  }
+
+  if (newPassword.length < 6) {
+    return { ok: false, error: "Password baru minimal 6 karakter." };
+  }
+
+  const users = await getUsersList();
+  const target = users.find(
+    (u) =>
+      (u.email || "").toLowerCase() === cleanKey ||
+      u.uid === emailOrUid ||
+      u.id === emailOrUid
+  );
+  if (!target) {
+    return { ok: false, error: "Akun user tidak ditemukan di database." };
+  }
+
+  const targetUid = target.uid || target.id;
+
+  // 1. Hash password with secure random salt
+  const { hash, salt } = await hashPassword(newPassword);
+
+  // 2. Persist updated passwordHash and salt to user's Firestore profile
+  await adminUpdateAccount(targetUid, {
+    passwordHash: hash,
+    salt,
+    passwordResetByAdminAt: new Date().toISOString(),
+  });
+
+  return { ok: true };
+}
+
+/**
+ * Admin: Delete user account
+ */
+export async function adminDeleteAccount(uid) {
+  if (!uid) return { ok: false, error: "UID tidak valid." };
+
+  // 1. Delete doc from Firestore
+  if (db) {
+    try {
+      await deleteDoc(doc(db, "users", uid));
+    } catch (err) {
+      console.error("Gagal menghapus doc user di Firestore:", err);
+    }
+  }
+
+  // 2. Remove from users_v1 dataset
+  const users = await getUsersList();
+  const updated = users.filter((u) => u.uid !== uid && u.id !== uid);
+  await saveUsersList(updated);
+
+  // 3. Record in deleted_users_v1 tombstone for immediate revocation
+  try {
+    const deletedList = await storeGet("deleted_users_v1", []);
+    const list = Array.isArray(deletedList) ? deletedList : [];
+    if (!list.some((d) => d.uid === uid || d.id === uid)) {
+      await storeSet("deleted_users_v1", [
+        ...list,
+        { uid, deletedAt: new Date().toISOString() },
+      ]);
+    }
+  } catch (err) {
+    console.warn("Tombstone save error:", err);
+  }
+
+  return { ok: true };
+}
+

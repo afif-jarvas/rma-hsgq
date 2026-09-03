@@ -1,8 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-
-import { onAuthStateChanged, signOut, updatePassword } from "firebase/auth";
-
-import { auth, getUserProfile, saveUserProfile } from "../firebase.js";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import authApi, { getStoredToken, clearStoredAuth } from "../api/authClient.js";
+import { canUser, assertAuthorized, normalizeRole, ROLES, USER_STATUS } from "./rbac.js";
 
 const AuthContext = createContext(null);
 
@@ -10,156 +8,165 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [inactiveError, setInactiveError] = useState("");
 
-  useEffect(() => {
-    /*
-    Firebase memanggil callback ini ketika:
-    - user login
-    - user logout
-    - halaman direfresh (session persistence)
-    */
-    if (!auth) {
-      // Offline fallback: check localStorage session
-      try {
-        const localUid = localStorage.getItem("hsgq_session_uid");
-        if (localUid) {
-          const cachedProfile = JSON.parse(
-            localStorage.getItem(`hsgq_user_profile_${localUid}`) || "null",
-          );
-          if (cachedProfile) {
-            setUser({ uid: localUid, email: cachedProfile.email, displayName: cachedProfile.displayName });
-            setProfile(cachedProfile);
-          }
-        }
-      } catch (e) {}
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
+  const refreshProfile = useCallback(async () => {
+    try {
+      const res = await authApi.getMe();
+      if (res && res.user) {
+        setUser(res.user);
+        setProfile(res.user);
+        return res.user;
+      }
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) {
+        clearStoredAuth();
         setUser(null);
         setProfile(null);
-        try {
-          localStorage.removeItem("hsgq_session_uid");
-        } catch (e) {}
-        setLoading(false);
+        if (err.status === 403) {
+          setInactiveError(err.message || "Akun Anda telah dinonaktifkan.");
+        }
+      }
+    }
+    return null;
+  }, []);
+
+  const loginWithUser = useCallback((userObj, profileObj, token) => {
+    const finalProfile = profileObj || userObj;
+    setUser(userObj);
+    setProfile(finalProfile);
+    setInactiveError("");
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch (_) {}
+    clearStoredAuth();
+    setUser(null);
+    setProfile(null);
+  }, []);
+
+  // Initialize Auth on App Load
+  useEffect(() => {
+    let isMounted = true;
+
+    async function initAuth() {
+      const token = getStoredToken();
+      if (!token) {
+        if (isMounted) setLoading(false);
         return;
       }
 
-      setUser(firebaseUser);
       try {
-        localStorage.setItem("hsgq_session_uid", firebaseUser.uid);
-      } catch (e) {}
-
-      /*
-      Ambil data profile tambahan dari Firestore / Local Cache.
-      Pastikan flag mustChangePassword divalidasi secara persistent.
-      */
-      try {
-        let userProfile = await getUserProfile(firebaseUser.uid);
-
-        if (!userProfile) {
-          // Buat profile default jika belum ada
-          userProfile = {
-            uid: firebaseUser.uid,
-            displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
-            email: firebaseUser.email,
-            role: firebaseUser.email?.toLowerCase().startsWith("admin") ? "Administrator" : "Engineer",
-            mustChangePassword: false,
-            createdAt: new Date().toISOString(),
-          };
-          await saveUserProfile(firebaseUser.uid, userProfile);
+        const res = await authApi.getMe();
+        if (isMounted && res.user) {
+          if (res.user.status === "inactive" || res.user.status === "Inactive") {
+            clearStoredAuth();
+            setUser(null);
+            setProfile(null);
+            setInactiveError("Akun Anda telah dinonaktifkan oleh Administrator. Hubungi Administrator untuk mengaktifkan kembali.");
+          } else {
+            setUser(res.user);
+            setProfile(res.user);
+            setInactiveError("");
+          }
         }
-
-        setProfile(userProfile);
-      } catch (profileErr) {
-        console.error("Gagal mengambil profile:", profileErr);
+      } catch (err) {
+        if (isMounted) {
+          clearStoredAuth();
+          setUser(null);
+          setProfile(null);
+          if (err.status === 403) {
+            setInactiveError(err.message || "Akun Anda telah dinonaktifkan.");
+          }
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
-    });
+    }
+
+    initAuth();
 
     return () => {
-      unsubscribe();
+      isMounted = false;
     };
   }, []);
 
-  async function refreshProfile() {
-    if (!user) return null;
-    const p = await getUserProfile(user.uid);
-    if (p) {
-      setProfile(p);
-    }
-    return p;
-  }
+  // Active session watchdog: Invalidate session immediately if user is deactivated/deleted
+  useEffect(() => {
+    if (!user?.id && !user?.uid) return;
 
-  async function changePassword(newPassword) {
-    if (!user) throw new Error("Pengguna tidak sedang login.");
+    let cancelled = false;
+    async function verifySession() {
+      const token = getStoredToken();
+      if (!token) return;
 
-    if (!newPassword || newPassword.length < 6) {
-      throw new Error("Password baru minimal harus terdiri dari 6 karakter.");
-    }
-
-    // 1. Update password di Firebase Auth jika tersedia
-    if (auth?.currentUser) {
       try {
-        await updatePassword(auth.currentUser, newPassword);
+        const res = await authApi.getMe();
+        if (cancelled) return;
+        if (!res || !res.user || res.user.status === "inactive" || res.user.status === "Inactive") {
+          clearStoredAuth();
+          setUser(null);
+          setProfile(null);
+          setInactiveError("Akun Anda telah dinonaktifkan oleh Administrator.");
+        }
       } catch (err) {
-        console.warn("Firebase updatePassword warning:", err);
-        // If requires re-authentication, we proceed with profile update or propagate
-        if (err?.code === "auth/requires-recent-login") {
-          throw new Error("Sesi login telah kedaluwarsa. Silakan logout dan login kembali untuk mengganti password.");
+        if (cancelled) return;
+        if (err.status === 401 || err.status === 403) {
+          clearStoredAuth();
+          setUser(null);
+          setProfile(null);
+          setInactiveError(err.message || "Sesi Anda telah berakhir.");
         }
       }
     }
 
-    // 2. Update status mustChangePassword = false secara persistent
-    // Also clear the _tempToken so it cannot be used for login again
-    const updatedData = {
-      mustChangePassword: false,
-      passwordChangedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      _tempToken: null,
+    const interval = setInterval(verifySession, 10000);
+    window.addEventListener("focus", verifySession);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener("focus", verifySession);
     };
+  }, [user?.id, user?.uid]);
 
-    await saveUserProfile(user.uid, updatedData);
+  const role = normalizeRole(profile?.role);
+  const isAdministrator = role === ROLES.ADMINISTRATOR;
+  const isEngineer = role === ROLES.ENGINEER;
+  const isViewer = role === ROLES.VIEWER;
 
-    // 3. Update React in-memory state
-    setProfile((current) => ({
-      ...(current || {}),
-      ...updatedData,
-      mustChangePassword: false,
-    }));
+  const can = useCallback(
+    (permission) => {
+      return canUser(profile, permission);
+    },
+    [profile]
+  );
 
-    return true;
-  }
-
-  async function logout() {
-    try {
-      localStorage.removeItem("hsgq_session_uid");
-    } catch (e) {}
-
-    if (auth) {
-      try {
-        await signOut(auth);
-      } catch (err) {
-        console.error("Logout error:", err);
-      }
-    }
-
-    setUser(null);
-    setProfile(null);
-  }
+  const assert = useCallback(
+    (permission, actionName) => {
+      return assertAuthorized(profile, permission, actionName);
+    },
+    [profile]
+  );
 
   const value = {
     user,
     profile,
     setProfile,
-    loading,
-    logout,
-    changePassword,
+    role,
+    isAdministrator,
+    isEngineer,
+    isViewer,
+    can,
+    assert,
     refreshProfile,
+    loginWithUser,
+    loading,
+    inactiveError,
+    setInactiveError,
+    logout,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -167,10 +174,8 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-
   if (!context) {
     throw new Error("useAuth harus digunakan di dalam AuthProvider");
   }
-
   return context;
 }

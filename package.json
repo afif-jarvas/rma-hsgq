@@ -11,12 +11,13 @@
     "start": "node server/index.js"
   },
   "dependencies": {
-    "better-sqlite3": "^13.0.3",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "firebase": "^11.0.0",
     "js-sha256": "^1.0.0",
+    "libsql": "^0.5.29",
     "lucide-react": "^0.383.0",
+    "pdfmake": "^0.3.11",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.12.7",

@@ -734,5 +734,36 @@ router.post("/sync-all", requireAuth, (req, res) => {
   }
 });
 
+/**
+ * POST /api/pcba/export-pdf
+ * Generate and stream PCBA PDF report per active subTab
+ */
+router.post("/export-pdf", requireAuth, async (req, res) => {
+  try {
+    const { items, subTab = "stock", meta } = req.body || {};
+    let exportItems = Array.isArray(items) ? items : [];
+
+    // Safety limit: max 500 rows
+    const totalCount = exportItems.length;
+    if (exportItems.length > 500) {
+      exportItems = exportItems.slice(0, 500);
+    }
+
+    const metaString = meta || `Sub-tab: ${subTab} | Total Data: ${exportItems.length}${totalCount > 500 ? ` (Dibatasi dari ${totalCount} baris)` : ""}`;
+    const { buildPcbaDocDefinition, generatePdfBuffer } = await import("../pdfService.js");
+    const docDef = buildPcbaDocDefinition(exportItems, subTab, metaString);
+    const pdfBuffer = await generatePdfBuffer(docDef);
+
+    const filename = `HSGQ_PCBA_${subTab}_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error("PCBA PDF export error:", err);
+    res.status(500).json({ ok: false, error: "Gagal membuat dokumen PDF PCBA: " + err.message });
+  }
+});
+
 export default router;
 

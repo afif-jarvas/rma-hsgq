@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Poster Generator — Telco Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50:  '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a'
+                        }
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #0f172a; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #e2e8f0; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+
+        .loader {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 52px; height: 52px;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .pill-radio:checked + label {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.25);
+        }
+
+        .card { background: white; border-radius: 1.5rem; border: 1px solid #e2e8f0; padding: 1.5rem; }
+
+        .inp {
+            width: 100%; padding: 0.65rem 1rem;
+            border: 1px solid #cbd5e1; border-radius: 0.75rem;
+            font-size: 0.875rem; outline: none;
+            background: #f8fafc; transition: all 0.15s;
+        }
+        .inp:focus { border-color: #3b82f6; background: white; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+
+        .ar-9-16  { aspect-ratio: 9/16; }
+        .ar-3-4   { aspect-ratio: 3/4; }
+        .ar-1-1   { aspect-ratio: 1/1; }
+        .ar-16-9  { aspect-ratio: 16/9; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+<header class="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-md shadow-brand-500/40">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-brand-900 to-brand-600">AI Poster Gen</h1>
+                <p class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold -mt-0.5">Telco Edition</p>
+            </div>
+        </div>
+        <div class="hidden sm:flex items-center gap-2 text-xs text-slate-500 font-medium bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full">
+            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+            Powered by Gemini Flash Image
+        </div>
+    </div>
+</header>
+
+<main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+        <!-- LEFT: FORM -->
+        <div class="lg:col-span-7 space-y-5">
+            <div class="card shadow-sm">
+                <h2 class="text-lg font-bold text-slate-800 mb-5 pb-4 border-b border-slate-100">Konfigurasi Poster</h2>
+                <form id="posterForm" class="space-y-5">
+
+                    <!-- Brand & Produk -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nama Brand <span class="text-red-500">*</span></label>
+                            <input id="brandName" type="text" required placeholder="Cth: HSGQ / Telkomsel" class="inp">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nama Produk <span class="text-red-500">*</span></label>
+                            <input id="productName" type="text" required placeholder="Cth: OLT G02ID / Orbit" class="inp">
+                        </div>
+                    </div>
+
+                    <!-- Kategori & Promo -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Kategori <span class="text-red-500">*</span></label>
+                            <select id="category" required class="inp cursor-pointer">
+                                <option value="Perangkat Jaringan Kecepatan Tinggi (Modem, Router, OLT, Switch)">Perangkat Jaringan (Modem, Router, OLT)</option>
+                                <option value="Layanan Internet Fiber Optik untuk Rumah dan Bisnis">Internet & Fiber Optik</option>
+                                <option value="Perangkat Smart Home dan IoT Wireless">Smart Home & IoT</option>
+                                <option value="Infrastruktur IT Enterprise dan Server B2B">Infrastruktur B2B & Server</option>
+                                <option value="Layanan Telekomunikasi Seluler dan Paket Data">Telekomunikasi & Paket Data</option>
+                                <option value="Perangkat CCTV dan Keamanan Jaringan">CCTV & Keamanan Jaringan</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Teks Promosi <span class="text-red-500">*</span></label>
+                            <input id="promoText" type="text" required placeholder="Cth: Diskon 99% Terbatas!" class="inp">
+                        </div>
+                    </div>
+
+                    <!-- Deskripsi Produk -->
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                            Deskripsi Produk
+                            <span class="text-slate-400 font-normal text-xs ml-1">(Opsional — bantu AI buat copywriting)</span>
+                        </label>
+                        <textarea id="productDesc" rows="2" placeholder="Cth: Kecepatan hingga 10Gbps, cocok untuk SOHO dan enterprise. Performa stabil 24/7."
+                            class="inp resize-none" style="height:70px;line-height:1.6"></textarea>
+                    </div>
+
+                    <!-- Logo Upload -->
+                    <div class="bg-blue-50 rounded-2xl border border-blue-100 p-4">
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">
+                            Logo Perusahaan
+                            <span class="text-slate-400 font-normal text-xs ml-1">(Opsional — pojok atas poster)</span>
+                        </label>
+                        <div class="flex items-center gap-4">
+                            <div id="logoPreview" class="hidden w-16 h-16 rounded-xl border-2 border-blue-200 bg-white flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
+                                <img id="logoImg" src="" class="max-w-full max-h-full object-contain p-1" alt="Logo">
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <label for="logoUpload" class="cursor-pointer bg-white border border-slate-300 text-brand-600 px-4 py-2 rounded-xl hover:bg-slate-50 transition-colors text-sm font-bold shadow-sm inline-block w-max">
+                                    <span id="logoLabelText">📁 Unggah Logo</span>
+                                    <input id="logoUpload" type="file" class="sr-only" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+                                </label>
+                                <button type="button" id="removeLogoBtn" class="hidden text-red-500 hover:text-red-600 text-xs font-semibold text-left">✕ Hapus Logo</button>
+                            </div>
+                            <p class="text-[11px] text-slate-500 leading-relaxed ml-auto max-w-[180px]">
+                                AI akan meletakkan logo di pojok kiri/kanan atas poster secara persis.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Foto Produk -->
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                            Foto Referensi Produk
+                            <span class="text-slate-400 font-normal text-xs ml-1">(Opsional — maks. 3 gambar)</span>
+                        </label>
+                        <div id="dropZone" class="border-2 border-slate-300 border-dashed rounded-xl hover:border-brand-400 transition-colors bg-slate-50 min-h-[140px] flex flex-col">
+                            <div id="uploadPlaceholder" class="flex flex-col items-center justify-center flex-grow py-6 px-4 text-center gap-2">
+                                <svg class="h-10 w-10 text-slate-300" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <label for="imageUpload" class="cursor-pointer text-sm font-semibold text-brand-600 hover:text-brand-700">
+                                    Pilih File
+                                    <input id="imageUpload" type="file" multiple class="sr-only" accept="image/png,image/jpeg,image/webp">
+                                </label>
+                                <p class="text-xs text-slate-400">atau seret & lepas di sini · PNG, JPG, WebP</p>
+                            </div>
+                            <div id="imagePreviewContainer" class="hidden flex-col p-3">
+                                <div id="previewGrid" class="grid grid-cols-3 gap-2 mb-3"></div>
+                                <div class="flex items-center justify-between pt-2 border-t border-slate-200">
+                                    <span id="imageCountText" class="text-xs font-semibold text-slate-500">0/3 Gambar</span>
+                                    <div class="flex gap-2">
+                                        <label id="addMoreLabel" for="imageUploadMore" class="cursor-pointer bg-brand-50 text-brand-600 px-3 py-1.5 rounded-lg hover:bg-brand-100 text-xs font-bold">
+                                            + Tambah
+                                            <input id="imageUploadMore" type="file" multiple class="sr-only" accept="image/png,image/jpeg,image/webp">
+                                        </label>
+                                        <button type="button" id="removeAllImagesBtn" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-100 text-xs font-bold">Hapus Semua</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sosmed -->
+                    <div class="bg-slate-50 rounded-2xl border border-slate-200 p-4">
+                        <label class="block text-sm font-semibold text-slate-700 mb-3">
+                            Akun Sosial Media & Kontak
+                            <span class="text-slate-400 font-normal text-xs ml-1">(Footer poster)</span>
+                        </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                                </div>
+                                <input id="igAccount" type="text" placeholder="@instagram_id" class="inp pl-10">
+                            </div>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
+                                </div>
+                                <input id="fbAccount" type="text" placeholder="Nama Halaman FB" class="inp pl-10">
+                            </div>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-3.5 flex items-center pointer-events-none" style="top:0;bottom:0">
+                                    <svg class="w-4 h-4 text-slate-800" fill="currentColor" viewBox="0 0 448 512"><path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a74.62,74.62,0,1,0,52.23,71.18V0l88,0a121.18,121.18,0,0,0,1.86,22.17h0A122.18,122.18,0,0,0,381,102.39a121.43,121.43,0,0,0,67,20.14Z"/></svg>
+                                </div>
+                                <input id="tiktokAccount" type="text" placeholder="@tiktok_id" class="inp pl-10">
+                            </div>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                </div>
+                                <input id="helpline" type="text" placeholder="0812-xxxx-xxxx" class="inp pl-10">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gaya Visual -->
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-3">Gaya Visual</label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                            <div>
+                                <input type="radio" name="designStyle" id="s1" class="peer sr-only pill-radio" checked
+                                    value="Minimalist Tech, clean white and light blue gradient background, Apple-style product photography, floating device hero shot, ultra-professional, bright studio lighting, premium feel">
+                                <label for="s1" class="block w-full text-center px-2 py-3 border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 text-sm transition-all">✦ Minimalis Tech</label>
+                            </div>
+                            <div>
+                                <input type="radio" name="designStyle" id="s2" class="peer sr-only pill-radio"
+                                    value="Futuristic 5G cyberpunk, glowing neon blue and purple circuit lines, dark matte black background, holographic glow effects, electric energy, ultra high-tech">
+                                <label for="s2" class="block w-full text-center px-2 py-3 border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 text-sm transition-all">⚡ Futuristik 5G</label>
+                            </div>
+                            <div>
+                                <input type="radio" name="designStyle" id="s3" class="peer sr-only pill-radio"
+                                    value="Super fast speed concept, dynamic motion blur trails, streaking light lines, pure velocity, bright electric blue and white, kinetic energy, representing ultra-low latency">
+                                <label for="s3" class="block w-full text-center px-2 py-3 border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 text-sm transition-all">🚀 Super Cepat</label>
+                            </div>
+                            <div>
+                                <input type="radio" name="designStyle" id="s4" class="peer sr-only pill-radio"
+                                    value="Fiber Optic data streams, glowing orange and cyan light threads weaving through dark space, abstract networking nodes, deep space tech ambiance, data flowing at the speed of light">
+                                <label for="s4" class="block w-full text-center px-2 py-3 border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 text-sm transition-all">🌐 Fiber Optik</label>
+                            </div>
+                            <div>
+                                <input type="radio" name="designStyle" id="s5" class="peer sr-only pill-radio"
+                                    value="Corporate B2B enterprise, sophisticated dark navy and silver gradient, clean geometric layout, professional business environment, trustworthy and authoritative brand feel">
+                                <label for="s5" class="block w-full text-center px-2 py-3 border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 text-sm transition-all">🏢 Korporat B2B</label>
+                            </div>
+                            <div>
+                                <input type="radio" name="designStyle" id="s6" class="peer sr-only pill-radio"
+                                    value="Smart Home lifestyle poster, cozy warm modern living room, glowing wifi and connectivity icons, happy family using connected devices, warm inviting golden light, homey comfort">
+                                <label for="s6" class="block w-full text-center px-2 py-3 border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 text-sm transition-all">🏠 Smart Home</label>
+                            </div>
+                            <div>
+                                <input type="radio" name="designStyle" id="s7" class="peer sr-only pill-radio"
+                                    value="Bold Indonesian red and white patriotic palette, energetic and vibrant, strong bold typography, mass market telco promotion style similar to Telkomsel or Indihome, high visual impact">
+                                <label for="s7" class="block w-full text-center px-2 py-3 border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 text-sm transition-all">🇮🇩 Merah Putih Bold</label>
+                            </div>
+                            <div>
+                                <input type="radio" name="designStyle" id="s8" class="peer sr-only pill-radio"
+                                    value="Dark premium luxury tech, ultra-sleek matte black background, gold and platinum accent lines, high-end product showcase, exclusivity and prestige, premium product launch aesthetic">
+                                <label for="s8" class="block w-full text-center px-2 py-3 border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 text-sm transition-all">✨ Dark Luxury</label>
+                            </div>
+                            <div>
+                                <input type="radio" name="designStyle" id="s9" class="peer sr-only pill-radio"
+                                    value="UMKM local Indonesia friendly aesthetic, bright warm cheerful colors, simple clean readable layout, approachable grassroots community feel, accessible small business style">
+                                <label for="s9" class="block w-full text-center px-2 py-3 border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 text-sm transition-all">🏪 UMKM Lokal</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ukuran -->
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-3">Ukuran & Format</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                            <div>
+                                <input type="radio" name="aspectRatio" id="r1" value="9:16" class="peer sr-only pill-radio">
+                                <label for="r1" class="block w-full text-center px-2 py-3 border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 text-sm transition-all">
+                                    <span class="block text-[10px] text-slate-400 mb-0.5">IG Story</span>
+                                    <strong>9:16</strong>
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" name="aspectRatio" id="r2" value="3:4" class="peer sr-only pill-radio" checked>
+                                <label for="r2" class="block w-full text-center px-2 py-3 border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 text-sm transition-all">
+                                    <span class="block text-[10px] text-slate-400 mb-0.5">Poster</span>
+                                    <strong>3:4</strong>
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" name="aspectRatio" id="r3" value="1:1" class="peer sr-only pill-radio">
+                                <label for="r3" class="block w-full text-center px-2 py-3 border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 text-sm transition-all">
+                                    <span class="block text-[10px] text-slate-400 mb-0.5">IG Feed</span>
+                                    <strong>1:1</strong>
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" name="aspectRatio" id="r4" value="16:9" class="peer sr-only pill-radio">
+                                <label for="r4" class="block w-full text-center px-2 py-3 border border-slate-200 rounded-xl cursor-pointer hover:border-brand-300 text-sm transition-all">
+                                    <span class="block text-[10px] text-slate-400 mb-0.5">Lanskap</span>
+                                    <strong>16:9</strong>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Key -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <label for="extApiKey" class="block text-xs font-bold text-amber-700 mb-1.5">🔑 Gemini API Key <span class="text-red-500">*</span></label>
+                        <input type="password" id="extApiKey" placeholder="Paste API Key Gemini Anda di sini..."
+                            class="w-full px-3 py-2 rounded-lg border border-amber-200 bg-white text-sm text-slate-700 focus:outline-none focus:border-amber-400">
+                        <p class="text-[11px] text-amber-600 mt-1.5 leading-relaxed">
+                            Gratis di <a href="https://aistudio.google.com/apikey" target="_blank" class="underline font-bold">aistudio.google.com/apikey</a>.
+                            Key hanya tersimpan di browser, tidak dikirim ke server lain.
+                        </p>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" id="generateBtn"
+                        class="w-full bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-white font-bold py-4 px-4 rounded-xl transition-all shadow-[0_8px_20px_-6px_rgba(37,99,235,0.45)] hover:shadow-[0_12px_24px_-8px_rgba(37,99,235,0.6)] flex items-center justify-center gap-2 text-base">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                        </svg>
+                        Buat Poster AI
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- RIGHT: RESULT -->
+        <div class="lg:col-span-5">
+            <div class="card shadow-sm sticky top-24 flex flex-col gap-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest">Hasil Poster</h2>
+                    <span id="resultBadge" class="bg-brand-50 text-brand-600 text-[10px] font-bold px-2 py-1 rounded-lg">Poster 3:4</span>
+                </div>
+
+                <!-- Canvas dinamis aspect ratio -->
+                <div id="canvasWrap" class="rounded-2xl bg-slate-100 border-2 border-dashed border-slate-200 overflow-hidden w-full relative flex items-center justify-center ar-3-4">
+
+                    <!-- Empty -->
+                    <div id="stateEmpty" class="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                        <svg class="w-14 h-14 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <p class="text-slate-400 text-sm font-medium">Isi form & klik "Buat Poster AI"</p>
+                        <p class="text-slate-300 text-xs mt-1">Estimasi 15–30 detik</p>
+                    </div>
+
+                    <!-- Loading -->
+                    <div id="stateLoading" class="hidden absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center z-10 gap-4">
+                        <div class="loader"></div>
+                        <div class="text-center">
+                            <p id="loadingText" class="text-brand-600 font-bold text-base animate-pulse">AI sedang merancang...</p>
+                            <p class="text-slate-400 text-xs mt-1">Powered by Gemini Flash Image</p>
+                        </div>
+                        <div id="retryIndicator" class="hidden bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 text-center">
+                            <p id="retryText" class="text-amber-700 text-xs font-semibold">Mencoba ulang...</p>
+                        </div>
+                    </div>
+
+                    <!-- Error -->
+                    <div id="stateError" class="hidden absolute inset-0 bg-red-50 flex flex-col items-center justify-center p-6 text-center z-10 gap-3">
+                        <svg class="w-12 h-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div>
+                            <p class="text-red-800 font-bold text-base">Pembuatan Gagal</p>
+                            <p id="errorMessage" class="text-red-600 text-xs mt-1 leading-relaxed">Error message</p>
+                        </div>
+                        <button id="retryBtn" class="px-5 py-2 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition-all shadow">Coba Lagi</button>
+                    </div>
+
+                    <!-- Result Image -->
+                    <img id="resultImage" src="" alt="Hasil Poster AI" class="hidden absolute inset-0 w-full h-full object-contain">
+                </div>
+
+                <!-- Action Buttons -->
+                <div id="actionButtons" class="hidden grid grid-cols-2 gap-3">
+                    <button id="downloadBtn" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        Unduh HD
+                    </button>
+                    <button id="remixBtn" class="bg-white border-2 border-slate-200 hover:border-brand-300 hover:bg-brand-50 text-slate-700 font-bold py-3 px-4 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        Varian Lain
+                    </button>
+                </div>
+
+                <div id="generateInfo" class="hidden text-center">
+                    <p class="text-[11px] text-slate-400">Klik "Varian Lain" untuk desain berbeda dari parameter yang sama.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let uploadedLogo   = null;
+let uploadedImages = [];
+let generatedUrl   = null;
+let remixSeed      = null;
+
+// ─── DOM ─────────────────────────────────────────────────────────────────────
+const form       = document.getElementById('posterForm');
+const dropZone   = document.getElementById('dropZone');
+const canvasWrap = document.getElementById('canvasWrap');
+const UI = {
+    empty:    document.getElementById('stateEmpty'),
+    loading:  document.getElementById('stateLoading'),
+    error:    document.getElementById('stateError'),
+    result:   document.getElementById('resultImage'),
+    actions:  document.getElementById('actionButtons'),
+    info:     document.getElementById('generateInfo'),
+    btn:      document.getElementById('generateBtn'),
+    errMsg:   document.getElementById('errorMessage'),
+    loadTxt:  document.getElementById('loadingText'),
+    retryInd: document.getElementById('retryIndicator'),
+    retryTxt: document.getElementById('retryText'),
+    badge:    document.getElementById('resultBadge'),
+};
+
+const AR_CLASS = { '9:16':'ar-9-16', '3:4':'ar-3-4', '1:1':'ar-1-1', '16:9':'ar-16-9' };
+const AR_LABEL = { '9:16':'IG Story 9:16', '3:4':'Poster 3:4', '1:1':'IG Feed 1:1', '16:9':'Lanskap 16:9' };
+
+// ─── ASPECT RATIO CHANGE ─────────────────────────────────────────────────────
+document.querySelectorAll('input[name="aspectRatio"]').forEach(r => {
+    r.addEventListener('change', () => {
+        Object.values(AR_CLASS).forEach(c => canvasWrap.classList.remove(c));
+        canvasWrap.classList.add(AR_CLASS[r.value]);
+        UI.badge.textContent = AR_LABEL[r.value];
+    });
+});
+
+// ─── LOGO UPLOAD ─────────────────────────────────────────────────────────────
+document.getElementById('logoUpload').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    readFileB64(file, data => {
+        uploadedLogo = { data, mimeType: file.type };
+        document.getElementById('logoImg').src = 'data:' + file.type + ';base64,' + data;
+        document.getElementById('logoPreview').classList.remove('hidden');
+        document.getElementById('removeLogoBtn').classList.remove('hidden');
+        document.getElementById('logoLabelText').textContent = '🔄 Ganti Logo';
+    });
+});
+document.getElementById('removeLogoBtn').addEventListener('click', () => {
+    uploadedLogo = null;
+    document.getElementById('logoUpload').value = '';
+    document.getElementById('logoPreview').classList.add('hidden');
+    document.getElementById('removeLogoBtn').classList.add('hidden');
+    document.getElementById('logoLabelText').textContent = '📁 Unggah Logo';
+});
+
+// ─── PRODUCT IMAGES ──────────────────────────────────────────────────────────
+['dragenter','dragover','dragleave','drop'].forEach(ev =>
+    dropZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); })
+);
+['dragenter','dragover'].forEach(ev =>
+    dropZone.addEventListener(ev, () => dropZone.classList.add('border-brand-500','bg-blue-50'))
+);
+['dragleave','drop'].forEach(ev =>
+    dropZone.addEventListener(ev, () => dropZone.classList.remove('border-brand-500','bg-blue-50'))
+);
+dropZone.addEventListener('drop', e => {
+    if (e.dataTransfer.files.length) processProductFiles(e.dataTransfer.files);
+});
+document.getElementById('imageUpload').addEventListener('change', e => processProductFiles(e.target.files));
+document.getElementById('imageUploadMore').addEventListener('change', e => {
+    processProductFiles(e.target.files);
+    e.target.value = '';
+});
+
+function processProductFiles(files) {
+    const MAX = 3;
+    const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    const slots = MAX - uploadedImages.length;
+    if (slots <= 0) { alert('Sudah 3 gambar — batas maksimal tercapai.'); return; }
+    if (newFiles.length > slots) alert(`Hanya ${slots} slot tersisa. Gambar melebihi batas diabaikan.`);
+    const toAdd = newFiles.slice(0, slots);
+    let loaded = 0;
+    toAdd.forEach(file => {
+        readFileB64(file, data => {
+            uploadedImages.push({ data, mimeType: file.type, src: 'data:' + file.type + ';base64,' + data });
+            if (++loaded === toAdd.length) renderPreviews();
+        });
+    });
+}
+
+function readFileB64(file, cb) {
+    const r = new FileReader();
+    r.onload = e => cb(e.target.result.split(',')[1]);
+    r.readAsDataURL(file);
+}
+
+function renderPreviews() {
+    const grid = document.getElementById('previewGrid');
+    grid.innerHTML = '';
+    if (uploadedImages.length > 0) {
+        document.getElementById('uploadPlaceholder').classList.add('hidden');
+        const wrap = document.getElementById('imagePreviewContainer');
+        wrap.classList.remove('hidden');
+        wrap.classList.add('flex');
+        uploadedImages.forEach((img, i) => {
+            const div = document.createElement('div');
+            div.className = 'relative h-24 border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm flex items-center justify-center p-1 group';
+            const el = document.createElement('img');
+            el.src = img.src;
+            el.className = 'max-h-full max-w-full object-contain';
+            const rm = document.createElement('button');
+            rm.type = 'button';
+            rm.className = 'absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity leading-none';
+            rm.textContent = '✕';
+            rm.addEventListener('click', () => { uploadedImages.splice(i, 1); renderPreviews(); });
+            div.appendChild(el); div.appendChild(rm); grid.appendChild(div);
+        });
+        document.getElementById('imageCountText').textContent = `${uploadedImages.length}/3 Gambar`;
+        document.getElementById('addMoreLabel').classList.toggle('hidden', uploadedImages.length >= 3);
+    } else {
+        document.getElementById('uploadPlaceholder').classList.remove('hidden');
+        const wrap = document.getElementById('imagePreviewContainer');
+        wrap.classList.add('hidden'); wrap.classList.remove('flex');
+    }
+}
+
+document.getElementById('removeAllImagesBtn').addEventListener('click', () => {
+    document.getElementById('imageUpload').value = '';
+    uploadedImages = [];
+    renderPreviews();
+});
+
+// ─── UI STATE ─────────────────────────────────────────────────────────────────
+function setUI(state) {
+    [UI.empty, UI.loading, UI.error, UI.result, UI.actions, UI.info, UI.retryInd]
+        .forEach(el => el.classList.add('hidden'));
+    UI.btn.disabled = state === 'loading';
+    UI.btn.classList.toggle('opacity-70', state === 'loading');
+    UI.btn.classList.toggle('cursor-not-allowed', state === 'loading');
+    if (state === 'empty')   UI.empty.classList.remove('hidden');
+    if (state === 'loading') UI.loading.classList.remove('hidden');
+    if (state === 'error')   UI.error.classList.remove('hidden');
+    if (state === 'success') {
+        UI.result.classList.remove('hidden');
+        UI.actions.classList.remove('hidden');
+        UI.info.classList.remove('hidden');
+    }
+}
+
+// ─── BUILD PROMPT ─────────────────────────────────────────────────────────────
+function buildPrompt({ brand, product, category, promo, desc, style, aspectRatio, contacts }) {
+    const seed = remixSeed
+        ? `\n\n[CREATIVE VARIATION SEED: "${remixSeed}" — produce a distinctly different layout, color mood, and overall composition compared to any previous version.]`
+        : '';
+
+    let p = `You are a senior graphic designer and Indonesian marketing copywriter creating a professional commercial advertising poster.
+
+=== POSTER BRIEF ===
+Brand: "${brand}"
+Product: "${product}"
+Category: ${category}
+Promotional Headline: "${promo}"
+${desc ? `Product Details: ${desc}` : ''}
+Visual Theme: ${style}
+Format: ${aspectRatio}
+
+=== LANGUAGE — CRITICAL ===
+ALL text ON the poster (headlines, taglines, descriptions, labels) MUST be in Bahasa Indonesia.
+Only brand names, product model codes, and social media handles stay in original form.
+Do NOT write any English text on the poster.
+
+=== TYPOGRAPHY & CONTENT ===
+1. Make "${promo}" the MOST visually dominant element — biggest font, boldest, highest contrast.
+2. Show "${brand}" and "${product}" prominently.
+3. Write ONE punchy Bahasa Indonesia sub-headline tagline (5–8 kata). Good examples: "Sinyal Kuat di Mana Saja", "Koneksi Nonstop Tanpa Gangguan", "Solusi Terbaik untuk Bisnis Anda".
+4. Do NOT write literal labels like "Produk:", "Brand:", "Kategori:".`;
+
+    if (contacts.length > 0) {
+        p += `
+
+=== FOOTER CONTACT BAR ===
+At the very bottom, create an elegant footer containing:
+${contacts.join('\n')}
+CRITICAL: Draw the ACTUAL visual platform icon/logo (Instagram camera, Facebook f-logo, TikTok note, WhatsApp phone) instead of writing the platform name in text. Show icon + handle text only. Keep footer clean and professional.`;
+    }
+
+    if (uploadedImages.length > 1) {
+        p += `
+
+=== MULTI-PRODUCT COMPOSITION ===
+${uploadedImages.length} product images provided. Feature ALL of them in one balanced composition.
+Arrange side-by-side, diagonal, or triangular — whichever is most aesthetically harmonious.
+All products must be clearly visible, well-lit, and none hidden or cropped.`;
+    } else if (uploadedImages.length === 1) {
+        p += `
+
+=== PRODUCT HERO ===
+1 product image provided. Make it the HERO — center-stage with dramatic professional studio lighting.`;
+    } else {
+        p += `
+
+=== PRODUCT VISUALIZATION ===
+No product image provided. Creatively visualize a premium photorealistic product fitting: ${category}.`;
+    }
+
+    if (uploadedLogo) {
+        p += `
+
+=== LOGO PLACEMENT — CRITICAL ===
+The exact brand logo is provided as a reference image. You MUST:
+- Place it in the TOP-LEFT or TOP-RIGHT corner of the poster.
+- Preserve exact colors, shape, proportions, and text — no modifications.
+- Scale proportionally so it fits neatly without overlapping key content.`;
+    }
+
+    p += `
+
+=== QUALITY STANDARD ===
+Final result: professional commercial advertisement, print and digital ready.
+Sharp typography, premium lighting, clear visual hierarchy, balanced composition.${seed}`;
+
+    return p;
+}
+
+// ─── GENERATE ─────────────────────────────────────────────────────────────────
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+form.addEventListener('submit', async e => {
+    e.preventDefault();
+
+    const apiKey = document.getElementById('extApiKey').value.trim();
+    if (!apiKey) {
+        alert('Gemini API Key wajib diisi.\n\nDapatkan gratis di: aistudio.google.com/apikey');
+        return;
+    }
+
+    const brand       = document.getElementById('brandName').value.trim();
+    const product     = document.getElementById('productName').value.trim();
+    const category    = document.getElementById('category').value;
+    const promo       = document.getElementById('promoText').value.trim();
+    const desc        = document.getElementById('productDesc').value.trim();
+    const style       = document.querySelector('input[name="designStyle"]:checked').value;
+    const aspectRatio = document.querySelector('input[name="aspectRatio"]:checked').value;
+
+    // Update canvas aspect ratio
+    Object.values(AR_CLASS).forEach(c => canvasWrap.classList.remove(c));
+    canvasWrap.classList.add(AR_CLASS[aspectRatio]);
+    UI.badge.textContent = AR_LABEL[aspectRatio];
+
+    // Contacts
+    const contacts = [];
+    const ig = document.getElementById('igAccount').value.trim();
+    const fb = document.getElementById('fbAccount').value.trim();
+    const tt = document.getElementById('tiktokAccount').value.trim();
+    const wa = document.getElementById('helpline').value.trim();
+    if (ig) contacts.push(`Instagram icon + handle: ${ig}`);
+    if (fb) contacts.push(`Facebook icon + page: ${fb}`);
+    if (tt) contacts.push(`TikTok icon + handle: ${tt}`);
+    if (wa) contacts.push(`WhatsApp icon + number: ${wa}`);
+
+    // Build parts
+    const promptText = buildPrompt({ brand, product, category, promo, desc, style, aspectRatio, contacts });
+    const parts = [{ text: promptText }];
+    if (uploadedLogo)   parts.push({ inlineData: { mimeType: uploadedLogo.mimeType, data: uploadedLogo.data } });
+    uploadedImages.forEach(img => parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } }));
+
+    const payload = {
+        contents: [{ role: 'user', parts }],
+        generationConfig: {
+            responseModalities: ['TEXT', 'IMAGE'],
+            imageConfig: { aspectRatio }
+        }
+    };
+
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
+
+    setUI('loading');
+    UI.loadTxt.textContent = 'AI sedang merancang poster...';
+
+    const delays = [0, 4000, 8000];
+    for (let attempt = 0; attempt < delays.length; attempt++) {
+        if (delays[attempt] > 0) {
+            UI.retryInd.classList.remove('hidden');
+            UI.retryTxt.textContent = `Server sibuk — mencoba ulang ke-${attempt} dari ${delays.length - 1}...`;
+            await sleep(delays[attempt]);
+        }
+
+        try {
+            UI.loadTxt.textContent = attempt === 0 ? 'AI sedang melukis poster...' : `Mencoba ulang (${attempt}/${delays.length - 1})...`;
+
+            const res = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                const msg = err?.error?.message || `HTTP ${res.status}`;
+                if (res.status === 400 || res.status === 403) throw new Error('API Key error: ' + msg);
+                throw new Error(msg);
+            }
+
+            const data = await res.json();
+            const imgPart = data?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+
+            if (!imgPart) {
+                const reason = data?.candidates?.[0]?.finishReason;
+                throw new Error(reason === 'SAFETY'
+                    ? 'Konten diblokir filter keamanan AI. Coba ubah teks promosi atau gaya visual.'
+                    : 'Respons AI tidak mengandung gambar. Coba lagi.');
+            }
+
+            generatedUrl = `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
+            UI.result.src = generatedUrl;
+            remixSeed = null;
+            setUI('success');
+            break;
+
+        } catch (err) {
+            const isKeyError = err.message.toLowerCase().includes('api key');
+            if (isKeyError || attempt === delays.length - 1) {
+                UI.errMsg.textContent = err.message;
+                setUI('error');
+                break;
+            }
+        }
+    }
+});
+
+document.getElementById('retryBtn').addEventListener('click', () => {
+    remixSeed = null;
+    form.dispatchEvent(new Event('submit'));
+});
+
+document.getElementById('remixBtn').addEventListener('click', () => {
+    remixSeed = Math.random().toString(36).slice(2, 8).toUpperCase();
+    form.dispatchEvent(new Event('submit'));
+});
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+    if (!generatedUrl) return;
+    const brand   = document.getElementById('brandName').value.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    const product = document.getElementById('productName').value.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    const ts      = new Date().toISOString().slice(0, 10);
+    const a = Object.assign(document.createElement('a'), {
+        href: generatedUrl,
+        download: `Poster-${brand}-${product}-${ts}.png`
+    });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+});
+</script>
+</body>
+</html>

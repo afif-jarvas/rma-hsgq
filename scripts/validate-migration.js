@@ -3,7 +3,7 @@
  * Comprehensive 8-point migration validation script for SQLite app.db
  */
 
-import Database from "better-sqlite3";
+import Database from "libsql";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";

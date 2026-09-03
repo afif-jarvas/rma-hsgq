@@ -429,4 +429,35 @@ router.post("/bulk-import", requireAuth, (req, res) => {
   }
 });
 
+/**
+ * POST /api/rma/export-pdf
+ * Generate and stream RMA PDF report according to active UI filters/sort
+ */
+router.post("/export-pdf", requireAuth, async (req, res) => {
+  try {
+    const { items, meta } = req.body || {};
+    let exportItems = Array.isArray(items) ? items : [];
+
+    // Safety limit: max 500 rows
+    const totalCount = exportItems.length;
+    if (exportItems.length > 500) {
+      exportItems = exportItems.slice(0, 500);
+    }
+
+    const metaString = meta || `Total Data: ${exportItems.length}${totalCount > 500 ? ` (Dibatasi dari ${totalCount} baris)` : ""}`;
+    const { buildRmaDocDefinition, generatePdfBuffer } = await import("../pdfService.js");
+    const docDef = buildRmaDocDefinition(exportItems, metaString);
+    const pdfBuffer = await generatePdfBuffer(docDef);
+
+    const filename = `HSGQ_RMA_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error("RMA PDF export error:", err);
+    res.status(500).json({ ok: false, error: "Gagal membuat dokumen PDF RMA: " + err.message });
+  }
+});
+
 export default router;

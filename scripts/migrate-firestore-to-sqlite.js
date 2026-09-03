@@ -3,7 +3,7 @@
  * Script migrasi total data dari Firestore Backup / Local SQLite ke server/data/app.db
  */
 
-import Database from "better-sqlite3";
+import Database from "libsql";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
